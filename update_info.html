@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Profile</title>
+    <script>
+        document.addEventListener("DOMContentLoaded", loadUserProfile);
+
+        function loadUserProfile() {
+            fetch("/load_user_info")
+                .then(response => response.json())
+                .then(user => {
+                    document.getElementById("userId").value = user.id;
+                    document.getElementById("name").value = user.name;
+                    document.getElementById("email").value = user.email;
+                    document.getElementById("contact").value = user.contact;
+                    document.getElementById("address").value = user.address;
+                })
+                .catch(error => console.error("Error loading profile:", error));
+        }
+
+        function updateUserProfile() {
+            const userId = document.getElementById("userId").value;
+            const fields = ["name", "email", "contact", "address"];
+
+            fields.forEach(field => {
+                const value = document.getElementById(field).value;
+                fetch("/updateUser", {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ id: userId, field, value })
+                })
+                .then(response => response.text())
+                .then(message => console.log(`${field} updated:`, message))
+                .catch(error => console.error(`Error updating ${field}:`, error));
+            });
+
+            alert("Profile updated successfully.");
+        }
+    </script>
+</head>
+<body>
+    <h1>Update Profile</h1>
+    <form onsubmit="event.preventDefault(); updateUserProfile();">
+        <input type="hidden" id="userId">
+        
+        <label for="name">Name:</label>
+        <input type="text" id="name" required><br>
+        
+        <label for="email">Email:</label>
+        <input type="email" id="email" required><br>
+        
+        <label for="contact">Contact:</label>
+        <input type="text" id="contact" required pattern="\d{10}"><br>
+        
+        <label for="address">Address:</label>
+        <input type="text" id="address" required><br>
+        
+        <button type="submit">Update</button>
+    </form>
+</body>
+</html>

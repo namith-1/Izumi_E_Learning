@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Enrollment</title>
+    <script>
+        async function fetchCourses() {
+            const response = await fetch('http://localhost:4000/courses'); // Fetch available courses
+            const courses = await response.json();
+            const courseList = document.getElementById('course-list');
+            courseList.innerHTML = '';
+
+            courses.forEach(course => {
+                const courseDiv = document.createElement('div');
+                courseDiv.innerHTML = `
+                    <h3>${course.title}</h3>
+                    <p></p>
+                    <label>Student Name: <input type="text" id="student-name-${course.id}"></label><br>
+                    <label>Student ID: <input type="text" id="student-${course.id}"></label>
+                    <button onclick="enroll(${course.id})">Enroll</button>
+                    <button onclick="verify_view(${course.id})">view</button>
+                    <p id="message-${course.id}" style="color: green;"></p>
+                `;
+                courseList.appendChild(courseDiv);
+            });
+        }
+    
+    
+        async function verify_view(courseId) {
+    const studentId = document.getElementById(`student-${courseId}`).value.trim();
+
+    if (!studentId) {
+        alert("Please enter a valid Student ID to verify enrollment.");
+        return;
+    }
+
+    try {
+        const response = await fetch(`http://localhost:4000/is_enrolled/${studentId}/${courseId}`, {
+            method: 'GET',
+            redirect: 'follow' // Allow the browser to follow redirects
+        });
+
+        if (response.redirected) {
+            window.location.href = response.url; // Redirect to the new page
+        } else {
+            alert("Unexpected response. Please try again.");
+        }
+    } catch (error) {
+        console.error("Error verifying enrollment:", error);
+        alert("Failed to verify enrollment. Try again later.");
+    }
+}
+
+
+
+        async function enroll(courseId) {
+            const studentId = document.getElementById(`student-${courseId}`).value.trim();
+            const studentName = document.getElementById(`student-name-${courseId}`).value.trim();
+            const messageElement = document.getElementById(`message-${courseId}`);
+
+            if (!studentId || !studentName) {
+                messageElement.style.color = "red";
+                messageElement.innerText = "Enter your Student Name and ID to enroll.";
+                return;
+            }
+
+            const response = await fetch('http://localhost:4000/enroll', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ studentId, studentName, courseId })
+            });
+
+            const result = await response.json();
+            messageElement.innerText = result.message;
+        }
+
+        document.addEventListener('DOMContentLoaded', fetchCourses);
+    </script>
+</head>
+<body>
+    <h1>Available Courses</h1>
+    <div id="course-list">Loading courses...</div>
+</body>
+</html>

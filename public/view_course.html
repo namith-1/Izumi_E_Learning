@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Viewer</title>
+    <script defer src="/script.js"></script>
+    <style>
+        :root {
+            --primary-color: #6200ea;
+            --primary-light: #9d46ff;
+            --primary-dark: #0a00b6;
+            --accent-color: #ff6584;
+            --background-dark: #121212;
+            --background-light: #1e1e1e;
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --text-tertiary: rgba(255, 255, 255, 0.5);
+            --success-color: #00e676;
+            --warning-color: #ffea00;
+            --error-color: #ff1744;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            --transition: all 0.3s ease;
+            --font-main: 'Poppins', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            font-family: var(--font-main);
+            background-color: var(--background-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .sidebar {
+            width: 300px;
+            background-color: var(--background-light);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            box-shadow: var(--box-shadow);
+            overflow-y: auto;
+        }
+
+        .sidebar h3 {
+            color: var(--primary-light);
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+            border-bottom: 2px solid var(--primary-light);
+            padding-bottom: 10px;
+        }
+
+        .content {
+            flex-grow: 1;
+            padding: 30px;
+            background-color: var(--background-dark);
+        }
+
+        .module {
+            margin-left: 20px;
+            margin-bottom: 10px;
+            position: relative;
+        }
+
+        .toggle-btn {
+            cursor: pointer;
+            margin-right: 10px;
+            color: var(--text-secondary);
+            transition: var(--transition);
+            display: inline-block;
+            width: 20px;
+            text-align: center;
+        }
+
+        .toggle-btn:hover {
+            color: var(--primary-light);
+            transform: scale(1.2);
+        }
+
+        .module button {
+            background-color: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: left;
+            padding: 8px 12px;
+            border-radius: var(--border-radius);
+            width: calc(100% - 30px);
+        }
+
+        .module button:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--primary-light);
+        }
+
+        .module button.active {
+            background-color: var(--primary-light);
+            color: var(--text-primary);
+        }
+
+        .submodules {
+            border-left: 2px solid var(--primary-dark);
+            margin-left: 10px;
+            padding-left: 10px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #module-title {
+            color: var(--primary-light);
+            margin-bottom: 20px;
+            font-size: 2rem;
+            border-bottom: 2px solid var(--primary-light);
+            padding-bottom: 10px;
+        }
+
+        #module-text {
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        #module-url {
+            display: inline-block;
+            background-color: var(--primary-light);
+            color: var(--text-primary);
+            text-decoration: none;
+            padding: 10px 15px;
+            border-radius: var(--border-radius);
+            transition: var(--transition);
+        }
+
+        #module-url:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-3px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        #module-flag {
+            display: inline-block;
+            background-color: var(--success-color);
+            color: var(--text-primary);
+            text-decoration: none;
+            padding: 10px 15px;
+            border-radius: var(--border-radius);
+            transition: var(--transition);
+            margin-top: 10px;
+        }
+
+        #module-flag:hover {
+            background-color: #00b359;
+            transform: translateY(-3px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--background-light);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-light);
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-dark);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            }
+        }
+        .completed-tick {
+            color: var(--success-color);
+            margin-left: 5px;
+            font-size: 0.8em;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h3>Course Modules</h3>
+        <div id="module-list"></div>
+    </div>
+    <div class="content">
+        <h2 id="module-title">Select a module</h2>
+        <p id="module-text"></p>
+        <a id="module-url" href="#" target="_blank"></a>
+        <a id="module-flag" href="#" target="_blank">Mark as Complete</a>
+    </div>
+
+    <script>
+        function getQueryParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const courseId = getQueryParam("courseID");
+            const studentId = 1; // Replace with actual student ID from session/auth
+
+            fetch(`/course/${courseId}`)
+                .then(res => res.json())
+                .then(data => {
+                    const moduleList = document.getElementById("module-list");
+
+                    // Fetch completed modules for this student
+                    fetch(`/completed_modules?studentId=${studentId}&courseId=${courseId}`)
+                        .then(res => res.json())
+                        .then(completedModules => {
+                            const completedModuleIds = completedModules.map(m => m.module_id);
+
+                            const buildTree = (modules, parent) => {
+                                modules.forEach(module => {
+                                    const moduleDiv = document.createElement("div");
+                                    moduleDiv.classList.add("module");
+
+                                    const toggleBtn = document.createElement("span");
+                                    toggleBtn.textContent = "-";
+                                    toggleBtn.classList.add("toggle-btn");
+                                    toggleBtn.onclick = () => {
+                                        const subModules = moduleDiv.querySelector(".submodules");
+                                        if (subModules) {
+                                            subModules.classList.toggle("hidden");
+                                            toggleBtn.textContent = subModules.classList.contains("hidden") ? "+" : "-";
+                                        }
+                                    };
+
+                                    const moduleBtn = document.createElement("button");
+                                    moduleBtn.textContent = module.title;
+                                    moduleBtn.onclick = () => {
+                                        document.getElementById("module-title").textContent = module.title;
+                                        document.getElementById("module-text").textContent = module.text;
+                                        const url = document.getElementById("module-url");
+                                        url.href = module.url;
+                                        url.textContent = module.url ? "Open Resource" : "";
+                                        document.getElementById("module-flag").href = `/module_complete?moduleId=${module.id}`;
+
+                                        // Update tick mark after marking as complete
+                                        document.getElementById("module-flag").onclick = () => {
+                                            fetch(`/module_complete?moduleId=${module.id}`, { method: 'PUT' })
+                                                .then(response => {
+                                                    if (response.ok) {
+                                                        const tick = document.createElement("span");
+                                                        tick.textContent = "✓";
+                                                        tick.classList.add("completed-tick");
+                                                        moduleDiv.appendChild(tick);
+                                                    } else {
+                                                        console.error("Failed to mark module as complete");
+                                                    }
+                                                });
+                                        };
+                                    };
+
+                                    moduleDiv.appendChild(toggleBtn);
+                                    moduleDiv.appendChild(moduleBtn);
+
+                                    // Add tick if module is completed
+                                    if (completedModuleIds.includes(module.id)) {
+                                        const tick = document.createElement("span");
+                                        tick.textContent = "✓";
+                                        tick.classList.add("completed-tick");
+                                        moduleDiv.appendChild(tick);
+                                    }
+
+                                    if (module.subModules.length > 0) {
+                                        const subModuleDiv = document.createElement("div");
+                                        subModuleDiv.classList.add("submodules");
+                                        buildTree(module.subModules, subModuleDiv);
+                                        moduleDiv.appendChild(subModuleDiv);
+                                    }
+
+                                    parent.appendChild(moduleDiv);
+                                });
+                            };
+
+                            buildTree(data.modules, moduleList);
+                        });
+                });
+        });
+    </script>
+</body>
+</html>

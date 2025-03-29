@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restore Account</title>
+    <script>
+        async function restoreAccount() {
+            const email = document.getElementById("email").value;
+            const response = await fetch('/restore', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email })
+            });
+
+            const message = await response.text();
+            alert(message);
+            if (response.ok) {
+                window.location.href = '/';
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>Restore Your Account</h1>
+    <p>Enter your email to restore your account:</p>
+    <input type="email" id="email" placeholder="Enter your email" required>
+    <button onclick="restoreAccount()">Restore Account</button>
+    <p><a href="/">Back to Login</a></p>
+</body>
+</html>

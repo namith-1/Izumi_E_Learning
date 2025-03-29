@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Quiz Maker</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 20px;
+        }
+
+        #question-list {
+            margin-bottom: 20px;
+        }
+
+        .question-container {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+            position: relative;
+        }
+
+        .option-container {
+            margin-left: 20px;
+        }
+
+        #quiz-display {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-top: 20px;
+        }
+
+        .quiz-question {
+            margin-bottom: 10px;
+        }
+
+        .quiz-option {
+            margin-left: 20px;
+        }
+
+        #results {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+
+        .remove-question-btn, .remove-option-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            cursor: pointer;
+            background-color: #f00;
+            color: white;
+            border: none;
+            padding: 2px 5px;
+            font-size: 12px;
+        }
+
+        .add-option-btn {
+            background-color: #008000;
+            color: white;
+            border: none;
+            padding: 2px 5px;
+            cursor: pointer;
+            margin-left: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Dynamic Quiz Maker</h1>
+
+    <div id="question-list">
+        <button onclick="addQuestion()">Add Question</button>
+    </div>
+
+    <button onclick="displayQuiz()">Display Quiz</button>
+
+    <div id="quiz-display" style="display: none;">
+        <h2>Quiz</h2>
+        <div id="quiz-questions"></div>
+        <button onclick="calculateResults()">Submit Quiz</button>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        let questionCount = 0;
+
+        function addQuestion() {
+            questionCount++;
+            const questionDiv = document.createElement("div");
+            questionDiv.classList.add("question-container");
+            questionDiv.innerHTML = `
+                <label for="question${questionCount}">Question ${questionCount}:</label><br>
+                <input type="text" id="question${questionCount}"><br>
+                <div id="options${questionCount}">
+                    <label>Options:</label><br>
+                    <input type="text" id="option${questionCount}_1"><br>
+                    <input type="text" id="option${questionCount}_2"><br>
+                    <input type="text" id="option${questionCount}_3"><br>
+                    <input type="text" id="option${questionCount}_4"><br>
+                    <button class="remove-option-btn" onclick="removeOption(${questionCount}, 4)">Remove</button><br>
+                    <button class="remove-option-btn" onclick="removeOption(${questionCount}, 3)">Remove</button><br>
+                    <button class="remove-option-btn" onclick="removeOption(${questionCount}, 2)">Remove</button><br>
+                    <button class="remove-option-btn" onclick="removeOption(${questionCount}, 1)">Remove</button><br>
+                </div>
+                <button class="add-option-btn" onclick="addOption(${questionCount})">Add Option</button><br>
+                <label for="correctAnswer${questionCount}">Correct Answer (1-4):</label>
+                <input type="number" id="correctAnswer${questionCount}" min="1" max="4"><br><br>
+                <button class="remove-question-btn" onclick="removeQuestion(${questionCount})">X</button>
+            `;
+            document.getElementById("question-list").appendChild(questionDiv);
+            updateCorrectAnswerMax(questionCount);
+        }
+
+        function removeQuestion(questionNumber) {
+            const questionDiv = document.querySelector(`#question-list div:nth-child(${questionNumber + 1})`);
+            if (questionDiv) {
+                questionDiv.remove();
+                reIndexQuestions();
+            }
+        }
+
+        function reIndexQuestions() {
+            const questionDivs = document.querySelectorAll("#question-list div");
+            questionDivs.forEach((div, index) => {
+                const newIndex = index + 1;
+                div.innerHTML = div.innerHTML.replace(/question\d+/g, `question${newIndex}`)
+                                            .replace(/option\d+_\d+/g, (match) => match.replace(/\d+/, newIndex))
+                                            .replace(/correctAnswer\d+/g, `correctAnswer${newIndex}`)
+                                            .replace(/Question \d+:/, `Question ${newIndex}:`)
+                                            .replace(/removeQuestion\(\d+\)/g, `removeQuestion(${newIndex})`)
+                                            .replace(/addOption\(\d+\)/g, `addOption(${newIndex})`)
+                                            .replace(/removeOption\(\d+, \d+\)/g, (match) => match.replace(/\d+/, newIndex))
+                                            .replace(/options\d+/g, `options${newIndex}`);
+                updateCorrectAnswerMax(newIndex);
+            });
+            questionCount = questionDivs.length;
+        }
+
+        function addOption(questionNumber) {
+            const optionsDiv = document.getElementById(`options${questionNumber}`);
+            const optionCount = optionsDiv.querySelectorAll("input").length + 1;
+            const optionInput = document.createElement("input");
+            optionInput.type = "text";
+            optionInput.id = `option${questionNumber}_${optionCount}`;
+            optionsDiv.appendChild(optionInput);
+            optionsDiv.appendChild(document.createElement("br"));
+
+            const removeButton = document.createElement("button");
+            removeButton.textContent = "Remove";
+            removeButton.classList.add("remove-option-btn");
+            removeButton.onclick = function() { removeOption(questionNumber, optionCount); };
+            optionsDiv.appendChild(removeButton);
+
+            updateCorrectAnswerMax(questionNumber);
+        }
+
+        function removeOption(questionNumber, optionNumber) {
+            const optionInput = document.getElementById(`option${questionNumber}_${optionNumber}`);
+            const br = optionInput.nextElementSibling;
+            const button = br.nextElementSibling;
+            optionInput.remove();
+            br.remove();
+            button.remove();
+            updateCorrectAnswerMax(questionNumber);
+        }
+
+        function updateCorrectAnswerMax(questionNumber) {
+            const optionsDiv = document.getElementById(`options${questionNumber}`);
+            const optionCount = optionsDiv.querySelectorAll("input").length;
+            document.getElementById(`correctAnswer${questionNumber}`).max = optionCount;
+            document.getElementById(`correctAnswer${questionNumber}`).labels[0].textContent = `Correct Answer (1-${optionCount}):`;
+        }
+
+        function displayQuiz() {
+            const quizQuestionsDiv = document.getElementById("quiz-questions");
+            quizQuestionsDiv.innerHTML = "";
+            let questions = [];
+
+            for (let i = 1; i <= questionCount; i++) {
+                const question = document.getElementById(`question${i}`).value;
+                const optionsDiv = document.getElementById(`options${i}`);
+                const options = Array.from(optionsDiv.querySelectorAll("input")).map(input => input.value);
+                const correctAnswer = parseInt(document.getElementById(`correctAnswer${i}`).value);
+
+                if (question && options.every(opt => opt) && correctAnswer >= 1 && correctAnswer <= options.length) {
+                    questions.push({ question, options, correctAnswer });
+                } else {
+                    alert("Please fill in all question fields correctly.");
+                    return;
+                }
+            }
+
+            questions.forEach((q, qIndex) => {
+                const questionDiv = document.createElement("div");
+                questionDiv.classList.add("quiz-question");
+                questionDiv.innerHTML = `<p>${qIndex + 1}. ${q.question}</p>`;
+
+                q.options.forEach((option, oIndex) => {
+                    const optionDiv = document.createElement("div");
+                    optionDiv.classList.add("quiz-option");
+                    optionDiv.innerHTML = `<input type="radio" name="question${qIndex}" value="${oIndex + 1}"> ${option}`;
+                    questionDiv.appendChild(optionDiv);
+                });
+
+                quizQuestionsDiv.appendChild(questionDiv);
+            });
+
+            document.getElementById("quiz-display").style.display = "block";
+        }
+
+        function calculateResults() {
+            let score = 0;
+            let questions = [];
+            for (let i = 1; i <= questionCount; i++) {
+                const question = document.getElementById(`question${i}`).value;
+                const optionsDiv = document.getElementById(`options${i}`);
+                const options = Array.from(optionsDiv.querySelectorAll("input")).map(input => input.value);
+                const correctAnswer = parseInt(document.getElementById(`correctAnswer${i}`).value);
+                questions.push({ question, options, correctAnswer });
+            }
+
+            questions.forEach((q, qIndex) => {
+                const selectedOption = document.querySelector(`input[name="question${qIndex}"]:checked`);
+                if (selectedOption && parseInt(selectedOption.value) === q.correctAnswer) {
+                    score++;
+                }
+            });
+
+            document.getElementById("results").textContent = `Your score: ${score} out of ${questions.length}`;
+        }
+    </script>
+</body>
+</html>

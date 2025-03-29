@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navigation with Profile Dropdown</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background: #f5f5f5;
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: #333;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+        }
+
+        .profile-container {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .profile-icon {
+            font-size: 20px;
+            color: white;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 40px;
+            background: white;
+            min-width: 200px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            animation: scaleIn 0.15s ease-out;
+        }
+
+        @keyframes scaleIn {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .dropdown-content.active {
+            display: block;
+        }
+
+        .dropdown-items {
+            padding: 8px 0;
+        }
+
+        .dropdown-item {
+            padding: 12px 16px;
+            color: #333;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.95em;
+            transition: background 0.2s;
+        }
+
+        .dropdown-item:hover {
+            background: #f8f9fa;
+        }
+
+        .dropdown-item i {
+            width: 20px;
+            color: #666;
+        }
+
+        .logout {
+            color: #dc3545 !important;
+        }
+
+        .divider {
+            border-top: 1px solid #eee;
+            margin: 8px 0;
+        }
+
+        .container {
+            margin-top: 60px;
+        }
+
+        .buttons {
+            margin: 20px;
+        }
+
+        .buttons button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            cursor: pointer;
+            background-color: #007BFF;
+            color: white;
+            font-size: 16px;
+        }
+
+        .buttons button:hover {
+            background-color: #0056b3;
+        }
+
+        .content {
+            padding: 20px;
+            border: 1px solid #ccc;
+            min-height: 200px;
+            margin: 20px auto;
+            width: 80%;
+        }
+
+        .frame {
+            width: 100%;
+            height: 600px;
+            border: none;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div>Simple Navigation Bar</div>
+        <div class="profile-container">
+            <i class="fa-solid fa-ellipsis-vertical profile-icon"></i>
+            <div class="dropdown-content">
+                <div class="dropdown-items">
+                    <a href="/profile" class="dropdown-item"><i class="fa-regular fa-user"></i>Profile</a>
+                    <a href="#" class="dropdown-item"><i class="fa-regular fa-credit-card"></i>My Purchases</a>
+                    <a href="#" class="dropdown-item"><i class="fa-solid fa-gear"></i>Settings</a>
+                    <a href="#" class="dropdown-item"><i class="fa-regular fa-bell"></i>Updates</a>
+                    <div class="divider"></div>
+                    <a href="#" class="dropdown-item"><i class="fa-regular fa-star"></i>Accomplishments</a>
+                    <a href="#" class="dropdown-item"><i class="fa-regular fa-circle-question"></i>Help Center</a>
+                    <div class="divider"></div>
+                    <a href="/logout" class="dropdown-item logout"><i class="fa-solid fa-arrow-right-from-bracket"></i>Log Out</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="buttons">
+            <button onclick="fetchIframe('home')">Home</button>
+            <button onclick="fetchIframe('courses')">Courses</button>
+            <button onclick="fetchIframe('my-learning')">My Learning</button>
+        </div>
+        <div class="content">
+            <iframe id="main-frame" class="frame"></iframe>
+        </div>
+        <div class="content">
+            <iframe id="main-frame-2" class="frame"></iframe>
+        </div>
+    </div>
+
+    <script>
+        window.onload = function () {
+    document.getElementById("main-frame").src = "http://localhost:4000/magazine/magazine.html";
+    document.getElementById("main-frame-2").src = "http://localhost:4000/course_card/course_card.html";
+};
+
+        const profileContainer = document.querySelector('.profile-container');
+        const dropdownContent = document.querySelector('.dropdown-content');
+
+        profileContainer.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdownContent.classList.toggle('active');
+        });
+
+        document.addEventListener('click', () => {
+            dropdownContent.classList.remove('active');
+        });
+
+        dropdownContent.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+
+        function fetchIframe(page) {
+    if (page === 'courses') {
+        document.getElementById("main-frame-2").src = "";
+        document.getElementById("main-frame").src = "http://localhost:4000/course_card/course_card.html";
+    } else {
+        document.getElementById("main-frame").src = "http://localhost:4000/magazine/magazine.html";
+        document.getElementById("main-frame-2").src = "http://localhost:4000/course_card/course_card.html";
+    }
+}
+
+        
+
+    </script>
+</body>
+</html>
