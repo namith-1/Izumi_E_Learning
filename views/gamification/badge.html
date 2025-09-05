@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Goals and Consistency</title>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        h1 {
+            color: #9d46ff;
+            margin-bottom: 20px;
+        }
+        .main-container {
+            display: flex;
+            gap: 100px; /* Space between goals and calendar */
+            align-items: flex-start; /* Align to the top */
+            max-width: 900px; /* Limit the overall width */
+            margin: 0 auto; /* Center the container */
+        }
+        .goals-section {
+            flex: 1; /* Take up equal space */
+            text-align: left;
+        }
+        .pending-goals-container, .completed-goals-container {
+            margin-top: 10px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .pending-goals-container h2, .completed-goals-container h2 {
+            color: #9d46ff;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        .goal-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .goal-item:last-child {
+            border-bottom: none;
+        }
+        .goal-name {
+            flex-grow: 1;
+        }
+        .complete-button {
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.3s ease;
+        }
+        .complete-button:hover {
+            background-color: #45a049;
+        }
+        .completed-goal {
+            color: #888;
+            font-style: italic;
+        }
+        .calendar-section {
+            flex: 1; /* Take up equal space */
+            text-align: center;
+        }
+        .calendar-container {
+            margin-top: 10px;
+        }
+        .calendar-header {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        .calendar-header select {
+            padding: 8px;
+            margin: 0 10px;
+        }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            width: 90%; /* Make calendar take full width of its container */
+        }
+        .calendar-day {
+            padding: 5px;
+            border: 1px solid #eee;
+            text-align: center;
+        }
+        .calendar-day.consistent {
+            background-color: #a7f3d0; /* Light green for consistent days */
+            font-weight: bold;
+        }
+        .calendar-day.inactive {
+            color: #ccc;
+        }
+        h2 {
+            margin-top: 15px;
+            color: #9d46ff;
+        }
+        #upvotes {
+            font-weight: bold;
+            color: #3b82f6;
+        }
+    </style>
+</head>
+<body>
+    <h1>Student Goals</h1>
+    <p>Total Upvotes: <span id="upvotes">0</span></p>
+    <div class="main-container">
+        <div class="goals-section">
+            <div class="pending-goals-container">
+                <h2>Pending Goals</h2>
+                <div id="pending-goals">
+                    </div>
+            </div>
+            <div class="completed-goals-container">
+                <h2>Completed Goals</h2>
+                <div id="completed-goals">
+                    </div>
+            </div>
+        </div>
+        <div class="calendar-section">
+            <h2>Consistency Calendar</h2>
+            <div class="calendar-header">
+                <select id="year"></select>
+                <select id="month">
+                    <option value="0">January</option>
+                    <option value="1">February</option>
+                    <option value="2">March</option>
+                    <option value="3">April</option>
+                    <option value="4">May</option>
+                    <option value="5">June</option>
+                    <option value="6">July</option>
+                    <option value="7">August</option>
+                    <option value="8">September</option>
+                    <option value="9">October</option>
+                    <option value="10">November</option>
+                    <option value="11">December</option>
+                </select>
+            </div>
+            <div id="calendar-grid" class="calendar-grid"></div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const upvotesSpan = document.getElementById("upvotes");
+            const pendingGoalsDiv = document.getElementById("pending-goals");
+            const completedGoalsDiv = document.getElementById("completed-goals");
+            const yearSelect = document.getElementById("year");
+            const monthSelect = document.getElementById("month");
+            const calendarGrid = document.getElementById("calendar-grid");
+
+            // Sample goals data
+            let goals = [
+                { id: 1, name: "Complete Math Assignment", completed: false },
+                { id: 2, name: "Read Chapter 5 of Science", completed: false },
+                { id: 3, name: "Practice Coding for 1 hour", completed: true },
+                { id: 4, name: "Attend Extra Class", completed: false },
+                { id: 5, name: "Review Previous Lesson", completed: true }
+            ];
+
+            // Function to render pending goals
+            const renderPendingGoals = () => {
+                pendingGoalsDiv.innerHTML = '';
+                goals.filter(goal => !goal.completed).forEach(goal => {
+                    const goalItem = document.createElement("div");
+                    goalItem.classList.add("goal-item");
+                    const goalName = document.createElement("span");
+                    goalName.classList.add("goal-name");
+                    goalName.textContent = goal.name;
+                    const completeButton = document.createElement("button");
+                    completeButton.classList.add("complete-button");
+                    completeButton.textContent = "Complete";
+                    completeButton.addEventListener("click", () => {
+                        goal.completed = true;
+                        renderPendingGoals();
+                        renderCompletedGoals();
+                    });
+                    goalItem.appendChild(goalName);
+                    goalItem.appendChild(completeButton);
+                    pendingGoalsDiv.appendChild(goalItem);
+                });
+            };
+
+            // Function to render completed goals
+            const renderCompletedGoals = () => {
+                completedGoalsDiv.innerHTML = '';
+                goals.filter(goal => goal.completed).forEach(goal => {
+                    const goalItem = document.createElement("div");
+                    goalItem.classList.add("goal-item");
+                    const goalName = document.createElement("span");
+                    goalName.classList.add("goal-name", "completed-goal");
+                    goalName.textContent = goal.name;
+                    goalItem.appendChild(goalName);
+                    completedGoalsDiv.appendChild(goalItem);
+                });
+            };
+
+            // Populate year options (current year - 5 to current year + 5)
+            const currentYear = new Date().getFullYear();
+            for (let i = currentYear - 5; i <= currentYear + 5; i++) {
+                const option = document.createElement("option");
+                option.value = i;
+                option.textContent = i;
+                if (i === currentYear) {
+                    option.selected = true;
+                }
+                yearSelect.appendChild(option);
+            }
+
+            // Function to generate random consistent days for a given year and month
+            const generateRandomConsistentDays = (year, month) => {
+                const firstDayOfMonth = new Date(year, month, 1);
+                const lastDayOfMonth = new Date(year, month + 1, 0);
+                const daysInMonth = lastDayOfMonth.getDate();
+                const consistentDays = [];
+                const numberOfConsistentDays = Math.floor(Math.random() * daysInMonth); // Random number of consistent days
+                for (let i = 0; i < numberOfConsistentDays; i++) {
+                    const randomDay = Math.floor(Math.random() * daysInMonth) + 1;
+                    const dateString = new Date(year, month, randomDay).toISOString().slice(0, 10);
+                    if (!consistentDays.includes(dateString)) {
+                        consistentDays.push(dateString);
+                    }
+                }
+                return consistentDays.sort(); // Sort for better visual (though not strictly necessary)
+            };
+
+            // Function to render the calendar
+            const renderCalendar = (year, month, consistentDays) => {
+                const firstDayOfMonth = new Date(year, month, 1);
+                const lastDayOfMonth = new Date(year, month + 1, 0);
+                const daysInMonth = lastDayOfMonth.getDate();
+                const startingDay = firstDayOfMonth.getDay(); // 0 for Sunday, 1 for Monday, etc.
+                calendarGrid.innerHTML = ''; // Clear previous calendar
+
+                // Create empty cells for the days before the first day of the month
+                for (let i = 0; i < startingDay; i++) {
+                    const emptyCell = document.createElement("div");
+                    emptyCell.classList.add("calendar-day", "inactive");
+                    calendarGrid.appendChild(emptyCell);
+                }
+
+                // Create cells for each day of the month
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const dayCell = document.createElement("div");
+                    dayCell.classList.add("calendar-day");
+                    dayCell.textContent = day;
+                    const currentDate = new Date(year, month, day).toISOString().slice(0, 10); // Format as YYYY-MM-DD
+                    if (consistentDays.includes(currentDate)) {
+                        dayCell.classList.add("consistent");
+                    }
+                    calendarGrid.appendChild(dayCell);
+                }
+            };
+
+            // Initial rendering of goals and calendar
+            upvotesSpan.textContent = 125; // Sample upvotes
+            renderPendingGoals();
+            renderCompletedGoals();
+            const initialYear = new Date().getFullYear();
+            const initialMonth = new Date().getMonth();
+            renderCalendar(initialYear, initialMonth, generateRandomConsistentDays(initialYear, initialMonth));
+            monthSelect.value = initialMonth; // Set the initial month in the dropdown
+
+            // Event listeners for year and month changes to re-render the calendar
+            yearSelect.addEventListener("change", () => {
+                renderCalendar(yearSelect.value, monthSelect.value, generateRandomConsistentDays(yearSelect.value, monthSelect.value));
+            });
+
+            monthSelect.addEventListener("change", () => {
+                renderCalendar(yearSelect.value, monthSelect.value, generateRandomConsistentDays(yearSelect.value, monthSelect.value));
+            });
+        });
+    </script>
+</body>
+</html>

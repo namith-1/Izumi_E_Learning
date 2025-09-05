@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Courses</title>
+    <style>
+        nav {
+            background-color: #f0f0f0;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+
+        nav button {
+            margin-right: 15px;
+            padding: 8px 12px;
+            border: none;
+            background-color: #ddd;
+            cursor: pointer;
+        }
+
+        nav button:hover {
+            background-color: #ccc;
+        }
+
+        .course-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .course-card {
+            background: #6200ea;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+        .course-card h3 {
+            margin: 0;
+            font-size: 1.2em;
+        }
+        .course-card p {
+            margin: 8px 0;
+            color: rgba(255, 255, 255, 0.7);
+        }
+        #student_main {
+            display: none;
+        }
+
+        .izumi-navbar {
+            position: fixed;
+            top: 0;
+            left: 0; /* Align from the left */
+            width: 100%; /* Full width */
+            background-color: #6d2c99;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.875rem 2rem;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .izumi-navbar-brand {
+            font-size: 1.25rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .izumi-nav-links {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .izumi-nav-link {
+            padding: 0.75rem 1rem;
+            background: none;
+            border: none;
+            font-size: 1rem;
+            font-weight: 500;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            text-decoration: none; /* Remove default link styling */
+        }
+
+        .izumi-nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .izumi-nav-link-active {
+            font-weight: 600;
+        }
+
+        .izumi-nav-link-active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background-color: white;
+        }
+
+        .izumi-profile-container {
+            position: relative;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .izumi-profile-container:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .izumi-profile-icon {
+            font-size: 20px;
+            color: white;
+        }
+
+        .izumi-dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 50px;
+            background: white;
+            min-width: 250px;
+            border-radius: 8px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.12);
+            transform-origin: top right;
+            animation: scaleIn 0.2s ease-out;
+            overflow: hidden;
+        }
+
+        @keyframes scaleIn {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .izumi-dropdown-content.active {
+            display: block;
+        }
+
+        .izumi-dropdown-items {
+            padding: 0.5rem 0;
+        }
+
+        .izumi-dropdown-item {
+            padding: 0.875rem 1.25rem;
+            color: #2d2d2d;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.875rem;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .izumi-dropdown-item:hover {
+            background: #f8f9fa;
+        }
+
+        .izumi-dropdown-item i {
+            width: 1.25rem;
+            text-align: center;
+        }
+
+        .izumi-logout {
+            color: #dc3545 !important;
+        }
+
+        .izumi-divider {
+            border-top: 1px solid #eaeaea;
+            margin: 0.5rem 0;
+        }
+
+        #my_info_main {
+            display: none;
+            padding-top: 20px; /* Add some space below the navbar */
+        }
+
+        #my_info_iframe {
+            width: 100%;
+            height: 600px; /* Adjust as needed */
+            border: 1px solid #ccc;
+        }
+    </style>
+    <link rel="stylesheet" href="/views/images/test.css">
+    <script>
+        async function loadCourses() {
+            const response = await fetch("/instructor-courses");
+
+            const courses = await response.json();
+            console.log(courses);
+            const courseList = document.getElementById("courseList");
+            courseList.innerHTML = "";
+
+            if (courses.length === 0) {
+                courseList.innerHTML = "<p>No courses found.</p>";
+                return;
+            }
+
+            courses.forEach(course => {
+                const courseDiv = document.createElement("div");
+                courseDiv.style.marginBottom = "10px";
+
+                const titleSpan = document.createElement("span");
+                titleSpan.innerText = course.title + " ";
+
+                const editLink = document.createElement("a");
+                editLink.href = `/course-edit?courseId=${course._id}`;
+                editLink.innerText = "Edit";
+                editLink.style.marginRight = "10px";
+
+                const viewLink = document.createElement("a");
+                viewLink.href = `/view_course?courseID=${course._id}`;
+                viewLink.innerText = "View";
+
+                courseDiv.appendChild(titleSpan);
+                courseDiv.appendChild(editLink);
+                courseDiv.appendChild(viewLink);
+                courseList.appendChild(courseDiv);
+            });
+        }
+
+        async function fetchCourses() {
+            const response = await fetch('http://localhost:4000/courses_by');
+            const courses = await response.json();
+
+            const container = document.getElementById('course-list');
+            container.innerHTML = '';
+
+            courses.forEach(course => {
+                const card = document.createElement('div');
+                card.classList.add('course-card');
+                card.innerHTML = `
+                    <h3>${course.course_title}</h3>
+                    <p><strong>Instructor:</strong> ${course.instructor_name}</p>
+                    <p><strong>Enrolled Students:</strong> ${course.enrolled_count}</p>
+                    <p><strong>Revenue:</strong> $${course.revenue}</p>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function navigate(view) {
+            document.getElementById("course_main").style.display = (view === "course-info") ? "block" : "none";
+            document.getElementById("student_main").style.display = (view === "student-info") ? "block" : "none";
+            const myInfoDiv = document.getElementById("my_info_main");
+            if (myInfoDiv) {
+                myInfoDiv.style.display = (view === "my-info") ? "block" : "none";
+                if (view === "my-info") {
+                    document.getElementById("my_info_iframe").src = "http://localhost:4000/instructor/details";
+                } else {
+                    document.getElementById("my_info_iframe").src = ""; // Clear iframe when not active
+                }
+            }
+        }
+
+        window.onload = function() {
+            loadCourses();
+            fetchCourses();
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            setupIzumiProfileDropdown();
+            setupIzumiNavigationTabs();
+            handleIzumiInitialTab();
+        });
+
+        function setupIzumiProfileDropdown() {
+            const profileContainer = document.querySelector('.izumi-profile-container');
+            const dropdownContent = document.querySelector('.izumi-dropdown-content');
+
+            if (profileContainer && dropdownContent) {
+                profileContainer.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    dropdownContent.classList.toggle('active');
+                });
+
+                profileContainer.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        dropdownContent.classList.toggle('active');
+                    }
+                });
+
+                document.addEventListener('click', () => {
+                    dropdownContent.classList.remove('active');
+                });
+
+                dropdownContent.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                });
+            }
+        }
+
+        function setupIzumiNavigationTabs() {
+            const navLinks = document.querySelectorAll('.izumi-nav-link');
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    const page = this.getAttribute('data-page');
+                    updateIzumiActiveTab(this);
+                    navigate(page); // Call navigate based on the data-page attribute
+                });
+            });
+        }
+
+        function updateIzumiActiveTab(clickedTab) {
+            const navLinks = document.querySelectorAll('.izumi-nav-link');
+            navLinks.forEach(link => {
+                link.classList.remove('izumi-nav-link-active');
+                link.setAttribute('aria-selected', 'false');
+            });
+            clickedTab.classList.add('izumi-nav-link-active');
+            clickedTab.setAttribute('aria-selected', 'true');
+        }
+
+        function handleIzumiInitialTab() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const page = urlParams.get('page');
+            if (page) {
+                const targetTab = Array.from(document.querySelectorAll('.izumi-nav-link')).find(link =>
+                    link.getAttribute('data-page') === page
+                );
+                if (targetTab) {
+                    updateIzumiActiveTab(targetTab);
+                    navigate(page);
+                } else {
+                    navigate('home'); // Default to home if page not found
+                }
+            } else {
+                navigate('home'); // Default to home if no page parameter
+            }
+        }
+    </script>
+</head>
+<body>
+    <link rel="stylesheet" href="navbar.css">
+<nav class="izumi-navbar">
+    <div class="izumi-navbar-brand">Izumi Learning</div>
+    <div class="izumi-nav-links">
+        <!-- <a href="#" class="izumi-nav-link" data-page="home" role="tab" aria-selected="false" onclick="navigate('home')">Home</a> -->
+        <a href="#" class="izumi-nav-link" data-page="course-info" role="tab" aria-selected="false" onclick="navigate('course-info')">Course Info</a>
+        <a href="#" class="izumi-nav-link" data-page="student-info" role="tab" aria-selected="false" onclick="navigate('student-info')">Student Info</a>
+        <a href="#" class="izumi-nav-link izumi-nav-link-active" data-page="my-info" role="tab" aria-selected="true" onclick="navigate('my-info')">My Info</a>
+    </div>
+    <div class="izumi-profile-container" aria-label="User menu" role="button" tabindex="0">
+        <i class="fa-solid fa-ellipsis-vertical izumi-profile-icon"></i>
+        <div class="izumi-dropdown-content" role="menu">
+            <div class="izumi-dropdown-items">
+                <a href="/logout-instructor" class="izumi-dropdown-item izumi-logout" role="menuitem"><i class="fa-solid fa-arrow-right-from-bracket"></i>Log Out</a>
+            </div>
+        </div>
+    </div>
+</nav>
+    <nav>
+        <button onclick="navigate('course-info')">Course Info</button>
+        <button onclick="navigate('student-info')">Student Info</button>
+        <button onclick="navigate('my-info')">My Info</button>
+    </nav>
+
+    <div id="course_main" style="display: none;">
+        <h1>Your Courses</h1>
+        <div id="courseList"></div>
+        <a href="/course-edit">Create New?</a>
+    </div>
+
+    <div id="student_main" style="display: none;">
+        <h1>Courses and Instructor</h1>
+        <div class="course-container" id="course-list"></div>
+    </div>
+
+    <div id="my_info_main">
+        <h2>My Information</h2>
+        <iframe id="my_info_iframe" src="http://localhost:4000/instructor/details" frameborder="0"></iframe>
+    </div>
+
+      <a href="/logout-instructor" class="izumi-dropdown-item izumi-logout" role="menuitem"><i class="fa-solid fa-arrow-right-from-bracket"></i>Log Out</a>
+</body>
+</html>

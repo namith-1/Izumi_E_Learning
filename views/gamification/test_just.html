@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Educational Games</title>
+    <style>
+        :root {
+            /* Colors adapted from second palette with light theme inspired by Izumi landing page */
+            --primary-color: #6200ea; /* Deep purple */
+            --primary-light: #9d46ff; /* Vibrant purple */
+            --primary-dark: #0a00b6; /* Darker purple */
+            --accent-color: #ff6584; /* Coral pink */
+            --secondary-color: #3dbedf; /* Cyan from first palette */
+            --neutral-light: #F3F4F6; /* Light gray background */
+            --background-light: #ffffff; /* White background */
+            --text-primary: #1F2937; /* Dark gray text */
+            --text-secondary: #4B5563; /* Medium gray text */
+            --text-tertiary: #6B7280; /* Light gray text */
+            --success-color: #00e676; /* Green */
+            --warning-color: #ffea00; /* Yellow */
+            --error-color: #ff1744; /* Red */
+            --border-radius: 12px;
+            --box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            --transition-speed: 0.3s;
+            --font-main: 'Poppins', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background: var(--neutral-light);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .search-container {
+            display: flex;
+            margin-bottom: 2rem;
+            padding: 0.5rem;
+            background: var(--background-light);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            align-items: center;
+            width: 100%;
+            max-width: 600px;
+            transition: var(--transition-speed);
+        }
+
+        .search-container:hover {
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .search-input {
+            padding: 0.75rem;
+            width: 100%;
+            border: 1px solid var(--text-tertiary);
+            border-radius: var(--border-radius) 0 0 var(--border-radius);
+            font-size: 1rem;
+            color: var(--text-primary);
+            background: var(--neutral-light);
+            transition: var(--transition-speed);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary-light);
+            box-shadow: 0 0 8px rgba(157, 70, 255, 0.3);
+        }
+
+        .search-button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0 var(--border-radius) var(--border-radius) 0;
+            background: linear-gradient(to right, var(--primary-color), var(--primary-light));
+            color: var(--background-light);
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: var(--transition-speed);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .search-button:hover {
+            background: linear-gradient(to right, var(--primary-light), var(--accent-color));
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .subject-list-container {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            overflow-x: auto;
+            padding: 1rem;
+            background: var(--background-light);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            width: 100%;
+            max-width: 960px;
+            white-space: nowrap;
+        }
+
+        .subject-button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: var(--border-radius);
+            background: var(--neutral-light);
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: var(--transition-speed);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .subject-button:hover {
+            background: var(--primary-light);
+            color: var(--background-light);
+            transform: translateY(-2px);
+        }
+
+        .subject-button.active {
+            background: linear-gradient(to right, var(--primary-color), var(--primary-light));
+            color: var(--background-light);
+            font-weight: 600;
+        }
+
+        .subject-header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            width: 100%;
+            max-width: 960px;
+        }
+
+        .subject-header h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(to right, var(--primary-light), var(--accent-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .subject-header p {
+            font-size: 1rem;
+            color: var(--text-secondary);
+        }
+
+        .game-cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            width: 100%;
+            max-width: 960px;
+        }
+
+        .game-card {
+            background: var(--background-light);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            cursor: pointer;
+            transition: var(--transition-speed);
+            box-shadow: var(--box-shadow);
+            transform: perspective(1000px) rotateX(2deg) rotateY(2deg);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .game-card:hover {
+            transform: perspective(1000px) rotateX(0deg) rotateY(0deg);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            animation: glow 1.5s infinite;
+        }
+
+        /* Animated gradient border effect on hover */
+        @keyframes glow {
+            0% {
+                border: 2px solid transparent;
+                background: var(--background-light);
+            }
+            50% {
+                border: 2px solid var(--primary-light);
+                background: linear-gradient(var(--background-light), var(--background-light)) padding-box,
+                            linear-gradient(to right, var(--primary-light), var(--accent-color)) border-box;
+            }
+            100% {
+                border: 2px solid transparent;
+                background: var(--background-light);
+            }
+        }
+
+        .game-image {
+            width: 100%;
+            height: 180px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .game-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: var(--transition-speed);
+        }
+
+        .game-card:hover .game-image img {
+            transform: scale(1.1);
+        }
+
+        .game-image::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0));
+            opacity: 0.5;
+            transition: opacity var(--transition-speed);
+        }
+
+        .game-card:hover .game-image::after {
+            opacity: 0.7;
+        }
+
+        .game-info {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            flex: 1;
+        }
+
+        .game-title {
+            margin: 0;
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .game-short-desc {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        .play-button {
+            padding: 0.6rem 1.2rem;
+            border-radius: var(--border-radius);
+            background: linear-gradient(to right, var(--secondary-color), var(--success-color));
+            color: var(--background-light);
+            text-decoration: none;
+            margin-top: auto;
+            border: none;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: var(--transition-speed);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .play-button:hover {
+            background: linear-gradient(to right, var(--success-color), var(--secondary-color));
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .game-iframe-container {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .game-iframe {
+            width: 90%;
+            height: 90%;
+            border: none;
+            border-radius: var(--border-radius);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .back-button {
+            position: absolute;
+            top: 2rem;
+            left: 2rem;
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(to right, var(--accent-color), var(--error-color));
+            color: var(--background-light);
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            z-index: 1001;
+            transition: var(--transition-speed);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .back-button:hover {
+            background: linear-gradient(to right, var(--error-color), var(--accent-color));
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .no-results {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            margin-top: 2rem;
+            width: 100%;
+            max-width: 960px;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+
+            .search-container {
+                max-width: 100%;
+            }
+
+            .subject-list-container {
+                padding: 0.5rem;
+            }
+
+            .subject-button {
+                padding: 0.5rem 1rem;
+                font-size: 0.9rem;
+            }
+
+            .subject-header h2 {
+                font-size: 1.5rem;
+            }
+
+            .game-cards-container {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            }
+
+            .game-image {
+                height: 140px;
+            }
+
+            .game-title {
+                font-size: 1.1rem;
+            }
+
+            .game-short-desc {
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .search-input,
+            .search-button {
+                font-size: 0.9rem;
+                padding: 0.5rem;
+            }
+
+            .subject-button {
+                padding: 0.4rem 0.8rem;
+                font-size: 0.8rem;
+            }
+
+            .game-title {
+                font-size: 1rem;
+            }
+
+            .game-short-desc,
+            .play-button {
+                font-size: 0.8rem;
+            }
+
+            .back-button {
+                padding: 0.5rem 1rem;
+                font-size: 0.9rem;
+            }
+
+            .game-image {
+                height: 120px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="search-container">
+        <input type="text" id="searchInput" class="search-input" placeholder="Search games...">
+        <button class="search-button" onclick="searchGames()">Search</button>
+    </div>
+
+    <div class="subject-list-container" id="subjectListContainer"></div>
+
+    <div class="game-cards-container" id="gameCardsContainer"></div>
+
+    <div class="game-iframe-container" id="gameIframeContainer">
+        <button class="back-button" id="backButton">Back to Games</button>
+        <iframe class="game-iframe" id="gameFrame" src="" frameborder="0"></iframe>
+    </div>
+
+    <script>
+        const gameData = {
+            "Math": {
+                "title": "Explore Mathematical Concepts",
+                "description": "Engaging games to learn and practice various mathematical topics.",
+                "games": [
+                    {
+                        "title": "Calculus Grapher (PhET)",
+                        "description": "Visualize functions, derivatives, and integrals.",
+                        "url": "https://phet.colorado.edu/sims/html/calculus-grapher/latest/calculus-grapher_en.html",
+                        "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRBgW-xTZCEQeRxGFmv6wIUgeTvGtto6uOH6g&s" // Math graphs
+                    },
+                    {
+                        "title": "Graphing Lines (PhET)",
+                        "description": "Explore how the slope and y-intercept affect linear graphs.",
+                        "url": "https://phet.colorado.edu/sims/html/graphing-lines/latest/graphing-lines_en.html",
+                        "image": "https://media.geeksforgeeks.org/wp-content/uploads/20240917170702/Function-in-Maths.webp" // Coordinate plane
+                    },
+                    {
+                        "title": "Function Builder (PhET)",
+                        "description": "Build your own functions and see their graphs.",
+                        "url": "https://phet.colorado.edu/sims/html/function-builder/latest/function-builder_en.html",
+                        "image": "https://cdn.britannica.com/88/62088-004-8245C6C2/graph-curve-calculus-help-steps-x-shape.jpg" // Mathematical functions
+                    },
+                    {
+                        "title": "Number Line (PhET)",
+                        "description": "Explore integers, fractions, decimals, and number operations on a number line.",
+                        "url": "https://phet.colorado.edu/sims/html/number-line/latest/number-line_en.html",
+                        "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRRk2SIGSFYsIkjQopNDNCwD_SZOupH9eO36w&s" // Number line concept
+                    },
+                    {
+                        "title": "Geometric Shapes (Interactive)",
+                        "description": "Identify and learn about different geometric shapes.",
+                        "url": "https://www.mathlearningcenter.org/apps/geoboard",
+                        "image": "https://snu.edu.in/site/assets/files/16719/34087903_math_6.1600x0.webp" // Geometric shapes
+                    }
+                ]
+            },
+            "Science": {
+                "title": "Discover the Wonders of Science",
+                "description": "Interactive games and simulations to explore different scientific fields.",
+                "games": [
+                    {
+                        "title": "Projectile Motion (PhET)",
+                        "description": "Learn about trajectory, velocity, and gravity.",
+                        "url": "https://phet.colorado.edu/sims/html/projectile-motion/latest/projectile-motion_en.html",
+                        "image": "https://images.unsplash.com/photo-1612282129478-4d2b0ecca6f7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" // Physics motion
+                    },
+                    {
+                        "title": "Energy Forms and Changes (PhET)",
+                        "description": "Explore different forms of energy and how they can be converted.",
+                        "url": "https://phet.colorado.edu/sims/html/energy-forms-and-changes/latest/energy-forms-and-changes_en.html",
+                        "image": "https://images.unsplash.com/photo-1517976487497-9d721418a3f7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" // Energy concept
+                    },
+                    {
+                        "title": "States of Matter (PhET)",
+                        "description": "Investigate the behavior of atoms and molecules in different states of matter.",
+                        "url": "https://phet.colorado.edu/sims/html/states-of-matter/latest/states-of-matter_en.html",
+                        "image": "https://images.unsplash.com/photo-1635078649988-c28865e359a8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" // Molecular structure
+                    },
+                    {
+                        "title": "Human Body (Interactive)",
+                        "description": "Explore the different systems of the human body.",
+                        "url": "https://www.visiblebody.com/",
+                        "image": "https://images.unsplash.com/photo-1579684385127-1ef15d508118?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" // Human anatomy
+                    }
+                ],
+                "sub_subjects": {
+                    "Biology": {
+                        "title": "Delve into Biology",
+                        "description": "Explore the fascinating world of living organisms.",
+                        "games": [
+                            {
+                                "title": "Cell Biology (Interactive)",
+                                "description": "Explore the structure and function of cells.",
+                                "url": "https://www.purposegames.com/game/cell-biology-interactive-diagram-quiz",
+                                "image": "https://images.unsplash.com/photo-1592334590737-4c7c78fccc42?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" // Cells under microscope
+                            },
+                            {
+                                "title": "The Virtual Body (Interactive)",
+                                "description": "An interactive exploration of human anatomy.",
+                                "url": "https://www.medtropolis.com/vbody.asp",
+                                "image": "https://images.unsplash.com/photo-1582719188393-bb71ca45dbb9?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" // Human body systems
+                            }
+                        ]
+                    },
+                    "Chemistry": {
+                        "title": "Unravel the Mysteries of Chemistry",
+                        "description": "Explore the composition, structure, properties, and reactions of matter.",
+                        "games": [
+                            {
+                                "title": "Balancing Chemical Equations (PhET)",
+                                "description": "Learn how to balance chemical equations through an interactive game.",
+                                "url": "https://phet.colorado.edu/sims/html/balancing-chemical-equations/latest/balancing-chemical-equations_en.html",
+                                "image": "https://images.unsplash.com/photo-1621293954908-907159247fc8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" // Chemical equations
+                            },
+                            {
+                                "title": "Molecule Shapes (PhET)",
+                                "description": "Explore three-dimensional molecular shapes by bonding atoms.",
+                                "url": "https://phet.colorado.edu/sims/html/molecule-shapes/latest/molecule-shapes_en.html",
+                                "image": "https://images.unsplash.com/photo-1630369161088-8137849db02f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" // Molecular models
+                            }
+                        ]
+                    }
+                }
+            },
+            "Physics": {
+                "title": "Explore the Principles of Physics",
+                "description": "Interactive simulations to understand the fundamental laws of physics.",
+                "games": [
+                    {
+                        "title": "Motion 1D (PhET)",
+                        "description": "Explore position, velocity, and acceleration in one dimension.",
+                        "url": "https://phet.colorado.edu/sims/html/motion-1d/latest/motion-1d_en.html",
+                        "image": "https://images.unsplash.com/photo-1614036634955-7b7177f84315?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" // Motion physics
+                    },
+                    {
+                        "title": "Forces and Motion: Basics (PhET)",
+                        "description": "Investigate net force, friction, and acceleration.",
+                        "url": "https://phet.colorado.edu/sims/html/forces-and-motion-basics/latest/forces-and-motion-basics_en.html",
+                        "image": "https://images.unsplash.com/photo-1635944093606-0deb44e9ebb4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" // Force and motion
+                    },
+                    {
+                        "title": "Circuit Construction Kit: DC (PhET)",
+                        "description": "Build and experiment with DC electrical circuits.",
+                        "url": "https://phet.colorado.edu/sims/html/circuit-construction-kit-dc/latest/circuit-construction-kit-dc_en.html",
+                        "image": "https://images.unsplash.com/photo-1516321165247-7b6f2721e8c8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" // Electrical circuits
+                    }
+                ]
+            },
+            "CS": {
+                "title": "Dive into Computer Science",
+                "description": "Coding challenges and interactive tools to understand computer science principles.",
+                "games": [
+                    {
+                        "title": "Blockly Maze",
+                        "description": "Learn fundamental programming concepts with block-based puzzles.",
+                        "url": "https://blockly.games/maze?lang=en",
+                        "image": "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" // Coding blocks
+                    },
+                    {
+                        "title": "Code.org - Hour of Code",
+                        "description": "Engaging coding activities for all skill levels.",
+                        "url": "https://hourofcode.com/us/learn",
+                        "image": "https://images.unsplash.com/photo-1516321497487-e288fb19713f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" // Programming interface
+                    }
+                ],
+                "sub_subjects": {
+                    "Web Development": {
+                        "title": "Explore Web Development",
+                        "description": "Learn the basics of building websites.",
+                        "games": [
+                            {
+                                "title": "Codecademy - HTML & CSS",
+                                "description": "Interactive lessons on HTML and CSS fundamentals.",
+                                "url": "https://www.codecademy.com/learn/learn-html",
+                                "image": "https://images.unsplash.com/photo-1523437113738-bbd3cc89fb50?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" // Web development code
+                            },
+                            {
+                                "title": "Khan Academy - HTML, CSS, JS",
+                                "description": "Learn web development through videos and interactive exercises.",
+                                "url": "https://www.khanacademy.org/computing/computer-programming/html-css",
+                                "image": "https://images.unsplash.com/photo-1498050108023-c5249f4df085?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" // Web design
+                            }
+                        ]
+                    }
+                }
+            }
+        };
+
+        const searchInput = document.getElementById('searchInput');
+        const subjectListContainer = document.getElementById('subjectListContainer');
+        const gameCardsContainer = document.getElementById('gameCardsContainer');
+        const gameIframeContainer = document.getElementById('gameIframeContainer');
+        const gameFrame = document.getElementById('gameFrame');
+        const backButton = document.getElementById('backButton');
+        let currentSubject = null;
+        let allGames = [];
+
+        function populateAllGames() {
+            allGames = [];
+            for (const subject in gameData) {
+                if (gameData[subject] && gameData[subject].games) {
+                    allGames.push(...gameData[subject].games);
+                }
+                if (gameData[subject] && gameData[subject].sub_subjects) {
+                    for (const subSubject in gameData[subject].sub_subjects) {
+                        if (gameData[subject].sub_subjects[subSubject] && gameData[subject].sub_subjects[subSubject].games) {
+                            allGames.push(...gameData[subject].sub_subjects[subSubject].games);
+                        }
+                    }
+                }
+            }
+        }
+
+        function renderSubjectButtons() {
+            subjectListContainer.innerHTML = '';
+            for (const subject in gameData) {
+                const button = document.createElement('button');
+                button.classList.add('subject-button');
+                button.textContent = subject;
+                button.addEventListener('click', () => {
+                    currentSubject = subject;
+                    renderGameCards(subject);
+                    document.querySelectorAll('.subject-button').forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                });
+                subjectListContainer.appendChild(button);
+            }
+        }
+
+        function renderGameCards(subject) {
+            gameCardsContainer.innerHTML = '';
+            let gamesToDisplay = [];
+
+            if (subject && gameData[subject] && gameData[subject].games) {
+                const subjectHeader = document.createElement('div');
+                subjectHeader.classList.add('subject-header');
+                const subjectTitle = document.createElement('h2');
+                subjectTitle.textContent = gameData[subject].title;
+                subjectHeader.appendChild(subjectTitle);
+                const subjectDescription = document.createElement('p');
+                subjectDescription.textContent = gameData[subject].description;
+                subjectHeader.appendChild(subjectDescription);
+                gameCardsContainer.appendChild(subjectHeader);
+                gamesToDisplay = gameData[subject].games;
+            } else if (!subject) {
+                for (const sub in gameData) {
+                    if (gameData[sub] && gameData[sub].games) {
+                        gamesToDisplay.push(...gameData[sub].games);
+                    }
+                }
+            }
+
+            if (gamesToDisplay.length > 0) {
+                gameCardsContainer.style.gridTemplateColumns = 'repeat(auto-fit, minmax(250px, 1fr))';
+                gamesToDisplay.forEach(game => {
+                    const card = document.createElement('div');
+                    card.classList.add('game-card');
+                    const imageDiv = document.createElement('div');
+                    imageDiv.classList.add('game-image');
+                    const img = document.createElement('img');
+                    img.src = game.image || 'https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
+                    img.alt = game.title;
+                    imageDiv.appendChild(img);
+                    card.appendChild(imageDiv);
+                    const infoDiv = document.createElement('div');
+                    infoDiv.classList.add('game-info');
+                    const title = document.createElement('h3');
+                    title.classList.add('game-title');
+                    title.textContent = game.title;
+                    infoDiv.appendChild(title);
+                    const desc = document.createElement('p');
+                    desc.classList.add('game-short-desc');
+                    desc.textContent = game.description;
+                    infoDiv.appendChild(desc);
+                    const playButton = document.createElement('button');
+                    playButton.classList.add('play-button');
+                    playButton.textContent = 'Play';
+                    playButton.addEventListener('click', () => {
+                        gameFrame.src = game.url;
+                        gameCardsContainer.style.display = 'none';
+                        gameIframeContainer.style.display = 'flex';
+                    });
+                    infoDiv.appendChild(playButton);
+                    card.appendChild(infoDiv);
+                    gameCardsContainer.appendChild(card);
+                });
+            } else if (gameCardsContainer.innerHTML === '') {
+                gameCardsContainer.innerHTML = '<p>No games available for this subject yet.</p>';
+            }
+        }
+
+        function searchGames() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const searchResults = [];
+
+            for (const subject in gameData) {
+                if (gameData[subject] && gameData[subject].games) {
+                    gameData[subject].games.forEach(game => {
+                        if (game.title.toLowerCase().includes(searchTerm) || game.description.toLowerCase().includes(searchTerm)) {
+                            searchResults.push(game);
+                        }
+                    });
+                }
+                if (gameData[subject] && gameData[subject].sub_subjects) {
+                    for (const subSubject in gameData[subject].sub_subjects) {
+                        if (gameData[subject].sub_subjects[subSubject] && gameData[subject].sub_subjects[subSubject].games) {
+                            gameData[subject].sub_subjects[subSubject].games.forEach(game => {
+                                if (game.title.toLowerCase().includes(searchTerm) || game.description.toLowerCase().includes(searchTerm)) {
+                                    searchResults.push(game);
+                                }
+                            });
+                        }
+                    }
+                }
+            }
+
+            gameCardsContainer.innerHTML = '';
+            if (searchResults.length > 0) {
+                gameCardsContainer.style.gridTemplateColumns = 'repeat(auto-fit, minmax(250px, 1fr))';
+                searchResults.forEach(game => {
+                    const card = document.createElement('div');
+                    card.classList.add('game-card');
+                    const imageDiv = document.createElement('div');
+                    imageDiv.classList.add('game-image');
+                    const img = document.createElement('img');
+                    img.src = game.image || 'https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
+                    img.alt = game.title;
+                    imageDiv.appendChild(img);
+                    card.appendChild(imageDiv);
+                    const infoDiv = document.createElement('div');
+                    infoDiv.classList.add('game-info');
+                    const title = document.createElement('h3');
+                    title.classList.add('game-title');
+                    title.textContent = game.title;
+                    infoDiv.appendChild(title);
+                    const desc = document.createElement('p');
+                    desc.classList.add('game-short-desc');
+                    desc.textContent = game.description;
+                    infoDiv.appendChild(desc);
+                    const playButton = document.createElement('button');
+                    playButton.classList.add('play-button');
+                    playButton.textContent = 'Play';
+                    playButton.addEventListener('click', () => {
+                        gameFrame.src = game.url;
+                        gameCardsContainer.style.display = 'none';
+                        gameIframeContainer.style.display = 'flex';
+                    });
+                    infoDiv.appendChild(playButton);
+                    card.appendChild(infoDiv);
+                    gameCardsContainer.appendChild(card);
+                });
+            } else {
+                gameCardsContainer.innerHTML = '<p class="no-results">No games found matching your search.</p>';
+            }
+        }
+
+        function initializePage() {
+            renderSubjectButtons();
+            renderGameCards(Object.keys(gameData)[0]);
+            if (Object.keys(gameData).length > 0) {
+                const firstButton = document.querySelector('.subject-button');
+                if (firstButton) {
+                    firstButton.classList.add('active');
+                    currentSubject = Object.keys(gameData)[0];
+                }
+            }
+            populateAllGames();
+        }
+
+        backButton.addEventListener('click', () => {
+            gameFrame.src = '';
+            gameIframeContainer.style.display = 'none';
+            gameCardsContainer.style.display = 'grid';
+            if (currentSubject) {
+                renderGameCards(currentSubject);
+            } else {
+                renderGameCards(Object.keys(gameData)[0]);
+                if (Object.keys(gameData).length > 0) {
+                    const firstButton = document.querySelector('.subject-button');
+                    if (firstButton) {
+                        firstButton.classList.add('active');
+                        currentSubject = Object.keys(gameData)[0];
+                    }
+                } else {
+                    gameCardsContainer.innerHTML = '<p>Please select a subject.</p>';
+                }
+            }
+            searchInput.value = '';
+        });
+
+        document.addEventListener('DOMContentLoaded', initializePage);
+    </script>
+</body>
+</html>

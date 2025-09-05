@@ -1,0 +1,98 @@
+/* Base styling and reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f8f8f8;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+  
+  /* Header styling */
+  h2 {
+    font-size: 2rem;
+    color: #1a1a1a;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.8rem;
+    border-bottom: 2px solid #eaeaea;
+    font-weight: 600;
+  }
+  
+  /* Question list styling */
+  ul {
+    list-style: none;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    margin-bottom: 2rem;
+  }
+  
+  li {
+    border-bottom: 1px solid #f0f0f0;
+  }
+  
+  li:last-child {
+    border-bottom: none;
+  }
+  
+  li a {
+    display: block;
+    padding: 1rem 1.5rem;
+    color: #444;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+  
+  li a:hover {
+    background-color: #f9f9f9;
+    color: #000;
+    padding-left: 1.7rem;
+  }
+  
+  /* Navigation link */
+  body > a {
+    display: inline-block;
+    background-color: #333;
+    color: white;
+    text-decoration: none;
+    padding: 0.7rem 1.2rem;
+    border-radius: 4px;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+  }
+  
+  body > a:hover {
+    background-color: #000;
+  }
+  
+  /* Empty state */
+  ul:empty::after {
+    content: "No questions available.";
+    display: block;
+    padding: 2rem;
+    text-align: center;
+    color: #888;
+    font-style: italic;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    body {
+      padding: 1rem;
+    }
+    
+    h2 {
+      font-size: 1.5rem;
+    }
+    
+    li a {
+      padding: 0.8rem 1rem;
+    }
+  }

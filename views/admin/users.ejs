@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management - Admin Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background-color: #343a40;
+            color: white;
+        }
+        .nav-link {
+            color: rgba(255,255,255,.8);
+        }
+        .nav-link:hover {
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 px-0 sidebar">
+                <div class="p-3">
+                    <h4>Admin Panel</h4>
+                    <hr>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/admin/dashboard">
+                                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="/admin/users">
+                                <i class="fas fa-users me-2"></i>Users
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/admin/courses">
+                                <i class="fas fa-book me-2"></i>Courses
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/admin/content">
+                                <i class="fas fa-file-alt me-2"></i>Content
+                            </a>
+                        </li>
+                        <li class="nav-item mt-4">
+                            <a class="nav-link text-danger" href="/admin/logout">
+                                <i class="fas fa-sign-out-alt me-2"></i>Logout
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10 p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2>User Management</h2>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                        <i class="fas fa-plus me-2"></i>Add New User
+                    </button>
+                </div>
+
+                <!-- Search and Filter -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <input type="text" class="form-control" placeholder="Search users...">
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select">
+                                    <option value="">All Roles</option>
+                                    <option value="instructor">Instructor</option>
+                                    <option value="student">Student</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select">
+                                    <option value="">All Status</option>
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Users Table -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Contact</th>
+                                        <th>Address</th>
+                                        <th>Role</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% if (students && students.length > 0) { %>
+                                        <% students.forEach(student => { %>
+                                            <tr data-id="<%= student._id %>" data-role="student">
+                                                <td><%= student.name %></td>
+                                                <td><%= student.email %></td>
+                                                <td><%= student.contact %></td>
+                                                <td><%= student.address %></td>
+                                                <td><span class="badge bg-primary">Student</span></td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-info me-2">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-danger">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        <% }); %>
+                                    <% } %>
+                                    
+                                    <% if (instructors && instructors.length > 0) { %>
+                                        <% instructors.forEach(instructor => { %>
+                                            <tr data-id="<%= instructor._id %>" data-role="instructor">
+                                                <td><%= instructor.name %></td>
+                                                <td><%= instructor.email %></td>
+                                                <td><%= instructor.contact %></td>
+                                                <td><%= instructor.address %></td>
+                                                <td><span class="badge bg-success">Instructor</span></td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-info me-2">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-danger">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        <% }); %>
+                                    <% } %>
+                                    
+                                    <% if ((!students || students.length === 0) && (!instructors || instructors.length === 0)) { %>
+                                        <tr>
+                                            <td colspan="6" class="text-center">No users found</td>
+                                        </tr>
+                                    <% } %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add User Modal -->
+    <div class="modal fade" id="addUserModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New User</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form action="/admin/users" method="POST">
+                        <div class="mb-3">
+                            <label class="form-label">Name</label>
+                            <input type="text" name="name" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" name="email" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Contact</label>
+                            <input type="text" name="contact" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Address</label>
+                            <input type="text" name="address" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Role</label>
+                            <select name="role" class="form-select" required>
+                                <option value="student">Student</option>
+                                <option value="instructor">Instructor</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Password</label>
+                            <input type="password" name="password" class="form-control" required>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Add User</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit User Modal -->
+    <div class="modal fade" id="editUserModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit User</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editUserForm">
+                        <div class="mb-3">
+                            <label class="form-label">Name</label>
+                            <input type="text" name="name" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" name="email" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Contact</label>
+                            <input type="text" name="contact" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Address</label>
+                            <input type="text" name="address" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Role</label>
+                            <select name="role" class="form-select" required>
+                                <option value="student">Student</option>
+                                <option value="instructor">Instructor</option>
+                            </select>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.querySelector('input[placeholder="Search users..."]');
+            const roleFilter = document.querySelector('select:nth-of-type(1)');
+            const statusFilter = document.querySelector('select:nth-of-type(2)');
+            const tableRows = document.querySelectorAll('tbody tr');
+
+            function filterTable() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const selectedRole = roleFilter.value.toLowerCase();
+                const selectedStatus = statusFilter.value.toLowerCase();
+
+                tableRows.forEach(row => {
+                    const name = row.cells[0].textContent.toLowerCase();
+                    const email = row.cells[1].textContent.toLowerCase();
+                    const role = row.cells[4].textContent.toLowerCase();
+                    
+                    const matchesSearch = name.includes(searchTerm) || email.includes(searchTerm);
+                    const matchesRole = !selectedRole || role.includes(selectedRole);
+                    const matchesStatus = !selectedStatus || (selectedStatus === 'active' ? true : false);
+
+                    row.style.display = matchesSearch && matchesRole && matchesStatus ? '' : 'none';
+                });
+            }
+
+            if (searchInput) searchInput.addEventListener('input', filterTable);
+            if (roleFilter) roleFilter.addEventListener('change', filterTable);
+            if (statusFilter) statusFilter.addEventListener('change', filterTable);
+
+            // Delete user
+            const deleteButtons = document.querySelectorAll('.btn-danger');
+            deleteButtons.forEach(button => {
+                button.addEventListener('click', async function() {
+                    const row = this.closest('tr');
+                    const userId = row.getAttribute('data-id');
+                    const role = row.getAttribute('data-role');
+
+                    if (confirm('Are you sure you want to delete this user?')) {
+                        try {
+                            const response = await fetch(`/admin/users/${userId}?role=${role}`, {
+                                method: 'DELETE',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                }
+                            });
+                            const data = await response.json();
+                            
+                            if (data.success) {
+                                row.remove();
+                            } else {
+                                alert('Error deleting user');
+                            }
+                        } catch (error) {
+                            console.error('Error:', error);
+                            alert('Error deleting user');
+                        }
+                    }
+                });
+            });
+
+            // Edit user
+            const editButtons = document.querySelectorAll('.btn-info');
+            editButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const row = this.closest('tr');
+                    const userId = row.getAttribute('data-id');
+                    const role = row.getAttribute('data-role');
+                    const name = row.cells[0].textContent;
+                    const email = row.cells[1].textContent;
+                    const contact = row.cells[2].textContent;
+                    const address = row.cells[3].textContent;
+
+                    // Populate edit modal
+                    const editModal = new bootstrap.Modal(document.getElementById('editUserModal'));
+                    const form = document.getElementById('editUserForm');
+                    
+                    if (form) {
+                        // Set form data
+                        form.setAttribute('data-id', userId);
+                        form.setAttribute('data-role', role);
+                        form.querySelector('[name="name"]').value = name;
+                        form.querySelector('[name="email"]').value = email;
+                        form.querySelector('[name="contact"]').value = contact;
+                        form.querySelector('[name="address"]').value = address;
+                        form.querySelector('[name="role"]').value = role;
+
+                        // Show modal
+                        editModal.show();
+                    }
+                });
+            });
+
+            // Handle edit form submission
+            const editForm = document.getElementById('editUserForm');
+            if (editForm) {
+                editForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    const userId = this.getAttribute('data-id');
+                    const formData = new FormData(this);
+                    const data = Object.fromEntries(formData.entries());
+
+                    try {
+                        const response = await fetch(`/admin/users/${userId}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(data)
+                        });
+                        const result = await response.json();
+                        
+                        if (result.success) {
+                            window.location.reload();
+                        } else {
+                            alert('Error updating user');
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        alert('Error updating user');
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html> 

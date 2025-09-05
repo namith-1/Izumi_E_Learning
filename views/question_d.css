@@ -1,0 +1,134 @@
+/* Global styles and reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f5f5f5;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+  
+  /* Typography */
+  h2 {
+    font-size: 2rem;
+    color: #222;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.8rem;
+    border-bottom: 2px solid #eaeaea;
+  }
+  
+  h3 {
+    font-size: 1.5rem;
+    color: #333;
+    margin: 2rem 0 1rem;
+  }
+  
+  /* Question list */
+  ul {
+    list-style: none;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+  }
+  
+  li {
+    border-bottom: 1px solid #eee;
+  }
+  
+  li:last-child {
+    border-bottom: none;
+  }
+  
+  li a {
+    display: block;
+    padding: 1rem 1.5rem;
+    color: #444;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+  
+  li a:hover {
+    background-color: #f9f9f9;
+    color: #000;
+    padding-left: 1.7rem;
+  }
+  
+  /* Form styling */
+  form {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    margin-bottom: 1.5rem;
+  }
+  
+  input, textarea {
+    display: block;
+    width: 100%;
+    padding: 0.8rem;
+    margin-bottom: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 1rem;
+    transition: border 0.2s ease;
+  }
+  
+  input:focus, textarea:focus {
+    outline: none;
+    border-color: #aaa;
+  }
+  
+  textarea {
+    min-height: 150px;
+    resize: vertical;
+  }
+  
+  button {
+    background-color: #333;
+    color: white;
+    border: none;
+    padding: 0.4rem 1rem;
+    font-size: 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+  
+  button:hover {
+    background-color: #000;
+  }
+  
+  /* Back link */
+  body > a {
+    display: inline-block;
+    color: #555;
+    text-decoration: none;
+    margin-top: 1rem;
+    font-weight: 500;
+    transition: color 0.2s ease;
+  }
+  
+  body > a:hover {
+    color: #000;
+    text-decoration: underline;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    body {
+      padding: 1rem;
+    }
+    
+    form {
+      padding: 1.5rem;
+    }
+  }
