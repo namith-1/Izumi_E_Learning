@@ -38,6 +38,8 @@ const transactionsInstructorSchema = new mongoose.Schema({
     amount: { type: Number, default:0 }
 });
 
+//schema
+
 const enrollmentSchema = new mongoose.Schema({
     student_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Student' }, // Reference to Student
     course_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Course' }, // Reference to Course
