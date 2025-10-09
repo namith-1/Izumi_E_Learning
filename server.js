@@ -29,11 +29,10 @@ const instructorRoutes = require('./routes/instructorRoutes');
 const updateStudentRoutes = require('./routes/updateStudentRoutes');
 const studentCourseRoutes = require('./routes/studentCourseRoutes');
 const CourseView = require('./routes/courseRoutes');
-const Comments = require('./routes/comments');
-const qna = require('./routes/questions.js');
 const gamifyRoutes = require("./routes/gamifyRoutes");
 const instructorCourseRoutes = require('./routes/instructorCourseRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const commonRoutes = require("./routes/instructor/commonRoutes");
 
 const magazineController = require('./controllers/magazineController');
 app.get('/magazines', magazineController.index);
@@ -43,12 +42,11 @@ app.use('/', instructorRoutes); // All instructor routes
 app.use('/', updateStudentRoutes); // No change in URLs, handled as-is
 app.use('/', studentCourseRoutes);
 app.use('/', CourseView);  
-app.use('/coms', Comments);
 // app.use('/', qna); // All question routes
 app.use("/", gamifyRoutes);
 app.use("/", instructorCourseRoutes);
 app.use('/admin', adminRoutes); // Admin routes
-
+app.use("/api", commonRoutes);
 
 // Load course and modules
 //course/id gets the course and modules as json to build the tree for both view_course and coure_edit

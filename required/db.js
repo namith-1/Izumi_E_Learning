@@ -32,11 +32,6 @@ const courseSchema = new mongoose.Schema({
     subject: { type: String }
 });
 
-const transactionsInstructorSchema = new mongoose.Schema({
-    t_id: { type: String, required: true },
-    instructor_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Instructor' }, // Reference to Instructor
-    amount: { type: Number, default:0 }
-});
 
 //schema
 
@@ -68,12 +63,7 @@ const courseStatsSchema = new mongoose.Schema({
     review_count: { type: Number, default: 0 }
 });
 
-const courseStatusSchema = new mongoose.Schema({
-    course_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Course', unique: true }, // One-to-one with Course
-    Disabled : { type: Number, default: 0 },
-    Deleted : { type: Number, default: 0 }
-    
-});
+
 
 const moduleSchema = new mongoose.Schema({
     course_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Course' },
@@ -105,11 +95,6 @@ const commentVoteSchema = new mongoose.Schema({
     //  No direct composite unique key
 });
 
-const instituteMailSchema = new mongoose.Schema({
-    i_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Comment' },
-    email_id: { type: string, unique: true },
-    status : {type : Number , default:1}
-});
 
 const Student = mongoose.model('Student', studentSchema);
 const Instructor = mongoose.model('Instructor', instructorSchema);
@@ -121,9 +106,7 @@ const Module = mongoose.model('Module', moduleSchema);
 const StudentModule = mongoose.model('StudentModule', studentModuleSchema);
 const Comment = mongoose.model('Comment', commentSchema);
 const CommentVote = mongoose.model('CommentVote', commentVoteSchema);
-const TransactionsInstructor = mongoose.model('TransactionsInstructor', transactionsInstructorSchema);
-const CourseStatus = mongoose.model('CourseStatus', courseStatusSchema);
-const InstituteMail = mongoose.model('InstituteMail', instituteMailSchema);
+
 //  Insert Initial Data (using Mongoose methods)
 async function seedData() {
     try {
@@ -204,7 +187,5 @@ module.exports = {
     StudentModule,
     Comment,
     CommentVote,
-    TransactionsInstructor,
-    CourseStatus,
-    InstituteMail,
+    
 };
