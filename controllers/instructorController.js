@@ -1,4 +1,5 @@
 const Instructor = require('../models/instructorModel'); // Import the Mongoose Instructor model
+const { InstituteMail } = require('../models/instructor/commonModel.js');
 const bcrypt = require('bcrypt');
 const path = require('path');
 
@@ -14,6 +15,22 @@ exports.signup = async (req, res) => {
                 return res.status(400).send('Account exists but is deleted. Please <a href="/restore.html">restore your account</a>.');
             }
         }
+
+                // ✅ Extract domain part (after @)
+        const domain = email.split('@')[1];
+        if (!domain) {
+            return res.status(400).send('Invalid email format.');
+        }
+
+        // ✅ Check if that domain exists in InstructorInfo
+        const instituteEmail = await InstituteMail.findOne({
+            email_id: { $regex: new RegExp(domain + '$', 'i') } // matches any email ending with that domain
+        });
+
+        if (!instituteEmail) {
+            return res.status(400).send('This email domain is not registered under any institute.');
+        }
+
 
         await Instructor.create(username, email, contact, address, password);
         res.redirect('/login_i');

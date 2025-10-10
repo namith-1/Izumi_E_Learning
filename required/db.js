@@ -46,6 +46,9 @@ const courseSchema = new mongoose.Schema({
   subject: { type: String },
 });
 
+
+//schema
+
 const enrollmentSchema = new mongoose.Schema({
   student_id: { type: mongoose.Schema.Types.ObjectId, ref: "Student" }, // Reference to Student
   course_id: { type: mongoose.Schema.Types.ObjectId, ref: "Course" }, // Reference to Course
@@ -77,6 +80,8 @@ const courseStatsSchema = new mongoose.Schema({
   price: { type: Number, default: 0 },
   review_count: { type: Number, default: 0 },
 });
+
+
 
 const moduleSchema = new mongoose.Schema({
   course_id: { type: mongoose.Schema.Types.ObjectId, ref: "Course" },
