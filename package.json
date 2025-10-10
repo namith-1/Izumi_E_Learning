@@ -1,4 +1,21 @@
 {
+  "name": "izumi-e-learning",
+  "version": "1.0.0",
+  "description": "An e-learning platform with student and instructor management",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "seed": "node seedData.js"
+  },
+  "keywords": [
+    "e-learning",
+    "education",
+    "nodejs",
+    "mongodb"
+  ],
+  "author": "",
+  "license": "ISC",
   "dependencies": {
     "bcrypt": "^5.1.1",
     "body-parser": "^2.2.0",
@@ -12,5 +29,8 @@
     "path": "^0.12.7",
     "socket.io": "^4.8.1",
     "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
   }
 }
