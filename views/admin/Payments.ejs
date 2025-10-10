@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payments - Admin Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background-color: #343a40;
+            color: white;
+        }
+        .nav-link {
+            color: rgba(255,255,255,.8);
+        }
+        .nav-link:hover, .nav-link.active {
+            color: white;
+            background-color: rgba(255,255,255,.1);
+        }
+        .stat-card {
+            border-left: 4px solid;
+        }
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        .loading-spinner.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 px-0 sidebar">
+                <div class="p-3">
+                    <h4>Admin Panel</h4>
+                    <hr>
+                    <ul class="nav flex-column">
+                        <li class="nav-item"><a class="nav-link" href="/admin/dashboard"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
+                        <li class="nav-item"><a class="nav-link active" href="/admin/Payments"><i class="fas fa-dollar-sign me-2"></i>Payments</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/admin/users"><i class="fas fa-users me-2"></i>Users</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/admin/courses"><i class="fas fa-book me-2"></i>Courses</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/admin/content"><i class="fas fa-file-alt me-2"></i>Content</a></li>
+                        <li class="nav-item mt-4"><a class="nav-link text-danger" href="/logout"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10 p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2>Payment Analytics</h2>
+                    <button class="btn btn-primary" onclick="loadPaymentData()">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+
+                <!-- Loading Spinner -->
+                <div class="loading-spinner" id="loadingSpinner">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading payment data...</p>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card stat-card border-primary">
+                            <div class="card-body">
+                                <h6 class="text-muted">Total Revenue</h6>
+                                <h3 id="totalRevenue">$0</h3>
+                                <small class="text-success"><i class="fas fa-arrow-up"></i> All time</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card stat-card border-success">
+                            <div class="card-body">
+                                <h6 class="text-muted">This Month</h6>
+                                <h3 id="monthRevenue">$0</h3>
+                                <small class="text-muted" id="monthCount">0 transactions</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card stat-card border-warning">
+                            <div class="card-body">
+                                <h6 class="text-muted">Pending</h6>
+                                <h3 id="pendingAmount">$0</h3>
+                                <small class="text-muted" id="pendingCount">0 payments</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card stat-card border-info">
+                            <div class="card-body">
+                                <h6 class="text-muted">Avg Transaction</h6>
+                                <h3 id="avgTransaction">$0</h3>
+                                <small class="text-muted">Per enrollment</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="row mb-4">
+                    <div class="col-md-8">
+                        <div class="card">
+                            <div class="card-header"><h5>Revenue Trend (Last 7 Days)</h5></div>
+                            <div class="card-body"><canvas id="revenueChart" height="80"></canvas></div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header"><h5>Payment Status</h5></div>
+                            <div class="card-body"><canvas id="statusChart"></canvas></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filters -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <input type="text" id="searchInput" class="form-control" placeholder="Search by user or course...">
+                            </div>
+                            <div class="col-md-3">
+                                <select id="statusFilter" class="form-select">
+                                    <option value="">All Status</option>
+                                    <option value="completed">Completed</option>
+                                    <option value="pending">Pending</option>
+                                    <option value="failed">Failed</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <input type="date" id="dateFilter" class="form-control">
+                            </div>
+                            <div class="col-md-2">
+                                <button class="btn btn-secondary w-100" onclick="clearFilters()">Clear</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payments Table -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>User</th>
+                                        <th>Course</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                        <th>Method</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="paymentsTable">
+                                    <tr>
+                                        <td colspan="7" class="text-center">No payments found</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Details Modal -->
+    <div class="modal fade" id="paymentModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Payment Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="paymentDetails">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script>
+        let payments = [];
+        let revenueChart, statusChart;
+
+        // Fetch payment data from backend
+        async function loadPaymentData() {
+            const spinner = document.getElementById('loadingSpinner');
+            spinner.classList.add('active');
+
+            try {
+                const response = await fetch('/admin/payments/data');
+                if (!response.ok) throw new Error('Failed to fetch payment data');
+                
+                const data = await response.json();
+                payments = data.payments || [];
+                
+                updateStats(data.stats);
+                updateCharts(data.chartData);
+                renderTable(payments);
+                
+                console.log('Payment data loaded successfully');
+            } catch (error) {
+                console.error('Error loading payment data:', error);
+                alert('Error loading payment data. Please try again.');
+            } finally {
+                spinner.classList.remove('active');
+            }
+        }
+
+        function updateStats(stats) {
+            document.getElementById('totalRevenue').textContent = '$' + stats.totalRevenue.toLocaleString();
+            document.getElementById('monthRevenue').textContent = '$' + stats.monthRevenue.toLocaleString();
+            document.getElementById('monthCount').textContent = stats.monthCount + ' transactions';
+            document.getElementById('pendingAmount').textContent = '$' + stats.pendingAmount.toLocaleString();
+            document.getElementById('pendingCount').textContent = stats.pendingCount + ' payments';
+            document.getElementById('avgTransaction').textContent = '$' + stats.avgTransaction.toLocaleString();
+        }
+
+        function updateCharts(chartData) {
+            // Revenue Chart
+            const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+            if (revenueChart) revenueChart.destroy();
+            
+            revenueChart = new Chart(revenueCtx, {
+                type: 'line',
+                data: {
+                    labels: chartData.labels,
+                    datasets: [{
+                        label: 'Revenue ($)',
+                        data: chartData.revenue,
+                        borderColor: '#0d6efd',
+                        tension: 0.4,
+                        fill: true,
+                        backgroundColor: 'rgba(13, 110, 253, 0.1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return '$' + context.parsed.y.toLocaleString();
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: { 
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Status Chart
+            const statusCtx = document.getElementById('statusChart').getContext('2d');
+            if (statusChart) statusChart.destroy();
+            
+            statusChart = new Chart(statusCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Completed', 'Pending', 'Failed'],
+                    datasets: [{
+                        data: [chartData.completed, chartData.pending, chartData.failed],
+                        backgroundColor: ['#198754', '#ffc107', '#dc3545']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+    function renderTable(data) {
+    const tbody = document.getElementById('paymentsTable');
+    
+    if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center">No payments found</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = data.map(p => {
+        const dateStr = String(p.date); // e.g., 20251010
+        const formattedDate = `${dateStr.slice(8,10)}/${dateStr.slice(5,7)}/${dateStr.slice(0,4)}`; // DD-MM-YYYY
+
+        return `
+        <tr>
+            <td>${formattedDate}</td>
+            <td>${p.user}</td>
+            <td>${p.course}</td>
+            <td>$${p.amount.toLocaleString()}</td>
+            <td><span class="badge bg-${p.status === 'completed' ? 'success' : p.status === 'pending' ? 'warning' : 'danger'}">${p.status}</span></td>
+            <td>${p.method}</td>
+            <td>
+                <button class="btn btn-sm btn-info" onclick="viewPayment('${p._id}')" title="View Details">
+                    <i class="fas fa-eye"></i>
+                </button>
+                ${p.status === 'pending' ? `
+                <button class="btn btn-sm btn-success" onclick="updatePaymentStatus('${p._id}', 'completed')" title="Mark as Completed">
+                    <i class="fas fa-check"></i>
+                </button>` : ''}
+            </td>
+        </tr>
+        `;
+    }).join('');
+}
+
+        function filterPayments() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const status = document.getElementById('statusFilter').value;
+            const date = document.getElementById('dateFilter').value;
+            
+            const filtered = payments.filter(p => {
+                const matchSearch = p.user.toLowerCase().includes(search) || p.course.toLowerCase().includes(search);
+                const matchStatus = !status || p.status === status;
+                const matchDate = !date || p.date === date;
+                return matchSearch && matchStatus && matchDate;
+            });
+            
+            renderTable(filtered);
+        }
+
+        function clearFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('dateFilter').value = '';
+            renderTable(payments);
+        }
+
+        // View payment details
+        async function viewPayment(id) {
+            const modal = new bootstrap.Modal(document.getElementById('paymentModal'));
+            const detailsDiv = document.getElementById('paymentDetails');
+            
+            detailsDiv.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div></div>';
+            modal.show();
+            
+            try {
+                const response = await fetch(`/admin/payments/${id}`);
+                const payment = await response.json();
+                
+                detailsDiv.innerHTML = `
+                    <div class="row">
+                        <div class="col-md-6"><strong>Date:</strong></div>
+                        <div class="col-md-6">${new Date(payment.date).toLocaleDateString()}</div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-md-6"><strong>Student:</strong></div>
+                        <div class="col-md-6">${payment.student.name}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6"><strong>Email:</strong></div>
+                        <div class="col-md-6">${payment.student.email}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6"><strong>Contact:</strong></div>
+                        <div class="col-md-6">${payment.student.contact || 'N/A'}</div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-md-6"><strong>Course:</strong></div>
+                        <div class="col-md-6">${payment.course.title}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6"><strong>Subject:</strong></div>
+                        <div class="col-md-6">${payment.course.subject}</div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-md-6"><strong>Amount:</strong></div>
+                        <div class="col-md-6"><h5>$${payment.amount.toLocaleString()}</h5></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6"><strong>Status:</strong></div>
+                        <div class="col-md-6"><span class="badge bg-${payment.status === 'completed' ? 'success' : payment.status === 'pending' ? 'warning' : 'danger'}">${payment.status}</span></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6"><strong>Method:</strong></div>
+                        <div class="col-md-6">${payment.method}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6"><strong>Progress:</strong></div>
+                        <div class="col-md-6">${payment.progress}%</div>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error fetching payment details:', error);
+                detailsDiv.innerHTML = '<div class="alert alert-danger">Error loading payment details</div>';
+            }
+        }
+
+        // Update payment status
+        async function updatePaymentStatus(id, status) {
+            if (!confirm('Are you sure you want to update this payment status?')) return;
+            
+            try {
+                const response = await fetch(`/admin/payments/${id}/status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ status })
+                });
+                
+                if (response.ok) {
+                    alert('Payment status updated successfully');
+                    loadPaymentData(); // Reload data
+                } else {
+                    throw new Error('Failed to update status');
+                }
+            } catch (error) {
+                console.error('Error updating payment status:', error);
+                alert('Error updating payment status. Please try again.');
+            }
+        }
+
+        // Event listeners
+        document.getElementById('searchInput').addEventListener('input', filterPayments);
+        document.getElementById('statusFilter').addEventListener('change', filterPayments);
+        document.getElementById('dateFilter').addEventListener('change', filterPayments);
+
+        // Initialize - Load data when page loads
+        loadPaymentData();
+    </script>
+</body>
+</html>

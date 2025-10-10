@@ -370,5 +370,401 @@ router.get('/logout', (req, res) => {
         res.redirect('/admin/login');
     });
 });
+router.get('/Payments', isAdmin, async (req, res) => {
+    try {
+        console.log('📄 Rendering payments page...');
+        res.render('admin/payments');
+    } catch (error) {
+        console.error('❌ Payments page error:', error);
+        res.status(500).render('error', { message: 'Error loading payments page' });
+    }
+});
+
+
+
+// -------------------- PAYMENT DATA ROUTE --------------------
+router.get('/payments/data', isAdmin, async (req, res) => {
+    console.log('🔍 Starting payment data fetch...');
+    
+    try {
+        // STEP 1: Fetch enrollments with related data
+        console.log('Step 1: Fetching enrollments...');
+        const enrollments = await Enrollment.aggregate([
+            {
+                $lookup: {
+                    from: 'students',
+                    localField: 'student_id',
+                    foreignField: '_id',
+                    as: 'student'
+                }
+            },
+            {
+                $lookup: {
+                    from: 'courses',
+                    localField: 'course_id',
+                    foreignField: '_id',
+                    as: 'course'
+                }
+            },
+            { $unwind: { path: '$student', preserveNullAndEmptyArrays: true } },
+            { $unwind: { path: '$course', preserveNullAndEmptyArrays: true } },
+            { $sort: { date_enrolled: -1 } }
+        ]);
+        console.log(`✅ Found ${enrollments.length} enrollments`);
+
+        // STEP 2: Fetch course stats
+        console.log('Step 2: Fetching course stats...');
+        const courseStats = await CourseStat.find().lean();
+        console.log(`✅ Found ${courseStats.length} course stats`);
+
+        const statsMap = {};
+        courseStats.forEach(stat => {
+            statsMap[stat.course_id.toString()] = stat;
+        });
+
+        // STEP 3: Build payment records
+        console.log('Step 3: Building payment records...');
+        const payments = enrollments.map(enrollment => {
+            const courseId = enrollment.course_id?._id?.toString();
+            const courseStat = courseId ? statsMap[courseId] : null;
+            const amount = courseStat?.price || 0;
+
+            return {
+                _id: enrollment._id,
+                date: enrollment.date_enrolled,
+                user: enrollment.student?.name || 'Unknown Student',
+                course: enrollment.course?.title || 'Unknown Course',
+                amount: amount,
+                status: enrollment.payment_status || 'completed',
+                method: enrollment.payment_method || 'Card'
+            };
+        });
+        console.log(`✅ Built ${payments.length} payment records`);
+
+        // STEP 4: Compute statistics
+        console.log('Step 4: Calculating statistics...');
+        const totalRevenue = payments.reduce((sum, p) =>
+            sum + (p.status === 'completed' ? p.amount : 0), 0);
+
+        const currentMonth = new Date().getMonth();
+        const currentYear = new Date().getFullYear();
+
+        const monthlyPayments = payments.filter(p => {
+            if (!p.date) return false;
+            const paymentDate = new Date(p.date);
+            return paymentDate.getMonth() === currentMonth &&
+                   paymentDate.getFullYear() === currentYear;
+        });
+
+        const monthRevenue = monthlyPayments.reduce((sum, p) =>
+            sum + (p.status === 'completed' ? p.amount : 0), 0);
+
+        const pendingPayments = payments.filter(p => p.status === 'pending');
+        const pendingAmount = pendingPayments.reduce((sum, p) => sum + p.amount, 0);
+
+        const completedPayments = payments.filter(p => p.status === 'completed');
+        const completedCount = completedPayments.length;
+        const avgTransaction = completedCount > 0
+            ? Math.round(totalRevenue / completedCount)
+            : 0;
+
+        // STEP 5: Chart data (Last 7 days revenue)
+console.log('Step 5: Generating chart data...');
+const last7Days = [];
+const revenueByDay = [];
+
+for (let i = 6; i >= 0; i--) {
+    const date = new Date();
+    date.setDate(date.getDate() - i);
+
+    const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD for comparison
+    last7Days.push(date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric'
+    }));
+
+    const dayRevenue = payments
+        .filter(p => {
+            if (!p.date) return false;
+            const paymentDate = new Date(p.date);
+            const paymentDateStr = paymentDate.toISOString().split('T')[0];
+            return paymentDateStr === dateStr && p.status === 'completed';
+        })
+        .reduce((sum, p) => sum + p.amount, 0);
+
+    revenueByDay.push(Math.round(dayRevenue));
+}
+
+
+        // STEP 6: Status counts
+        const completed = completedPayments.length;
+        const pending = pendingPayments.length;
+        const failed = payments.filter(p => p.status === 'failed').length;
+
+        // STEP 7: Send response
+        const response = {
+            payments,
+            stats: {
+                totalRevenue: Math.round(totalRevenue),
+                monthRevenue: Math.round(monthRevenue),
+                monthCount: monthlyPayments.filter(p => p.status === 'completed').length,
+                pendingAmount: Math.round(pendingAmount),
+                pendingCount: pending,
+                avgTransaction
+            },
+            chartData: {
+                labels: last7Days,
+                revenue: revenueByDay,
+                completed,
+                pending,
+                failed
+            }
+        };
+
+        console.log('✅ Sending response with', payments.length, 'records');
+        res.json(response);
+
+    } catch (error) {
+        console.error('❌ Payment data error:', error);
+        res.status(500).json({
+            error: 'Error fetching payment data: ' + error.message,
+            payments: [],
+            stats: {
+                totalRevenue: 0,
+                monthRevenue: 0,
+                monthCount: 0,
+                pendingAmount: 0,
+                pendingCount: 0,
+                avgTransaction: 0
+            },
+            chartData: {
+                labels: [],
+                revenue: [],
+                completed: 0,
+                pending: 0,
+                failed: 0
+            }
+        });
+    }
+});
+
+
+// Update payment status
+router.put('/payments/:id/status', isAdmin, async (req, res) => {
+    console.log(`🔄 Updating payment status for ID: ${req.params.id}`);
+    
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+
+        // Validate status
+        if (!['completed', 'pending', 'failed'].includes(status)) {
+            console.log('❌ Invalid status:', status);
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Invalid payment status' 
+            });
+        }
+
+        const enrollment = await Enrollment.findByIdAndUpdate(
+            id, 
+            { payment_status: status },
+            { new: true }
+        );
+
+        if (!enrollment) {
+            console.log('❌ Payment not found');
+            return res.status(404).json({ 
+                success: false, 
+                error: 'Payment not found' 
+            });
+        }
+
+        console.log(`✅ Payment status updated to: ${status}`);
+        res.json({ success: true, enrollment });
+        
+    } catch (error) {
+        console.error('❌ Update payment status error:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Error updating payment status' 
+        });
+    }
+});
+
+// Get payment details
+router.get('/payments/:id', isAdmin, async (req, res) => {
+    console.log(`🔍 Fetching payment details for ID: ${req.params.id}`);
+    
+    try {
+        const { id } = req.params;
+        
+        const enrollment = await Enrollment.findById(id)
+            .populate('student_id', 'name email contact')
+            .populate('course_id', 'title subject');
+        
+        if (!enrollment) {
+            console.log('❌ Payment not found');
+            return res.status(404).json({ error: 'Payment not found' });
+        }
+
+        // Get course pricing from CourseStat
+        const courseStat = await CourseStat.findOne({ 
+            course_id: enrollment.course_id 
+        });
+
+        const payment = {
+            _id: enrollment._id,
+            date: enrollment.enrollment_date,
+            student: enrollment.student_id,
+            course: enrollment.course_id,
+            amount: courseStat?.price || 0,
+            status: enrollment.payment_status || 'completed',
+            method: enrollment.payment_method || 'Card',
+            progress: enrollment.progress_percentage || 0
+        };
+        
+        console.log('✅ Payment details fetched successfully');
+        res.json(payment);
+        
+    } catch (error) {
+        console.error('❌ Get payment error:', error);
+        res.status(500).json({ error: 'Error fetching payment details' });
+    }
+});
+
+// Add these routes to your admin routes file (after the existing payment routes)
+
+// Update payment (status and method)
+router.put('/payments/:id', isAdmin, async (req, res) => {
+    console.log(`🔄 Updating payment ID: ${req.params.id}`);
+    
+    try {
+        const { id } = req.params;
+        const { status, method } = req.body;
+
+        // Validate status
+        if (status && !['completed', 'pending', 'failed'].includes(status)) {
+            console.log('❌ Invalid status:', status);
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Invalid payment status' 
+            });
+        }
+
+        // Build update object
+        const updateData = {};
+        if (status) updateData.payment_status = status;
+        if (method) updateData.payment_method = method;
+
+        const enrollment = await Enrollment.findByIdAndUpdate(
+            id, 
+            updateData,
+            { new: true }
+        );
+
+        if (!enrollment) {
+            console.log('❌ Payment not found');
+            return res.status(404).json({ 
+                success: false, 
+                error: 'Payment not found' 
+            });
+        }
+
+        console.log(`✅ Payment updated successfully`);
+        res.json({ success: true, enrollment });
+        
+    } catch (error) {
+        console.error('❌ Update payment error:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Error updating payment' 
+        });
+    }
+});
+
+// Delete payment (soft delete - removes enrollment)
+router.delete('/payments/:id', isAdmin, async (req, res) => {
+    console.log(`🗑️ Deleting payment ID: ${req.params.id}`);
+    
+    try {
+        const { id } = req.params;
+        
+        // Find the enrollment first
+        const enrollment = await Enrollment.findById(id);
+        
+        if (!enrollment) {
+            console.log('❌ Payment not found');
+            return res.status(404).json({ 
+                success: false, 
+                error: 'Payment not found' 
+            });
+        }
+
+        // Get the course to update enrollment count
+        const courseStat = await CourseStat.findOne({ 
+            course_id: enrollment.course_id 
+        });
+
+        // Delete the enrollment
+        await Enrollment.findByIdAndDelete(id);
+
+        // Update course enrollment count (decrement)
+        if (courseStat && courseStat.enrolled_count > 0) {
+            await CourseStat.findByIdAndUpdate(
+                courseStat._id,
+                { $inc: { enrolled_count: -1 } }
+            );
+            console.log('✅ Course enrollment count decremented');
+        }
+
+        console.log(`✅ Payment deleted successfully`);
+        res.json({ success: true, message: 'Payment deleted successfully' });
+        
+    } catch (error) {
+        console.error('❌ Delete payment error:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Error deleting payment' 
+        });
+    }
+});
+
+// Alternative: Soft delete with is_deleted flag (if you prefer keeping records)
+
+router.delete('/payments/:id', isAdmin, async (req, res) => {
+    console.log(`🗑️ Soft deleting payment ID: ${req.params.id}`);
+    
+    try {
+        const { id } = req.params;
+        
+        const enrollment = await Enrollment.findByIdAndUpdate(
+            id, 
+            { 
+                is_deleted: true,
+                deleted_at: new Date()
+            },
+            { new: true }
+        );
+
+        if (!enrollment) {
+            console.log('❌ Payment not found');
+            return res.status(404).json({ 
+                success: false, 
+                error: 'Payment not found' 
+            });
+        }
+
+        console.log(`✅ Payment soft deleted successfully`);
+        res.json({ success: true, message: 'Payment deleted successfully' });
+        
+    } catch (error) {
+        console.error('❌ Delete payment error:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Error deleting payment' 
+        });
+    }
+});
 
 module.exports = router; 
