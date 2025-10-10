@@ -1,108 +1,329 @@
+</html>
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Login</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Izumi</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-    :root {
-        --primary-color: #6200ea;
-        --primary-light: #9d46ff;
-        --primary-dark: #0a00b6;
-        --accent-color: #ff6584;
-        --background-dark: #121212;
-        --background-light: #1e1e1e;
-        --text-primary: #ffffff;
-        --text-secondary: rgba(255, 255, 255, 0.7);
-        --text-tertiary: rgba(255, 255, 255, 0.5);
-        --success-color: #00e676;
-        --warning-color: #ffea00;
-        --error-color: #ff1744;
-        --border-radius: 8px;
-        --box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-        --transition: all 0.3s ease;
-        --font-main: 'Poppins', sans-serif;
-    }
-    
-    body {
-        font-family: var(--font-main);
-        background-color: var(--background-dark);
-        color: var(--text-primary);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        height: 100vh;
-        margin: 0;
-    }
-    
-    h1 {
-        margin-bottom: 20px;
-    }
-    
-    .container {
-        background-color: var(--background-light);
-        padding: 20px;
-        border-radius: var(--border-radius);
-        box-shadow: var(--box-shadow);
-        text-align: center;
-        width: 300px;
-    }
-    
-    input, button {
-        width: 100%;
-        padding: 10px;
-        margin-top: 10px;
-        border: none;
-        border-radius: var(--border-radius);
-        font-size: 16px;
-    }
-    
-    input {
-        background-color: var(--background-dark);
-        color: var(--text-primary);
-        border: 1px solid var(--primary-light);
-    }
-    
-    button {
-        background-color: var(--primary-color);
-        color: var(--text-primary);
-        cursor: pointer;
-        transition: var(--transition);
-    }
-    
-    button:hover {
-        background-color: var(--primary-light);
-    }
-    
-    p a {
-        color: var(--accent-color);
-        text-decoration: none;
-    }
-    
-    p a:hover {
-        text-decoration: underline;
-    }
-    
-    .izumi {
-        font-size: 24px;
-        font-weight: bold;
-        color: var(--primary-light);
-        margin-bottom: 20px;
-    }
-</style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-purple: #8b5cf6;
+            --primary-light: #a78bfa;
+            --cyan-accent: #b8e0dc;
+            --yellow-accent: #fef3c7;
+            --background: #f5f5f5;
+            --white: #ffffff;
+            --text-dark: #2d3748;
+            --text-medium: #4a5568;
+            --text-light: #718096;
+            --border-radius: 16px;
+            --transition: all 0.3s ease;
+            --font-main: 'Poppins', sans-serif;
+        }
+        
+        body {
+            font-family: var(--font-main);
+            background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 10%;
+            right: 5%;
+            width: 400px;
+            height: 400px;
+            background: var(--cyan-accent);
+            opacity: 0.3;
+            border-radius: 50%;
+            filter: blur(80px);
+            animation: float 8s ease-in-out infinite;
+        }
+
+        body::after {
+            content: '';
+            position: absolute;
+            bottom: 10%;
+            left: 5%;
+            width: 300px;
+            height: 300px;
+            background: var(--yellow-accent);
+            opacity: 0.4;
+            border-radius: 50%;
+            filter: blur(80px);
+            animation: float 10s ease-in-out infinite reverse;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(30px, -30px) scale(1.1); }
+        }
+
+        .geometric-shape {
+            position: absolute;
+            background: var(--cyan-accent);
+            opacity: 0.15;
+        }
+
+        .shape-1 {
+            top: 15%;
+            left: 15%;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .shape-2 {
+            bottom: 20%;
+            right: 20%;
+            width: 120px;
+            height: 120px;
+            border-radius: 20px;
+            transform: rotate(45deg);
+            animation: rotate 20s linear infinite;
+        }
+
+        .shape-3 {
+            top: 50%;
+            right: 10%;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--yellow-accent);
+            opacity: 0.2;
+            animation: pulse 4s ease-in-out infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(45deg); }
+            to { transform: rotate(405deg); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.2; }
+            50% { transform: scale(1.2); opacity: 0.3; }
+        }
+        
+        .container {
+            background: var(--white);
+            padding: 50px 45px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+            text-align: center;
+            width: 100%;
+            max-width: 440px;
+            position: relative;
+            z-index: 1;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .container:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.12);
+        }
+        
+        .izumi {
+            font-size: 42px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary-purple) 0%, var(--primary-light) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+
+        h1 {
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 40px;
+            color: var(--text-dark);
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .form-group {
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-medium);
+            transition: color 0.3s ease;
+        }
+
+        input {
+            width: 100%;
+            padding: 16px 18px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 15px;
+            font-family: var(--font-main);
+            background-color: #fafafa;
+            color: var(--text-dark);
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        input::placeholder {
+            color: var(--text-light);
+        }
+
+        input:focus {
+            border-color: var(--primary-purple);
+            background-color: var(--white);
+            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.1);
+        }
+
+        .form-group:focus-within label {
+            color: var(--primary-purple);
+        }
+
+        button {
+            width: 100%;
+            padding: 16px;
+            margin-top: 12px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            font-family: var(--font-main);
+            background: linear-gradient(135deg, var(--primary-purple) 0%, var(--primary-light) 100%);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 20px rgba(139, 92, 246, 0.25);
+            position: relative;
+            overflow: hidden;
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.6s ease;
+        }
+
+        button:hover::before {
+            left: 100%;
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 28px rgba(139, 92, 246, 0.35);
+        }
+
+        button:active {
+            transform: translateY(-1px);
+        }
+
+        .links {
+            margin-top: 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .links p {
+            font-size: 14px;
+            color: var(--text-medium);
+            margin: 0;
+        }
+
+        .links a {
+            color: var(--primary-purple);
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .links a::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -3px;
+            left: 0;
+            background: var(--primary-purple);
+            transition: width 0.3s ease;
+        }
+
+        .links a:hover {
+            color: var(--primary-light);
+        }
+
+        .links a:hover::after {
+            width: 100%;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 40px 30px;
+            }
+
+            .izumi {
+                font-size: 36px;
+            }
+
+            h1 {
+                font-size: 26px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <h1>Login</h1>
-    <form action="/login_i" method="post">
-        <label for="email">Email:</label>
-        <input type="email" id="email" name="email" required><br><br>
+    <div class="geometric-shape shape-1"></div>
+    <div class="geometric-shape shape-2"></div>
+    <div class="geometric-shape shape-3"></div>
 
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" required><br><br>
-
-        <button type="submit">Login</button>
-    </form>
-
-    <p>Don't have an account? <a href="/views/instructor_auth/signup_i.html">Sign up</a></p>
-    <p><a href="/restore.html">Restore Account?</a></p>
+    <div class="container">
+        <div class="izumi">Izumi</div>
+        <h1>Login</h1>
+        <form action="/login_i" method="post">
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required placeholder="Enter your email">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required placeholder="Enter your password">
+            </div>
+            
+            <button type="submit">Login</button>
+        </form>
+        <div class="links">
+             <p>Don't have an account? <a href="/views/instructor_auth/signup_i.html">Sign up</a></p>
+             <p><a href="/restore.html">Restore Account?</a></p>
+        </div>
+    </div>
 </body>
 </html>
