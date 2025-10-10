@@ -94,10 +94,22 @@ function saveCourse() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-            title: document.getElementById("courseTitle").value,
-            modules
-        })
-    }).then(res => res.json()).then(alert);
+    title: document.getElementById("courseTitle").value,
+    modules,
+    price: Number(document.getElementById("price").value)
+})
+
+    }).then(res => res.json())
+      .then(data => {
+    alert(data.message || "Course saved successfully!"); // show message
+    window.location.href = "/instructor-dashboard"; // redirect to your URL
+})
+.catch(err => console.error(err));
+
+
+
+
+
 }
     }
 }
