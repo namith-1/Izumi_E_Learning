@@ -7,13 +7,15 @@ const transactionsInstructorSchema = new mongoose.Schema({
   amount: { type: Number, default: 0 },
 }, { timestamps: true });
 
-// ✅ InstituteMail Schema
+
 const instituteMailSchema = new mongoose.Schema({
-  i_id: { type: mongoose.Schema.Types.ObjectId, ref: "Instructor", required: true },
+  i_id: { type: String},
   email_id: { type: String, unique: true, required: true },
-  name: { type: String, unique: true, required: true },
-  status: { type: Number, default: 1 },
+  name: { type: String, required: true },
+  status: { type: Number, default: 1 }, // 1 = active, 0 = inactive
 }, { timestamps: true });
+
+
 
 // ✅ CourseStatus Schema
 const courseStatusSchema = new mongoose.Schema({
