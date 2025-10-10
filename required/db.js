@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 // Connection URI (replace with your MongoDB connection string)
-const uri = 'mongodb://localhost:27017/izumi3'; // Replace with your actual URI
+const uri = process.env.MONGO_URI; // Replace with your actual URI
 
 mongoose.connect(uri)
     .then(() => console.log('Connected to MongoDB'))
@@ -35,6 +35,7 @@ const courseSchema = new mongoose.Schema({
 const enrollmentSchema = new mongoose.Schema({
     student_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Student' }, // Reference to Student
     course_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Course' }, // Reference to Course
+    date_enrolled: { type: Date, default: Date.now }
     //   No direct UNIQUE constraint in Mongoose schema, handled in code
 });
 
@@ -169,7 +170,6 @@ async function seedData() {
     }
 }
 
-seedData(); // Call the function to insert data
 
 module.exports = {
     Student,

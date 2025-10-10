@@ -303,35 +303,39 @@
             });
         }
 
-        function renderTable(data) {
-            const tbody = document.getElementById('paymentsTable');
-            
-            if (data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center">No payments found</td></tr>';
-                return;
-            }
-            
-            tbody.innerHTML = data.map(p => `
-                <tr>
-                    <td>${new Date(p.date).toLocaleDateString()}</td>
-                    <td>${p.user}</td>
-                    <td>${p.course}</td>
-                    <td>$${p.amount.toLocaleString()}</td>
-                    <td><span class="badge bg-${p.status === 'completed' ? 'success' : p.status === 'pending' ? 'warning' : 'danger'}">${p.status}</span></td>
-                    <td>${p.method}</td>
-                    <td>
-                        <button class="btn btn-sm btn-info" onclick="viewPayment('${p._id}')" title="View Details">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        ${p.status === 'pending' ? `
-                        <button class="btn btn-sm btn-success" onclick="updatePaymentStatus('${p._id}', 'completed')" title="Mark as Completed">
-                            <i class="fas fa-check"></i>
-                        </button>
-                        ` : ''}
-                    </td>
-                </tr>
-            `).join('');
-        }
+    function renderTable(data) {
+    const tbody = document.getElementById('paymentsTable');
+    
+    if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center">No payments found</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = data.map(p => {
+        const dateStr = String(p.date); // e.g., 20251010
+        const formattedDate = `${dateStr.slice(8,10)}/${dateStr.slice(5,7)}/${dateStr.slice(0,4)}`; // DD-MM-YYYY
+
+        return `
+        <tr>
+            <td>${formattedDate}</td>
+            <td>${p.user}</td>
+            <td>${p.course}</td>
+            <td>$${p.amount.toLocaleString()}</td>
+            <td><span class="badge bg-${p.status === 'completed' ? 'success' : p.status === 'pending' ? 'warning' : 'danger'}">${p.status}</span></td>
+            <td>${p.method}</td>
+            <td>
+                <button class="btn btn-sm btn-info" onclick="viewPayment('${p._id}')" title="View Details">
+                    <i class="fas fa-eye"></i>
+                </button>
+                ${p.status === 'pending' ? `
+                <button class="btn btn-sm btn-success" onclick="updatePaymentStatus('${p._id}', 'completed')" title="Mark as Completed">
+                    <i class="fas fa-check"></i>
+                </button>` : ''}
+            </td>
+        </tr>
+        `;
+    }).join('');
+}
 
         function filterPayments() {
             const search = document.getElementById('searchInput').value.toLowerCase();

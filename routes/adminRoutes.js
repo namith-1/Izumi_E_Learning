@@ -380,15 +380,15 @@ router.get('/Payments', isAdmin, async (req, res) => {
     }
 });
 
-// Get payment data for analytics
+
+
+// -------------------- PAYMENT DATA ROUTE --------------------
 router.get('/payments/data', isAdmin, async (req, res) => {
     console.log('🔍 Starting payment data fetch...');
     
     try {
-        // STEP 1: Fetch all enrollments with related data
+        // STEP 1: Fetch enrollments with related data
         console.log('Step 1: Fetching enrollments...');
-        
-        // FIX: Changed from 'cours' to 'Enrollment'
         const enrollments = await Enrollment.aggregate([
             {
                 $lookup: {
@@ -406,36 +406,21 @@ router.get('/payments/data', isAdmin, async (req, res) => {
                     as: 'course'
                 }
             },
-            {
-                $unwind: {
-                    path: '$student',
-                    preserveNullAndEmptyArrays: true
-                }
-            },
-            {
-                $unwind: {
-                    path: '$course',
-                    preserveNullAndEmptyArrays: true
-                }
-            },
-            {
-                $sort: { enrollment_date: -1 }
-            }
+            { $unwind: { path: '$student', preserveNullAndEmptyArrays: true } },
+            { $unwind: { path: '$course', preserveNullAndEmptyArrays: true } },
+            { $sort: { date_enrolled: -1 } }
         ]);
-        
         console.log(`✅ Found ${enrollments.length} enrollments`);
 
-        // STEP 2: Fetch all course stats
+        // STEP 2: Fetch course stats
         console.log('Step 2: Fetching course stats...');
         const courseStats = await CourseStat.find().lean();
         console.log(`✅ Found ${courseStats.length} course stats`);
-        
-        // Create stats map for quick lookup
+
         const statsMap = {};
         courseStats.forEach(stat => {
             statsMap[stat.course_id.toString()] = stat;
         });
-        console.log('✅ Stats map created');
 
         // STEP 3: Build payment records
         console.log('Step 3: Building payment records...');
@@ -446,9 +431,7 @@ router.get('/payments/data', isAdmin, async (req, res) => {
 
             return {
                 _id: enrollment._id,
-                date: enrollment.enrollment_date ? 
-                    new Date(enrollment.enrollment_date).toISOString().split('T')[0] : 
-                    new Date().toISOString().split('T')[0],
+                date: enrollment.date_enrolled,
                 user: enrollment.student?.name || 'Unknown Student',
                 course: enrollment.course?.title || 'Unknown Course',
                 amount: amount,
@@ -458,67 +441,65 @@ router.get('/payments/data', isAdmin, async (req, res) => {
         });
         console.log(`✅ Built ${payments.length} payment records`);
 
-        // STEP 4: Calculate statistics
+        // STEP 4: Compute statistics
         console.log('Step 4: Calculating statistics...');
-        
-        // Total revenue
-        const totalRevenue = payments.reduce((sum, p) => 
+        const totalRevenue = payments.reduce((sum, p) =>
             sum + (p.status === 'completed' ? p.amount : 0), 0);
-        console.log(`📊 Total Revenue: $${totalRevenue}`);
-        
-        // Current month calculations
+
         const currentMonth = new Date().getMonth();
         const currentYear = new Date().getFullYear();
+
         const monthlyPayments = payments.filter(p => {
+            if (!p.date) return false;
             const paymentDate = new Date(p.date);
-            return paymentDate.getMonth() === currentMonth && 
+            return paymentDate.getMonth() === currentMonth &&
                    paymentDate.getFullYear() === currentYear;
         });
-        
-        const monthRevenue = monthlyPayments.reduce((sum, p) => 
+
+        const monthRevenue = monthlyPayments.reduce((sum, p) =>
             sum + (p.status === 'completed' ? p.amount : 0), 0);
-        console.log(`📊 Month Revenue: $${monthRevenue} (${monthlyPayments.length} payments)`);
-        
-        // Pending payments
+
         const pendingPayments = payments.filter(p => p.status === 'pending');
         const pendingAmount = pendingPayments.reduce((sum, p) => sum + p.amount, 0);
-        console.log(`📊 Pending: $${pendingAmount} (${pendingPayments.length} payments)`);
-        
-        // Average transaction
+
         const completedPayments = payments.filter(p => p.status === 'completed');
         const completedCount = completedPayments.length;
-        const avgTransaction = completedCount > 0 ? 
-            Math.round(totalRevenue / completedCount) : 0;
-        console.log(`📊 Average Transaction: $${avgTransaction}`);
+        const avgTransaction = completedCount > 0
+            ? Math.round(totalRevenue / completedCount)
+            : 0;
 
-        // STEP 5: Chart data - last 7 days revenue
-        console.log('Step 5: Generating chart data...');
-        const last7Days = [];
-        const revenueByDay = [];
-        
-        for (let i = 6; i >= 0; i--) {
-            const date = new Date();
-            date.setDate(date.getDate() - i);
-            const dateStr = date.toISOString().split('T')[0];
-            
-            last7Days.push(date.toLocaleDateString('en-US', { 
-                month: 'short', 
-                day: 'numeric' 
-            }));
-            
-            const dayRevenue = payments
-                .filter(p => p.date === dateStr && p.status === 'completed')
-                .reduce((sum, p) => sum + p.amount, 0);
-            
-            revenueByDay.push(Math.round(dayRevenue));
-        }
-        console.log('✅ Chart data generated:', { last7Days, revenueByDay });
+        // STEP 5: Chart data (Last 7 days revenue)
+console.log('Step 5: Generating chart data...');
+const last7Days = [];
+const revenueByDay = [];
 
-        // STEP 6: Status counts for pie chart
-        const completed = payments.filter(p => p.status === 'completed').length;
-        const pending = payments.filter(p => p.status === 'pending').length;
+for (let i = 6; i >= 0; i--) {
+    const date = new Date();
+    date.setDate(date.getDate() - i);
+
+    const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD for comparison
+    last7Days.push(date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric'
+    }));
+
+    const dayRevenue = payments
+        .filter(p => {
+            if (!p.date) return false;
+            const paymentDate = new Date(p.date);
+            const paymentDateStr = paymentDate.toISOString().split('T')[0];
+            return paymentDateStr === dateStr && p.status === 'completed';
+        })
+        .reduce((sum, p) => sum + p.amount, 0);
+
+    revenueByDay.push(Math.round(dayRevenue));
+}
+
+
+        // STEP 6: Status counts
+        const completed = completedPayments.length;
+        const pending = pendingPayments.length;
         const failed = payments.filter(p => p.status === 'failed').length;
-        console.log(`📊 Status counts - Completed: ${completed}, Pending: ${pending}, Failed: ${failed}`);
 
         // STEP 7: Send response
         const response = {
@@ -528,7 +509,7 @@ router.get('/payments/data', isAdmin, async (req, res) => {
                 monthRevenue: Math.round(monthRevenue),
                 monthCount: monthlyPayments.filter(p => p.status === 'completed').length,
                 pendingAmount: Math.round(pendingAmount),
-                pendingCount: pendingPayments.length,
+                pendingCount: pending,
                 avgTransaction
             },
             chartData: {
@@ -539,16 +520,13 @@ router.get('/payments/data', isAdmin, async (req, res) => {
                 failed
             }
         };
-        
-        console.log('✅ Sending response with', payments.length, 'payments');
+
+        console.log('✅ Sending response with', payments.length, 'records');
         res.json(response);
-        
+
     } catch (error) {
         console.error('❌ Payment data error:', error);
-        console.error('Error stack:', error.stack);
-        
-        // Send empty but valid response structure
-        res.status(500).json({ 
+        res.status(500).json({
             error: 'Error fetching payment data: ' + error.message,
             payments: [],
             stats: {
@@ -569,6 +547,7 @@ router.get('/payments/data', isAdmin, async (req, res) => {
         });
     }
 });
+
 
 // Update payment status
 router.put('/payments/:id/status', isAdmin, async (req, res) => {

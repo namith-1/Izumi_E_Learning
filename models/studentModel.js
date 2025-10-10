@@ -49,7 +49,7 @@ updateField: async (id, field, value) => {
 
     enroll: async (studentId, courseId) => {
         try {
-            const enrollment = new Enrollment({ student_id: studentId, course_id: courseId });
+            const enrollment = new Enrollment({ student_id: studentId, course_id: courseId, date_enrolled: new Date() });
             await enrollment.save();
         } catch (error) {
             if (error.code === 11000) {  // MongoDB duplicate key error code
