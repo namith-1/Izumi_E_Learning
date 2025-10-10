@@ -438,11 +438,32 @@
           </div>
         </div>
       </div>
-      <div class="tutor-section">
-        <h4>Are you a tutor?</h4>
-        <a href="http://localhost:4000/login_i">login or signup</a>
-      </div>
-      <div class="footer-bottom">
+     <section class="tutor-section" aria-labelledby="tutor-heading">
+  <div class="container tutor-card">
+    <div class="tutor-illustration" aria-hidden="true">
+      <!-- decorative shape / icon -->
+      <i class="fas fa-chalkboard-teacher"></i>
+    </div>
+
+    <div class="tutor-content">
+      <h4 id="tutor-heading">Are you a tutor?</h4>
+      <p class="tutor-sub">Share your expertise with learners worldwide. Create courses, track progress and earn on Izumi.</p>
+    </div>
+
+    <div class="tutor-actions" role="group" aria-label="Tutor actions">
+      <a href="http://localhost:4000/login_i" class="btn tutor-btn tutor-login" title="Tutor login">
+        <i class="fas fa-sign-in-alt" aria-hidden="true"></i>
+        <span>Login</span>
+      </a>
+
+      <a href="http://localhost:4000/signup_i" class="btn tutor-btn tutor-signup" title="Tutor signup">
+        <i class="fas fa-user-plus" aria-hidden="true"></i>
+        <span>Sign Up</span>
+      </a>
+    </div>
+  </div>
+</section>
+  <div class="footer-bottom">
         <p>© 2025 Izumi Learning. All rights reserved.</p>
         <div class="social-links">
           <a href="#"><i class="fab fa-facebook"></i></a>
