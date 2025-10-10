@@ -1,12 +1,16 @@
 const mongoose = require("mongoose");
+require("dotenv").config(); // Make sure to load .env variables first
 
-// Connection URI (uses environment variable or fallback to default)
+// Use environment variable or fallback to local MongoDB
 const uri = process.env.MONGODB_URI || "mongodb://localhost:27017/izumi3";
 
-mongoose
-  .connect(uri)
-  .then(() => console.log("Connected to MongoDB"))
-  .catch((err) => console.error("Error connecting to MongoDB:", err));
+mongoose.connect(uri, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+.then(() => console.log("✅ Connected to MongoDB successfully"))
+.catch((err) => console.error("❌ MongoDB connection error:", err.message));
+
 
 // Define Schemas (this is where Mongoose comes in)
 const studentSchema = new mongoose.Schema({
