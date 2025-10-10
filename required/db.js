@@ -1,15 +1,24 @@
 const mongoose = require("mongoose");
-require("dotenv").config(); // Make sure to load .env variables first
+require("dotenv").config(); // Load .env first
 
-// Use environment variable or fallback to local MongoDB
-const uri = process.env.MONGODB_URI || "mongodb://localhost:27017/izumi3";
+// Use Atlas if available, else fallback to local MongoDB
+const uri = process.env.MONGO_URI || "mongodb://localhost:27017/izumi3";
 
 mongoose.connect(uri, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
-.then(() => console.log("✅ Connected to MongoDB successfully"))
-.catch((err) => console.error("❌ MongoDB connection error:", err.message));
+.then(() => {
+  // Detect if using Atlas or local
+  if (uri.startsWith("mongodb+srv://")) {
+    console.log("✅ Connected to MongoDB Atlas cluster successfully");
+  } else {
+    console.log("✅ Connected to local MongoDB database successfully");
+  }
+})
+.catch((err) => {
+  console.error("❌ MongoDB connection error:", err.message);
+});
 
 
 // Define Schemas (this is where Mongoose comes in)
