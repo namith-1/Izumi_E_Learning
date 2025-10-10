@@ -1473,3 +1473,128 @@
       padding: 30px 20px;
     }
   }
+  /* ---- Tutor block ---- */
+:root {
+  --tutor-bg: linear-gradient(90deg, #EEF2FF 0%, #F8F7FF 100%);
+  --accentA: #6366F1; /* indigo */
+  --accentB: #8B5CF6; /* purple */
+  --muted: #6b7280;
+}
+
+.tutor-section {
+  margin: 40px 0;
+  padding: 18px 0;
+  background: var(--tutor-bg);
+  border-radius: 14px;
+}
+
+.tutor-card {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 18px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(16,24,40,0.06);
+}
+
+/* small decorative icon on the left */
+.tutor-illustration {
+  min-width: 68px;
+  min-height: 68px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(139,92,246,0.08));
+  color: var(--accentA);
+  font-size: 28px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(99,102,241,0.08), inset 0 -2px 6px rgba(255,255,255,0.6);
+}
+
+/* Text content */
+.tutor-content h4 {
+  margin: 0 0 6px;
+  font-size: 1.05rem;
+  color: #111827;
+}
+.tutor-sub {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.35;
+}
+
+/* Buttons */
+.tutor-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 12px; /* space between buttons */
+  align-items: center;
+}
+
+.tutor-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  padding: 10px 16px;
+  border-radius: 10px;
+  transition: transform .12s ease, box-shadow .12s ease, opacity .12s ease;
+  white-space: nowrap;
+  border: 0;
+  cursor: pointer;
+}
+
+/* Primary style (Login) */
+.tutor-login {
+  background: linear-gradient(90deg, var(--accentA), var(--accentB));
+  color: white;
+  box-shadow: 0 6px 18px rgba(99,102,241,0.18);
+}
+
+/* Outline style (Sign up) */
+.tutor-signup {
+  background: transparent;
+  color: var(--accentA);
+  border: 1.5px solid rgba(99,102,241,0.12);
+}
+
+/* Hover/focus */
+.tutor-btn:hover,
+.tutor-btn:focus {
+  transform: translateY(-2px);
+  text-decoration: none;
+  outline: none;
+}
+.tutor-login:active,
+.tutor-signup:active {
+  transform: translateY(0);
+}
+
+/* Small screens: stack items */
+@media (max-width: 700px) {
+  .tutor-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .tutor-illustration { margin: 0 auto; }
+
+  .tutor-actions {
+    width: 100%;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .tutor-btn {
+    flex: 1 1 auto;
+    justify-content: center;
+    padding: 12px 10px;
+  }
+}
