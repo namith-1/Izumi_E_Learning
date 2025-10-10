@@ -36,9 +36,9 @@ const enrollmentSchema = new mongoose.Schema({
     student_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Student' },
     course_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Course' },
     date_enrolled: { type: Date, default: Date.now }
-}, { timestamps: true });
+}, { timestamps: true }); // added timestamps for createdAt and updatedAt
 
-
+//
 const magazineSchema = new mongoose.Schema({
     title: { type: String, required: true },
     description: { type: String, required: true },
