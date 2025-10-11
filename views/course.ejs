@@ -291,8 +291,6 @@ body::after {
     color: white;
 }
 
-/* REMOVED original sticky NAV styles */
-
 section {
     background: var(--white);
     padding: 50px 40px;
@@ -371,7 +369,6 @@ section li::before {
 }
 
 @media screen and (max-width: 768px) {
-    /* Updated for the new, merged navbar layout */
     .izumi-navbar {
         flex-direction: column;
         align-items: flex-start;
@@ -386,8 +383,9 @@ section li::before {
         gap: 0;
         overflow-x: auto;
         white-space: nowrap;
+        margin-top: 0.5rem;
     }
-    .izumi-nav-link {
+    .izumi-nav-links .course-nav-link { 
         margin: 0 5px;
         padding: 8px 10px;
         font-size: 0.9em;
@@ -398,7 +396,7 @@ section li::before {
         right: 1.5rem;
     }
     body {
-        padding-top: 180px; /* Adjust padding for smaller screens with wrapped navbar */
+        padding-top: 180px; 
     }
 
     .course-info {
@@ -457,13 +455,11 @@ section li::before {
     top: 0;
     left: 0;
     width: 100%;
-    /* Added flex-wrap for better responsiveness of links */
     flex-wrap: wrap; 
     border-radius: 0; 
     background: linear-gradient(135deg, var(--primary-purple) 0%, var(--primary-light) 100%);
     color: white;
     display: flex;
-    /* Changed to align-items: stretch to let the bottom links use the full width on a second row */
     align-items: center; 
     padding: 1rem 2.5rem;
     z-index: 1000;
@@ -474,23 +470,40 @@ section li::before {
     font-size: 1.5rem;
     font-weight: 700;
     letter-spacing: 1px;
-    margin-right: 2.5rem; /* Separator for brand and course links */
+    margin-right: 2.5rem; 
 }
 
 .izumi-nav-links {
     display: flex;
-    /* Ensure course links are centered relative to each other */
     align-items: center; 
-    flex-wrap: wrap; /* Allows links to wrap on smaller screens */
-    gap: 0.5rem; /* Reduced gap for more links */
+    flex-wrap: wrap; 
+    gap: 0.5rem; 
 }
 
-/* New/Modified styles for the merged course links */
+/* MODIFIED STYLE FOR HOME LINK - CLEANER PILL SHAPE */
+.izumi-nav-link-active { 
+    font-weight: 600;
+    padding: 0.5rem 1.1rem; /* Adjusted padding */
+    /* Cleaner background for active state */
+    background-color: rgba(255, 255, 255, 0.25); 
+    border-radius: 50px; /* Pill shape */
+    color: white; 
+    text-decoration: none; 
+    transition: var(--transition);
+    margin-right: 1.2rem; /* Space between Home and course links */
+    display: inline-block; 
+}
+
+.izumi-nav-link-active:hover {
+    background-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Modified styles for the merged course links */
 .izumi-nav-links .course-nav-link {
     padding: 0.75rem 1.25rem;
     background: none;
     border: none;
-    font-size: 0.95rem; /* Slightly smaller for compactness */
+    font-size: 1em; 
     font-weight: 500;
     color: white;
     cursor: pointer;
@@ -498,31 +511,22 @@ section li::before {
     position: relative;
     text-decoration: none;
     border-radius: 8px;
-    /* Added to align with original hover effect */
     display: inline-block; 
+    margin: 0 5px; 
 }
 
 .izumi-nav-links .course-nav-link:hover {
     background-color: rgba(255, 255, 255, 0.15);
 }
 
-/* Style for the active/current section, like the old sticky nav */
 .izumi-nav-links .course-nav-link.active-course-link {
     font-weight: 600;
-    background-color: rgba(255, 255, 255, 0.2);
-    /* Adding a subtle bottom indicator */
-    border-bottom: 3px solid white; 
-    padding-bottom: 0.5rem;
-}
-
-.izumi-nav-link-active { /* Style for the main Home link */
-    font-weight: 600;
-    background-color: rgba(255, 255, 255, 0.2);
-    margin-right: 1.5rem;
+    /* Use the same subtle background as Home but less opacity */
+    background-color: rgba(0, 0, 0, 0.1); 
 }
 
 .izumi-profile-container {
-    margin-left: auto; /* Push the profile container to the right */
+    margin-left: auto; 
     position: relative;
     cursor: pointer;
     width: 44px;
@@ -555,7 +559,7 @@ section li::before {
     transform-origin: top right;
     animation: scaleIn 0.2s ease-out;
     overflow: hidden;
-    z-index: 1001; /* Ensure dropdown is above everything */
+    z-index: 1001; 
 }
 
 @keyframes scaleIn {
@@ -612,7 +616,7 @@ section li::before {
     border-top: 1px solid #e2e8f0;
     margin: 0.5rem 0;
 }
-</style>
+    </style>
 
 </head>
 <body>
@@ -625,7 +629,7 @@ section li::before {
         <div class="izumi-nav-links">
             <a
                 href="http://localhost:4000/"
-                class="izumi-nav-link izumi-nav-link-active"
+                class="izumi-nav-link-active"
                 data-page="home"
                 >Home</a
             >
