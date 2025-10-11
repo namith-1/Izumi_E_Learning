@@ -33,11 +33,12 @@
                             <a class="nav-link" href="/admin/dashboard">
                                 <i class="fas fa-tachometer-alt me-2"></i>Dashboard
                             </a>
-                    
+                        </li>
                         <li class="nav-item">
-                            <a class="nav-link active" href="/admin/payments">
-                                <i class="fas fa-tachometer-alt me-2"></i>payment
+                            <a class="nav-link" href="/admin/payments">
+                                <i class="fas fa-dollar-sign me-2"></i>Payment
                             </a>
+                        </li>
                         <li class="nav-item">
                             <a class="nav-link" href="/admin/users">
                                 <i class="fas fa-users me-2"></i>Users
@@ -74,23 +75,26 @@
                 <!-- Search and Filter -->
                 <div class="card mb-4">
                     <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <input type="text" class="form-control" placeholder="Search courses...">
+                        <div class="row g-2">
+                            <div class="col-md-5">
+                                <input type="text" id="searchInput" class="form-control" placeholder="Search courses...">
                             </div>
-                            <div class="col-md-3">
-                                <select class="form-select">
+                            <div class="col-md-2">
+                                <select id="subjectFilter" class="form-select">
                                     <option value="">All Subjects</option>
-                                    <option value="Computer Science">Computer Science</option>
-                                    <option value="Data Science">Data Science</option>
-                                    <option value="Marketing">Marketing</option>
+                                    <!-- Will be populated dynamically -->
                                 </select>
                             </div>
                             <div class="col-md-3">
-                                <select class="form-select">
+                                <select id="instructorFilter" class="form-select">
                                     <option value="">All Instructors</option>
                                     <!-- Will be populated dynamically -->
                                 </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button id="clearFilters" class="btn btn-outline-secondary w-100">
+                                    <i class="fas fa-times me-1"></i>Clear Filters
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -112,10 +116,10 @@
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody id="coursesTableBody">
                                     <% if (courses && courses.length > 0) { %>
                                         <% courses.forEach(course => { %>
-                                            <tr data-id="<%= course._id %>">
+                                            <tr data-id="<%= course._id %>" class="course-row">
                                                 <td><%= course.title %></td>
                                                 <td><%= course.subject %></td>
                                                 <td><%= course.instructor_name %></td>
@@ -128,17 +132,17 @@
                                                 </td>
                                                 <td>$<%= course.price.toFixed(2) %></td>
                                                 <td>
-                                                    <button class="btn btn-sm btn-info me-2">
+                                                    <button class="btn btn-sm btn-info me-2 edit-btn">
                                                         <i class="fas fa-edit"></i>
                                                     </button>
-                                                    <button class="btn btn-sm btn-danger">
+                                                    <button class="btn btn-sm btn-danger delete-btn">
                                                         <i class="fas fa-trash"></i>
                                                     </button>
                                                 </td>
                                             </tr>
                                         <% }); %>
                                     <% } else { %>
-                                        <tr>
+                                        <tr id="noCoursesRow">
                                             <td colspan="7" class="text-center">No courses found</td>
                                         </tr>
                                     <% } %>
@@ -175,7 +179,8 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Instructor</label>
-                            <select name="instructor_id" class="form-select" required>
+                            <select name="instructor_id" class="form-select instructor-select" required>
+                                <option value="">Select Instructor</option>
                                 <!-- Will be populated dynamically -->
                             </select>
                         </div>
@@ -217,7 +222,8 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Instructor</label>
-                            <select name="instructor_id" class="form-select" required>
+                            <select name="instructor_id" class="form-select instructor-select" required>
+                                <option value="">Select Instructor</option>
                                 <!-- Will be populated dynamically -->
                             </select>
                         </div>
@@ -238,14 +244,79 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Function to populate instructor dropdowns
+            // Function to populate filters from table data
+            function populateFiltersFromTable() {
+                const courseRows = document.querySelectorAll('.course-row');
+                
+                // Get unique subjects
+                const uniqueSubjects = new Set();
+                const uniqueInstructors = new Set();
+                
+                courseRows.forEach(row => {
+                    const subject = row.cells[1].textContent.trim();
+                    const instructor = row.cells[2].textContent.trim();
+                    
+                    if (subject) uniqueSubjects.add(subject);
+                    if (instructor) uniqueInstructors.add(instructor);
+                });
+
+                // Populate subject filter
+                const subjectFilter = document.getElementById('subjectFilter');
+                if (subjectFilter) {
+                    const currentValue = subjectFilter.value;
+                    // Clear existing options except "All Subjects"
+                    while (subjectFilter.options.length > 1) {
+                        subjectFilter.remove(1);
+                    }
+                    
+                    // Add unique subjects to filter
+                    Array.from(uniqueSubjects).sort().forEach(subject => {
+                        const option = document.createElement('option');
+                        option.value = subject;
+                        option.textContent = subject;
+                        subjectFilter.appendChild(option);
+                    });
+                    
+                    // Restore selected value if it exists
+                    if (currentValue && Array.from(uniqueSubjects).includes(currentValue)) {
+                        subjectFilter.value = currentValue;
+                    }
+                }
+
+                // Populate instructor filter
+                const instructorFilter = document.getElementById('instructorFilter');
+                if (instructorFilter) {
+                    const currentValue = instructorFilter.value;
+                    // Clear existing options except "All Instructors"
+                    while (instructorFilter.options.length > 1) {
+                        instructorFilter.remove(1);
+                    }
+
+                    // Add unique instructors to filter
+                    Array.from(uniqueInstructors).sort().forEach(instructor => {
+                        const option = document.createElement('option');
+                        option.value = instructor;
+                        option.textContent = instructor;
+                        instructorFilter.appendChild(option);
+                    });
+                    
+                    // Restore selected value if it exists
+                    if (currentValue && Array.from(uniqueInstructors).includes(currentValue)) {
+                        instructorFilter.value = currentValue;
+                    }
+                }
+            }
+
+            // Function to populate instructor dropdowns in modals
             async function populateInstructors() {
                 try {
                     const response = await fetch('/admin/instructors');
                     const instructors = await response.json();
                     
-                    const instructorSelects = document.querySelectorAll('select[name="instructor_id"]');
+                    // Populate modal instructor selects
+                    const instructorSelects = document.querySelectorAll('.instructor-select');
                     instructorSelects.forEach(select => {
+                        const currentValue = select.value;
                         // Clear existing options except the first one
                         while (select.options.length > 1) {
                             select.remove(1);
@@ -258,13 +329,19 @@
                             option.textContent = instructor.name;
                             select.appendChild(option);
                         });
+                        
+                        // Restore selected value if it exists
+                        if (currentValue) {
+                            select.value = currentValue;
+                        }
                     });
                 } catch (error) {
                     console.error('Error fetching instructors:', error);
                 }
             }
 
-            // Populate instructors when page loads
+            // Populate filters and instructors when page loads
+            populateFiltersFromTable();
             populateInstructors();
 
             // Populate instructors when add modal opens
@@ -279,38 +356,61 @@
                 editCourseModal.addEventListener('show.bs.modal', populateInstructors);
             }
 
-            const searchInput = document.querySelector('input[placeholder="Search courses..."]');
-            const subjectFilter = document.querySelector('select:nth-of-type(1)');
-            const instructorFilter = document.querySelector('select:nth-of-type(2)');
-            const tableRows = document.querySelectorAll('tbody tr');
+            // Filter functionality
+            const searchInput = document.getElementById('searchInput');
+            const subjectFilter = document.getElementById('subjectFilter');
+            const instructorFilter = document.getElementById('instructorFilter');
+            const clearFiltersBtn = document.getElementById('clearFilters');
 
             function filterTable() {
-                const searchTerm = searchInput.value.toLowerCase();
-                const selectedSubject = subjectFilter.value.toLowerCase();
-                const selectedInstructor = instructorFilter.value.toLowerCase();
+                const searchTerm = searchInput.value.toLowerCase().trim();
+                const selectedSubject = subjectFilter.value;
+                const selectedInstructor = instructorFilter.value;
 
-                tableRows.forEach(row => {
+                const courseRows = document.querySelectorAll('.course-row');
+                let visibleCount = 0;
+
+                courseRows.forEach(row => {
                     const title = row.cells[0].textContent.toLowerCase();
-                    const subject = row.cells[1].textContent.toLowerCase();
-                    const instructor = row.cells[2].textContent.toLowerCase();
+                    const subject = row.cells[1].textContent;
+                    const instructor = row.cells[2].textContent;
                     
-                    const matchesSearch = title.includes(searchTerm);
+                    const matchesSearch = !searchTerm || title.includes(searchTerm);
                     const matchesSubject = !selectedSubject || subject === selectedSubject;
-                    const matchesInstructor = !selectedInstructor || instructor.includes(selectedInstructor);
+                    const matchesInstructor = !selectedInstructor || instructor === selectedInstructor;
 
-                    row.style.display = matchesSearch && matchesSubject && matchesInstructor ? '' : 'none';
+                    if (matchesSearch && matchesSubject && matchesInstructor) {
+                        row.style.display = '';
+                        visibleCount++;
+                    } else {
+                        row.style.display = 'none';
+                    }
                 });
+
+                // Show/hide "no courses" message
+                const noCoursesRow = document.getElementById('noCoursesRow');
+                if (noCoursesRow) {
+                    noCoursesRow.style.display = visibleCount === 0 ? '' : 'none';
+                }
+            }
+
+            function clearFilters() {
+                searchInput.value = '';
+                subjectFilter.value = '';
+                instructorFilter.value = '';
+                filterTable();
             }
 
             if (searchInput) searchInput.addEventListener('input', filterTable);
             if (subjectFilter) subjectFilter.addEventListener('change', filterTable);
             if (instructorFilter) instructorFilter.addEventListener('change', filterTable);
+            if (clearFiltersBtn) clearFiltersBtn.addEventListener('click', clearFilters);
 
             // Delete course
-            const deleteButtons = document.querySelectorAll('.btn-danger');
-            deleteButtons.forEach(button => {
-                button.addEventListener('click', async function() {
-                    const row = this.closest('tr');
+            document.addEventListener('click', async function(e) {
+                if (e.target.closest('.delete-btn')) {
+                    const button = e.target.closest('.delete-btn');
+                    const row = button.closest('tr');
                     const courseId = row.getAttribute('data-id');
 
                     if (confirm('Are you sure you want to delete this course? This will also delete all associated content.')) {
@@ -325,6 +425,8 @@
                             
                             if (data.success) {
                                 row.remove();
+                                // Update filter dropdowns
+                                populateFiltersFromTable();
                             } else {
                                 alert('Error deleting course');
                             }
@@ -333,14 +435,14 @@
                             alert('Error deleting course');
                         }
                     }
-                });
+                }
             });
 
             // Edit course
-            const editButtons = document.querySelectorAll('.btn-info');
-            editButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    const row = this.closest('tr');
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('.edit-btn')) {
+                    const button = e.target.closest('.edit-btn');
+                    const row = button.closest('tr');
                     const courseId = row.getAttribute('data-id');
                     const title = row.cells[0].textContent;
                     const subject = row.cells[1].textContent;
@@ -360,7 +462,7 @@
                         // Show modal
                         editModal.show();
                     }
-                });
+                }
             });
 
             // Handle edit form submission

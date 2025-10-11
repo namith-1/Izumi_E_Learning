@@ -42,8 +42,24 @@ exports.getCourseDetails = async (req, res) => {
     ];
 
     // Ensure a simple string courseId is passed to the view so client-side JS can use it
+    // Normalize course object into `courseData` to match template expectations
+    const courseData = {
+      id: course.id || course._id,
+      title: course.title || "Untitled Course",
+      enrollmentCount: Number(
+        course.enrolled_count || course.enrollmentCount || 0
+      ),
+      rating: Number(course.avg_rating || course.rating || 0),
+      reviewsCount: Number(course.review_count || course.reviewsCount || 0),
+      avgCompletionTime:
+        course.avg_completion_time || course.avgCompletionTime || null,
+      // include original raw object for any additional fields used elsewhere
+      raw: course,
+    };
+
     res.render("course.ejs", {
       course,
+      courseData,
       navLinks,
       sections,
       courseId: String(course.id),
