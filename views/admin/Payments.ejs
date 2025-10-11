@@ -312,8 +312,8 @@
     }
     
     tbody.innerHTML = data.map(p => {
-        const dateStr = String(p.date); // e.g., 20251010
-        const formattedDate = `${dateStr.slice(8,10)}/${dateStr.slice(5,7)}/${dateStr.slice(0,4)}`; // DD-MM-YYYY
+        const dateStr = String(p.date); 
+        const formattedDate = `${dateStr.slice(8,10)}/${dateStr.slice(5,7)}/${dateStr.slice(0,4)}`;
 
         return `
         <tr>
@@ -359,7 +359,6 @@
             renderTable(payments);
         }
 
-        // View payment details
         async function viewPayment(id) {
             const modal = new bootstrap.Modal(document.getElementById('paymentModal'));
             const detailsDiv = document.getElementById('paymentDetails');
@@ -422,7 +421,6 @@
             }
         }
 
-        // Update payment status
         async function updatePaymentStatus(id, status) {
             if (!confirm('Are you sure you want to update this payment status?')) return;
             
@@ -447,12 +445,10 @@
             }
         }
 
-        // Event listeners
         document.getElementById('searchInput').addEventListener('input', filterPayments);
         document.getElementById('statusFilter').addEventListener('change', filterPayments);
         document.getElementById('dateFilter').addEventListener('change', filterPayments);
 
-        // Initialize - Load data when page loads
         loadPaymentData();
     </script>
 </body>
