@@ -8,13 +8,24 @@ const { CourseStat } = require("../required/db");
 exports.checkEnrollment = async (req, res) => {
   if (!req.session.student) return res.redirect("/");
 
-  const courseId = req.query.courseId;
-  const studentId = req.session.student;
+  // Accept params from either query (/?courseId=...) or path (/is_enrolled/:studentId/:courseId)
+  const courseId = req.query.courseId || req.params.courseId;
+  // Prefer session student when available, else allow path param for API calls from the client
+  const studentId = req.session.student || req.params.studentId;
 
   if (!courseId) return res.status(400).send("Missing course ID.");
+  // Validate courseId early to avoid passing invalid IDs to Mongoose
+  if (!mongoose.Types.ObjectId.isValid(courseId)) {
+    return res.status(400).send("Invalid Course ID.");
+  }
 
   try {
     const enrolled = await StudentCourse.isEnrolled(studentId, courseId);
+    // If request came from an AJAX fetch (path-style with explicit studentId), return JSON
+    if (req.params.studentId || req.xhr) {
+      return res.json({ enrolled, courseId });
+    }
+
     if (enrolled) {
       res.redirect(`/view_course?courseID=${courseId}&studentID=${studentId}`);
     } else {
@@ -36,6 +47,11 @@ exports.enrollStudent = async (req, res) => {
     return res
       .status(400)
       .json({ message: "Student ID and Course ID are required" });
+  }
+
+  // Validate courseId before attempting to enroll
+  if (!mongoose.Types.ObjectId.isValid(courseId)) {
+    return res.status(400).json({ message: "Invalid Course ID." });
   }
 
   try {

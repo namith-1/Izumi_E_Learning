@@ -4,78 +4,226 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Course Viewer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
       :root {
-        --primary-color: #6200ea;
-        --primary-light: #9d46ff;
-        --primary-dark: #0a00b6;
-        --accent-color: #ff6584;
-        --background-dark: #ffffff;
-        --background-light: #ffffff;
-        --text-primary: #000000;
-        --text-secondary: rgba(12, 0, 0, 0.7);
-        --text-tertiary: rgba(255, 255, 255, 0.5);
-        --success-color: #00e676;
-        --warning-color: #ffea00;
-        --error-color: #ff1744;
-        --border-radius: 8px;
-        --box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        --primary-purple: #8b5cf6;
+        --primary-light: #a78bfa;
+        --cyan-accent: #b8e0dc;
+        --yellow-accent: #fef3c7;
+        --background: #f5f5f5;
+        --white: #ffffff;
+        --text-dark: #2d3748;
+        --text-medium: #4a5568;
+        --text-light: #718096;
+        --success-color: #10b981;
+        --border-radius: 16px;
         --transition: all 0.3s ease;
-        --font-main: "Poppins", sans-serif;
+        --font-main: 'Poppins', sans-serif;
       }
+      
       * {
         margin: 0;
         padding: 0;
         box-sizing: border-box;
       }
+      
       body {
         display: flex;
         font-family: var(--font-main);
-        background-color: var(--background-dark);
-        color: var(--text-primary);
+        background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+        color: var(--text-dark);
         min-height: 100vh;
         line-height: 1.6;
-        flex-direction: column; /* Changed to column to fix layout */
+        flex-direction: column;
+        position: relative;
+        overflow-x: hidden;
+      }
+
+      body::before {
+        content: '';
+        position: fixed;
+        top: 10%;
+        right: 5%;
+        width: 400px;
+        height: 400px;
+        background: var(--cyan-accent);
+        opacity: 0.2;
+        border-radius: 50%;
+        filter: blur(80px);
+        animation: float 8s ease-in-out infinite;
+        z-index: 0;
+      }
+
+      body::after {
+        content: '';
+        position: fixed;
+        bottom: 10%;
+        left: 5%;
+        width: 300px;
+        height: 300px;
+        background: var(--yellow-accent);
+        opacity: 0.25;
+        border-radius: 50%;
+        filter: blur(80px);
+        animation: float 10s ease-in-out infinite reverse;
+        z-index: 0;
+      }
+
+      @keyframes float {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        50% { transform: translate(30px, -30px) scale(1.1); }
+      }
+
+      .geometric-shape {
+        position: fixed;
+        background: var(--cyan-accent);
+        opacity: 0.15;
+        z-index: 0;
+      }
+
+      .shape-1 {
+        top: 15%;
+        left: 15%;
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        animation: float 6s ease-in-out infinite;
+      }
+
+      .shape-2 {
+        bottom: 20%;
+        right: 20%;
+        width: 120px;
+        height: 120px;
+        border-radius: 20px;
+        transform: rotate(45deg);
+        animation: rotate 20s linear infinite;
+      }
+
+      .shape-3 {
+        top: 50%;
+        right: 10%;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: var(--yellow-accent);
+        opacity: 0.3;
+        animation: pulse 4s ease-in-out infinite;
+      }
+
+      .shape-4 {
+        top: 25%;
+        left: 45%;
+        width: 200px;
+        height: 200px;
+        background: var(--cyan-accent);
+        opacity: 0.12;
+        border-radius: 30px;
+        transform: rotate(25deg);
+        animation: float 12s ease-in-out infinite;
+      }
+
+      .shape-5 {
+        bottom: 35%;
+        left: 25%;
+        width: 100px;
+        height: 100px;
+        background: var(--yellow-accent);
+        opacity: 0.15;
+        border-radius: 20px;
+        animation: pulse 5s ease-in-out infinite;
+      }
+
+      .shape-6 {
+        top: 60%;
+        right: 30%;
+        width: 90px;
+        height: 90px;
+        background: var(--cyan-accent);
+        opacity: 0.1;
+        border-radius: 50%;
+        animation: float 8s ease-in-out infinite reverse;
+      }
+
+      @keyframes rotate {
+        from { transform: rotate(45deg); }
+        to { transform: rotate(405deg); }
+      }
+
+      @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 0.15; }
+        50% { transform: scale(1.2); opacity: 0.25; }
       }
 
       .app-container {
         display: flex;
         flex: 1;
-        padding-top: 80px; /* Space for fixed navbar */
+        padding-top: 80px;
+        position: relative;
+        z-index: 1;
       }
 
       .sidebar {
-        width: 300px;
-        background-color: var(--background-light);
-        border-right: 1px solid rgba(0, 0, 0, 0.1);
-        padding: 20px;
-        box-shadow: var(--box-shadow);
+        width: 320px;
+        background: var(--white);
+        border-radius: 0 var(--border-radius) var(--border-radius) 0;
+        padding: 24px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
         overflow-y: auto;
-        height: calc(100vh - 80px); /* Adjusted for navbar */
+        height: calc(100vh - 80px);
         position: fixed;
         top: 80px;
         left: 0;
+        transition: var(--transition);
+      }
+
+      .sidebar:hover {
+        box-shadow: 0 15px 50px rgba(0, 0, 0, 0.12);
       }
 
       .sidebar h3 {
-        color: var(--primary-light);
-        margin-bottom: 15px;
+        background: linear-gradient(135deg, var(--primary-purple) 0%, var(--primary-light) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 20px;
         font-size: 1.5rem;
-        border-bottom: 2px solid var(--primary-light);
-        padding-bottom: 10px;
+        font-weight: 700;
+        border-bottom: 2px solid #e2e8f0;
+        padding-bottom: 12px;
       }
 
       .content {
         flex-grow: 1;
-        padding: 30px;
-        margin-left: 300px; /* Match sidebar width */
-        background-color: var(--background-dark);
+        padding: 40px;
+        margin-left: 320px;
+        background: transparent;
         display: flex;
         flex-direction: column;
+        position: relative;
+        z-index: 1;
       }
 
       .module-content {
-        margin-bottom: 20px;
+        background: var(--white);
+        border-radius: var(--border-radius);
+        padding: 40px;
+        margin-bottom: 24px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+        transition: var(--transition);
+      }
+
+      .module-content:hover {
+        box-shadow: 0 15px 50px rgba(0, 0, 0, 0.12);
+        transform: translateY(-4px);
+      }
+
+      #module-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--text-dark);
+        margin-bottom: 16px;
       }
 
       .video-player-container {
@@ -84,6 +232,9 @@
         aspect-ratio: 16 / 9;
         background-color: #000;
         margin-bottom: 20px;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
       }
 
       .video-player {
@@ -99,35 +250,17 @@
         object-fit: cover;
       }
 
-      .video-controls {
-        position: absolute;
-        bottom: 10px;
-        left: 10px;
-        right: 10px;
-        display: flex;
-        justify-content: space-between;
-        z-index: 10;
-      }
-
-      .video-controls button {
-        background-color: rgba(0, 0, 0, 0.7);
-        border: none;
-        color: white;
-        padding: 8px 12px;
-        cursor: pointer;
-        border-radius: 4px;
-        font-size: 0.9em;
-        /* Completion flow: after marking complete the user is redirected to module_complete page */
-        padding-bottom: 5px;
-      }
-
       #module-text {
-        color: var(--text-secondary);
-        margin-bottom: 15px;
+        color: var(--text-medium);
+        margin-bottom: 20px;
+        font-size: 1.05rem;
+        line-height: 1.8;
       }
 
       #module-resource {
-        margin-bottom: 15px;
+        margin-bottom: 20px;
+        border-radius: 12px;
+        overflow: hidden;
       }
 
       #module-resource.hidden {
@@ -145,147 +278,209 @@
 
       #module-flag {
         display: inline-block;
-        background-color: var(--success-color);
-        color: var(--text-primary);
+        background: linear-gradient(135deg, var(--success-color) 0%, #059669 100%);
+        color: white;
         text-decoration: none;
-        padding: 10px 15px;
-        border-radius: var(--border-radius);
+        padding: 14px 28px;
+        border-radius: 12px;
         transition: var(--transition);
         margin-top: 10px;
+        font-weight: 600;
+        box-shadow: 0 8px 20px rgba(16, 185, 129, 0.25);
+        position: relative;
+        overflow: hidden;
+      }
+
+      #module-flag::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        transition: left 0.6s ease;
+      }
+
+      #module-flag:hover::before {
+        left: 100%;
       }
 
       #module-flag:hover {
-        background-color: #00b359;
         transform: translateY(-3px);
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 12px 28px rgba(16, 185, 129, 0.35);
       }
 
-      /* Scrollbar Styling */
+      .module {
+        margin-bottom: 12px;
+      }
+
+      .module button {
+        width: 100%;
+        text-align: left;
+        background: #fafafa;
+        border: 2px solid #e2e8f0;
+        padding: 14px 18px;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: var(--transition);
+        font-family: var(--font-main);
+        font-size: 15px;
+        font-weight: 500;
+        color: var(--text-dark);
+      }
+
+      .module button:hover {
+        background: #f0f4ff;
+        border-color: var(--primary-light);
+        transform: translateX(4px);
+      }
+
+      .module button.active {
+        background: linear-gradient(135deg, var(--primary-purple) 0%, var(--primary-light) 100%);
+        color: white;
+        border-color: var(--primary-purple);
+        box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+      }
+
       ::-webkit-scrollbar {
         width: 10px;
       }
 
       ::-webkit-scrollbar-track {
-        background: var(--background-light);
+        background: #f1f1f1;
+        border-radius: 10px;
       }
 
       ::-webkit-scrollbar-thumb {
         background: var(--primary-light);
-        border-radius: 5px;
+        border-radius: 10px;
       }
 
       ::-webkit-scrollbar-thumb:hover {
-        background: var(--primary-dark);
+        background: var(--primary-purple);
       }
 
-      /* Comments Section Styling */
       .comments-section {
-        margin-top: 30px;
-        border-top: 2px solid var(--primary-light);
-        padding-top: 20px;
+        background: var(--white);
+        border-radius: var(--border-radius);
+        padding: 40px;
+        margin-top: 24px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+        transition: var(--transition);
+      }
+
+      .comments-section:hover {
+        box-shadow: 0 15px 50px rgba(0, 0, 0, 0.12);
       }
 
       .comments-section h3 {
-        color: var(--primary-light);
-        margin-bottom: 15px;
+        background: linear-gradient(135deg, var(--primary-purple) 0%, var(--primary-light) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 24px;
         font-size: 1.5rem;
+        font-weight: 700;
       }
 
       .comment {
-        border: 1px solid #e0e0e0;
-        border-radius: var(--border-radius);
-        padding: 15px;
-        margin-bottom: 15px;
-        background-color: #fafafa;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 16px;
+        background: #fafafa;
+        transition: var(--transition);
+      }
+
+      .comment:hover {
+        border-color: var(--primary-light);
+        background: #f0f4ff;
+        transform: translateX(4px);
       }
 
       .comment-header {
         display: flex;
         justify-content: space-between;
-        margin-bottom: 8px;
+        margin-bottom: 10px;
       }
 
       .comment-author {
-        font-weight: bold;
-        color: var(--primary-dark);
+        font-weight: 600;
+        color: var(--primary-purple);
       }
 
       .comment-date {
-        color: var(--text-secondary);
+        color: var(--text-light);
         font-size: 0.9em;
       }
 
       .comment-content {
         margin-bottom: 10px;
-      }
-
-      .comment-actions {
-        display: flex;
-        gap: 10px;
-        margin-top: 5px;
-      }
-
-      .comment-action-btn {
-        background: none;
-        border: none;
-        color: var(--primary-color);
-        cursor: pointer;
-        font-size: 0.9em;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        padding: 5px;
-        border-radius: 4px;
-      }
-
-      .comment-action-btn:hover {
-        background-color: rgba(98, 0, 234, 0.1);
-      }
-
-      .reply {
-        margin-left: 30px;
-        border-left: 3px solid var(--primary-light);
-        padding-left: 15px;
+        color: var(--text-medium);
       }
 
       .comment-form {
-        margin-bottom: 20px;
+        margin-bottom: 24px;
       }
 
       .comment-form textarea {
         width: 100%;
-        padding: 15px;
-        border: 1px solid #e0e0e0;
-        border-radius: var(--border-radius);
+        padding: 16px;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
         resize: vertical;
         font-family: var(--font-main);
-        margin-bottom: 10px;
+        margin-bottom: 12px;
+        background: #fafafa;
+        color: var(--text-dark);
+        transition: var(--transition);
+        font-size: 15px;
+      }
+
+      .comment-form textarea:focus {
+        outline: none;
+        border-color: var(--primary-purple);
+        background: var(--white);
+        box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.1);
       }
 
       .comment-form button {
-        background-color: var(--primary-light);
+        background: linear-gradient(135deg, var(--primary-purple) 0%, var(--primary-light) 100%);
         color: white;
         border: none;
-        padding: 10px 15px;
-        border-radius: var(--border-radius);
+        padding: 14px 28px;
+        border-radius: 12px;
         cursor: pointer;
-        font-weight: bold;
+        font-weight: 600;
         transition: var(--transition);
+        box-shadow: 0 8px 20px rgba(139, 92, 246, 0.25);
+        font-family: var(--font-main);
+        font-size: 15px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .comment-form button::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        transition: left 0.6s ease;
+      }
+
+      .comment-form button:hover::before {
+        left: 100%;
       }
 
       .comment-form button:hover {
-        background-color: var(--primary-dark);
+        transform: translateY(-3px);
+        box-shadow: 0 12px 28px rgba(139, 92, 246, 0.35);
       }
 
-      .score-display {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        font-weight: bold;
-        margin-right: 10px;
-      }
-
-      /* Responsive Design */
       @media (max-width: 768px) {
         .app-container {
           flex-direction: column;
@@ -295,21 +490,20 @@
           position: relative;
           top: 0;
           height: auto;
-          border-right: none;
-          border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+          border-radius: var(--border-radius);
+          margin: 20px;
         }
         .content {
           margin-left: 0;
-        }
-        .reply {
-          margin-left: 15px;
+          padding: 20px;
         }
       }
 
       .completed-tick {
         color: var(--success-color);
-        margin-left: 5px;
-        font-size: 0.8em;
+        margin-left: 8px;
+        font-size: 1.1em;
+        font-weight: bold;
       }
 
       .izumi-navbar {
@@ -317,20 +511,20 @@
         top: 0;
         left: 0;
         width: 100%;
-        background-color: #6d2c99;
+        background: linear-gradient(135deg, var(--primary-purple) 0%, var(--primary-light) 100%);
         color: white;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 0.875rem 2rem;
+        padding: 1rem 2.5rem;
         z-index: 1000;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+        box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3);
       }
 
       .izumi-navbar-brand {
-        font-size: 1.25rem;
-        font-weight: 600;
-        letter-spacing: 0.5px;
+        font-size: 1.5rem;
+        font-weight: 700;
+        letter-spacing: 1px;
       }
 
       .izumi-nav-links {
@@ -339,50 +533,43 @@
       }
 
       .izumi-nav-link {
-        padding: 0.75rem 1rem;
+        padding: 0.75rem 1.25rem;
         background: none;
         border: none;
         font-size: 1rem;
         font-weight: 500;
         color: white;
         cursor: pointer;
-        transition: all 0.3s ease;
+        transition: var(--transition);
         position: relative;
         text-decoration: none;
+        border-radius: 8px;
       }
 
       .izumi-nav-link:hover {
-        background-color: rgba(255, 255, 255, 0.1);
+        background-color: rgba(255, 255, 255, 0.15);
       }
 
       .izumi-nav-link-active {
         font-weight: 600;
-      }
-
-      .izumi-nav-link-active::after {
-        content: "";
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        height: 3px;
-        background-color: white;
+        background-color: rgba(255, 255, 255, 0.2);
       }
 
       .izumi-profile-container {
         position: relative;
         cursor: pointer;
-        width: 40px;
-        height: 40px;
+        width: 44px;
+        height: 44px;
         display: flex;
         align-items: center;
         justify-content: center;
         border-radius: 50%;
-        transition: all 0.3s ease;
+        transition: var(--transition);
+        background: rgba(255, 255, 255, 0.1);
       }
 
       .izumi-profile-container:hover {
-        background-color: rgba(255, 255, 255, 0.1);
+        background-color: rgba(255, 255, 255, 0.2);
       }
 
       .izumi-profile-icon {
@@ -394,11 +581,11 @@
         display: none;
         position: absolute;
         right: 0;
-        top: 50px;
+        top: 55px;
         background: white;
         min-width: 250px;
-        border-radius: 8px;
-        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.12);
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
         transform-origin: top right;
         animation: scaleIn 0.2s ease-out;
         overflow: hidden;
@@ -425,66 +612,85 @@
 
       .izumi-dropdown-item {
         padding: 0.875rem 1.25rem;
-        color: #2d2d2d;
+        color: var(--text-dark);
         text-decoration: none;
         display: flex;
         align-items: center;
         gap: 0.875rem;
         font-size: 0.95rem;
-        transition: all 0.3s ease;
+        transition: var(--transition);
+        font-weight: 500;
       }
 
       .izumi-dropdown-item:hover {
-        background: #f8f9fa;
+        background: #f0f4ff;
+        color: var(--primary-purple);
       }
 
-      /* Toggle styles for show-completed checkbox */
       .toggle-container {
-        margin-bottom: 12px;
+        margin-bottom: 16px;
       }
+      
       .toggle-label {
         font-size: 0.95rem;
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 10px;
+        color: var(--text-medium);
+        font-weight: 500;
+      }
+
+      .toggle-label input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+        accent-color: var(--primary-purple);
       }
 
       .izumi-dropdown-item i {
         width: 1.25rem;
         text-align: center;
+        color: var(--primary-light);
       }
 
       .izumi-logout {
         color: #dc3545 !important;
       }
 
+      .izumi-logout i {
+        color: #dc3545 !important;
+      }
+
       .izumi-divider {
-        border-top: 1px solid #eaeaea;
+        border-top: 1px solid #e2e8f0;
         margin: 0.5rem 0;
       }
-      /* simple floating alert (drop-box) */
+
       .drop-alert {
         position: fixed;
         left: 50%;
         top: 20%;
         transform: translateX(-50%);
-        background: rgba(0, 0, 0, 0.85);
+        background: rgba(0, 0, 0, 0.9);
         color: #fff;
-        padding: 14px 18px;
-        border-radius: 10px;
+        padding: 16px 24px;
+        border-radius: 12px;
         z-index: 2000;
-        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
         display: none;
         font-weight: 600;
+        font-size: 15px;
       }
+      
       .drop-alert.show {
         display: block;
         animation: dropFade 320ms ease;
       }
+      
       @keyframes dropFade {
         from {
           opacity: 0;
-          transform: translateX(-50%) translateY(-6px);
+          transform: translateX(-50%) translateY(-10px);
         }
         to {
           opacity: 1;
@@ -498,8 +704,15 @@
     />
   </head>
   <body>
+    <div class="geometric-shape shape-1"></div>
+    <div class="geometric-shape shape-2"></div>
+    <div class="geometric-shape shape-3"></div>
+    <div class="geometric-shape shape-4"></div>
+    <div class="geometric-shape shape-5"></div>
+    <div class="geometric-shape shape-6"></div>
+
     <nav class="izumi-navbar">
-      <div class="izumi-navbar-brand">Izumi Learning</div>
+      <div class="izumi-navbar-brand">Izumi</div>
       <div class="izumi-nav-links">
         <a
           href="http://localhost:4000/"
@@ -568,14 +781,10 @@
           <a id="module-flag" href="#">Mark as Complete</a>
         </div>
 
-        <!-- floating drop alert -->
         <div id="drop-alert" class="drop-alert" role="alert">
           Please select a module to complete
         </div>
 
-        <!-- After marking complete the user will be redirected to module_complete page -->
-
-        <!-- Comments Section -->
         <div id="comments-section" class="comments-section">
           <h3>Discussion</h3>
           <div class="comment-form">
@@ -593,7 +802,6 @@
 
     <script>
       document.addEventListener("DOMContentLoaded", () => {
-        // utility to read query params
         const urlParams = new URLSearchParams(window.location.search);
         const courseId = urlParams.get("courseID") || "1";
         const studentId = urlParams.get("studentID") || "";
@@ -610,7 +818,6 @@
 
         let currentModuleId = null;
 
-        // global guard: if user clicks Mark as Complete without selecting a module
         moduleFlag.addEventListener("click", function (ev) {
           if (!currentModuleId) {
             ev.preventDefault();
@@ -669,7 +876,6 @@
             buildModuleList(data.modules || []);
           } catch (e) {
             console.warn("course fetch failed, using sample", e);
-            // fallback sample
             buildModuleList([
               {
                 id: 1,
@@ -683,17 +889,14 @@
         }
 
         async function buildModuleList(modules) {
-          // get completed modules from server
           let completedModuleIds = [];
           try {
-            // only include studentId when present to avoid 400 responses
             const qs = new URLSearchParams();
             if (studentId) qs.set("studentId", studentId);
             qs.set("courseId", courseId);
             const res = await fetch(`/completed_modules?${qs.toString()}`);
             if (res.ok) {
               const cm = await res.json();
-              // server may return either an array of ids or array of objects { module_id }
               if (Array.isArray(cm) && cm.length > 0) {
                 if (
                   typeof cm[0] === "object" &&
@@ -745,7 +948,6 @@
 
               moduleFlag.onclick = async (ev) => {
                 ev.preventDefault();
-                // optimistic UI (visual)
                 if (!moduleDiv.querySelector(".completed-tick")) {
                   const tick = document.createElement("span");
                   tick.className = "completed-tick";
@@ -753,7 +955,6 @@
                   moduleDiv.appendChild(tick);
                 }
 
-                // prepare payload
                 const payload = { moduleId: module.id };
                 if (studentId) payload.studentId = studentId;
 
@@ -764,14 +965,10 @@
                     body: JSON.stringify(payload),
                   });
 
-                  // store details for completion page
                   markModuleComplete(module.id, module.title);
-
-                  // navigate to completion page regardless of backend result to preserve UX
                   window.location.replace("/module_complete_page");
                 } catch (e) {
                   console.warn("module completion request error", e);
-                  // still redirect to completion page
                   markModuleComplete(module.id, module.title);
                   window.location.replace("/module_complete_page");
                 }
@@ -786,7 +983,6 @@
               moduleDiv.appendChild(tick);
             }
 
-            // submodules
             if (module.subModules && module.subModules.length) {
               const sub = document.createElement("div");
               sub.className = "submodules";
@@ -801,7 +997,6 @@
 
           modules.forEach((m) => moduleList.appendChild(makeModuleNode(m)));
 
-          // wire show-completed checkbox
           const toggleCompleted = document.getElementById("toggle-completed");
           const saved = localStorage.getItem("show_completed_modules");
           toggleCompleted.checked = saved === "true";
@@ -822,13 +1017,11 @@
           toggleCompleted.addEventListener("change", applyShowCompleted);
           applyShowCompleted();
 
-          // open first non-completed module
           const firstOpen = Array.from(
             moduleList.querySelectorAll("button")
           ).find((b) => !b.parentElement.querySelector(".completed-tick"));
           if (firstOpen) firstOpen.click();
 
-          // on return from completion page, if revisit_module_id exists, open it
           const revisitId = sessionStorage.getItem("revisit_module_id");
           if (revisitId) {
             const btn = Array.from(moduleList.querySelectorAll("button")).find(
@@ -839,7 +1032,6 @@
           }
         }
 
-        // --- comments (simplified) ---
         const API_URL = window.location.origin;
         async function fetchComments(moduleId) {
           try {
@@ -848,7 +1040,6 @@
             const data = await res.json();
             displayComments(data);
           } catch (e) {
-            // ignore, show no comments
             displayComments([]);
           }
         }
@@ -885,7 +1076,6 @@
           newCommentTextarea.value = "";
         });
 
-        // profile dropdown
         const profileContainer = document.querySelector(
           ".izumi-profile-container"
         );
@@ -900,25 +1090,19 @@
             dropdownContent.classList.remove("active");
         });
 
-        // start
         fetchCourseAndBuild();
       });
     </script>
 
-    <!-- Ensure Back button goes to home (/) on initial arrival to view_course -->
     <script>
       (function () {
         try {
-          // Run only once per tab to avoid polluting history repeatedly
           if (!sessionStorage.getItem("viewCourseHistoryPatched")) {
-            // Insert a history entry for home (/) before current URL so Back goes to home
-            // Push home, then replace it with current location so the Back entry is '/'
             history.pushState(null, "", "/");
             history.replaceState(null, "", location.href);
             sessionStorage.setItem("viewCourseHistoryPatched", "1");
           }
         } catch (e) {
-          // ignore
           console.warn("history patch failed", e);
         }
       })();
