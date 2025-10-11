@@ -46,12 +46,16 @@ const courseSchema = new mongoose.Schema({
   subject: { type: String },
 });
 
-const enrollmentSchema = new mongoose.Schema({
-  student_id: { type: mongoose.Schema.Types.ObjectId, ref: "Student" }, // Reference to Student
-  course_id: { type: mongoose.Schema.Types.ObjectId, ref: "Course" }, // Reference to Course
-  //   No direct UNIQUE constraint in Mongoose schema, handled in code
-});
 
+//schema
+
+const enrollmentSchema = new mongoose.Schema({
+    student_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Student' },
+    course_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Course' },
+    date_enrolled: { type: Date, default: Date.now }
+}, { timestamps: true }); // added timestamps for createdAt and updatedAt
+
+//
 const magazineSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: { type: String, required: true },
@@ -77,6 +81,8 @@ const courseStatsSchema = new mongoose.Schema({
   price: { type: Number, default: 0 },
   review_count: { type: Number, default: 0 },
 });
+
+
 
 const moduleSchema = new mongoose.Schema({
   course_id: { type: mongoose.Schema.Types.ObjectId, ref: "Course" },

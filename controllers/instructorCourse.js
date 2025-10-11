@@ -1,7 +1,7 @@
 const path = require("path");
 const model = require("../models/instructorCourseModel"); // Import the Mongoose-based model
 const mongoose = require("mongoose");
-
+const { CourseStat } = require("../required/db");
 exports.getCourseDetails_moduleTree = async (req, res) => {
   const courseId = req.params.courseId;
 
@@ -37,7 +37,19 @@ exports.getCourseDetails_moduleTree = async (req, res) => {
 exports.getAllCourses = async (req, res) => {
   try {
     const courses = await model.getAllCourses();
-    res.json(courses);
+
+    // Deduplicate courses by title + instructor_id to avoid showing duplicate cards
+    const seen = new Set();
+    const uniqueCourses = [];
+    for (const c of courses) {
+      const key = `${c.title}::${c.instructor_id}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        uniqueCourses.push(c);
+      }
+    }
+
+    res.json(uniqueCourses);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -59,11 +71,19 @@ exports.saveCourse = async (req, res) => {
   if (!req.session.instructor)
     return res.status(403).json({ error: "Unauthorized." });
 
-  const { title, modules } = req.body;
+  const { title, modules, price } = req.body;
   const instructorId = req.session.instructor;
 
   try {
     const courseId = await model.insertCourse(title, instructorId);
+    const stat = await CourseStat.create({
+      course_id: courseId,
+      enrolled_count: 10,
+      avg_rating: 4.5,
+      avg_completion_time: 120,
+      price: price,
+      review_count: 2,
+    });
 
     const insertModuleRecursive = async (mod, parentId = null) => {
       const moduleId = await model.insertModule(

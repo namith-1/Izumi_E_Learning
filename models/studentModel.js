@@ -4,8 +4,10 @@ const {
   Module,
   StudentModule,
   Course,
+  CourseStat,
 } = require("../required/db.js"); // Import the Mongoose models
 const bcrypt = require("bcrypt");
+const mongoose = require("mongoose");
 
 const StudentModel = {
   findByEmail: async (email) => {
@@ -71,6 +73,13 @@ const StudentModel = {
         course_id: courseId,
       });
       await enrollment.save();
+
+      // Increment the CourseStat enrolled_count for the course (upsert if necessary)
+      await CourseStat.findOneAndUpdate(
+        { course_id: courseId },
+        { $inc: { enrolled_count: 1 } },
+        { new: true, upsert: true }
+      );
     } catch (error) {
       if (error.code === 11000) {
         // MongoDB duplicate key error code
@@ -133,11 +142,18 @@ const StudentModel = {
   },
 
   getCompletedModules: async (studentId, courseId) => {
+    // Validate courseId before using it in queries
+    if (!mongoose.Types.ObjectId.isValid(courseId)) {
+      // Return empty list if invalid courseId to avoid CastError
+      return [];
+    }
+
+    const moduleIds = await Module.find({ course_id: courseId }).distinct(
+      "_id"
+    );
     const completedModules = await StudentModule.find({
       student_id: studentId,
-      module_id: {
-        $in: await Module.find({ course_id: courseId }).distinct("_id"),
-      },
+      module_id: { $in: moduleIds },
       is_completed: 1,
     }).select("module_id -_id");
     return completedModules.map((m) => m.module_id);
