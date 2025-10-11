@@ -101,27 +101,40 @@
             background-color: #f0f0f0;
         }
 
-        .profile-container {
-            position: relative;
-            cursor: pointer;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            transition: var(--transition);
-        }
+      .profile-container {
+    position: relative;
+    cursor: pointer;
+    /* Increased size for better tap target and visibility */
+    width: 48px; 
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: transparent; /* Start with transparent background */
+    transition: var(--transition);
+}
 
-        .profile-container:hover {
-            background-color: #f5f5f5;
-        }
+.profile-container:hover {
+    /* Subtle hover effect */
+    background-color: var(--border-color);
+}
 
-        .profile-icon {
-            font-size: 20px;
-            color: var(--text-dark);
-        }
+.profile-icon {
+    /* Larger icon for better visibility */
+    font-size: 28px; 
+    /* Gradient color effect for the icon */
+    background: linear-gradient(135deg, var(--izumi-primary) 0%, var(--izumi-secondary) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    transition: var(--transition);
+}
 
+.profile-container:hover .profile-icon {
+    /* Slightly darker/more saturated color on hover */
+    opacity: 0.85;
+}
         .dropdown-content {
             display: none;
             position: absolute;
@@ -552,7 +565,7 @@
             <a href="#" class="nav-link" data-page="my-learning" role="tab" aria-selected="false">Simulations</a>
         </div>
         <div class="profile-container" aria-label="User menu" role="button" tabindex="0">
-            <i class="fa-solid fa-ellipsis-vertical profile-icon"></i>
+            <i class="fa-regular fa-user-circle profile-icon"></i>
             <div class="dropdown-content" role="menu">
                 <div class="dropdown-items">
                     <a href="/profile" class="dropdown-item" role="menuitem"><i class="fa-regular fa-user"></i>Profile</a>
