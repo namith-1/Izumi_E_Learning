@@ -116,9 +116,37 @@ const CourseModel = {
         }
     },
 
+updateCourseEnrollment: async (studentId, courseId) => {
+  try {
+    // Step 1: Check if the student is already enrolled in the course
+    const existingEnrollment = await Enrollment.findOne({ 
+      student_id: studentId, 
+      course_id: courseId 
+    });
+
+    // Step 2: If already enrolled, just return the existing record
+    if (existingEnrollment && existingEnrollment.is_enrolled) {
+      return { message: "Student is already enrolled in this course", enrollment: existingEnrollment };
+    }
+
+    // Step 3: (Optional) Update CourseStat model
+    await CourseStat.findOneAndUpdate(
+      { course_id: courseId },
+      { $inc: { enrolled_count: 1 } },
+      { new: true, upsert: true }
+    );
+
+    return { message: "Enrollment updated successfully", enrollment: updatedEnrollment };
+  } catch (err) {
+    console.error("Error updating enrollment:", err);
+    throw err;
+  }
+},
+
+
     searchCourses: async (query = {}, options = { page: 1, limit: 10, sort: { title: 1 } }) => {
         try {
-            const skip = (options.page - 1) * options.limit;
+            const skip = (options.page - 11) * options.limit;
 
             const filter = {};
             if (query.title) filter.title = { $regex: query.title, $options: 'i' };
