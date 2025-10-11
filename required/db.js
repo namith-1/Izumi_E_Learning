@@ -50,8 +50,9 @@ const courseSchema = new mongoose.Schema({
 //schema
 
 const enrollmentSchema = new mongoose.Schema({
-  student_id: { type: mongoose.Schema.Types.ObjectId, ref: "Student" }, // Reference to Student
+  student_id: { type: mongoose.Schema.Types.ObjectId, ref: "Student" }, // Reference to Studenent
   course_id: { type: mongoose.Schema.Types.ObjectId, ref: "Course" }, // Reference to Course
+  is_enrolled: { type: Boolean, default: false },
   //   No direct UNIQUE constraint in Mongoose schema, handled in code
 });
 

@@ -1,5 +1,11 @@
 const StudentCourse = require('../models/studentModel'); // Import the Mongoose model
+const Course = require('../models/courseModel'); // Use the Mongoose model
+
 const mongoose = require('mongoose');
+
+const {CourseStat} = require("../required/db")
+
+
 
 exports.checkEnrollment = async (req, res) => {
     if (!req.session.student) return res.redirect('/');
@@ -35,6 +41,9 @@ exports.enrollStudent = async (req, res) => {
 
     try {
         await StudentCourse.enroll(studentId, courseId);
+         await Course.updateCourseEnrollment(studentId, courseId);
+        
+        
         res.redirect(`/view_course?courseID=${courseId}&studentID=${studentId}`);
     } catch (error) {
         console.error("Enrollment error:", error);
