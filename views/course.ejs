@@ -39,7 +39,10 @@ body {
     background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
     position: relative;
     overflow-x: hidden;
+    /* ADJUSTED padding for single, fixed, taller navbar */
+    padding-top: 130px; 
 }
+/* ... (body::before, body::after, @keyframes float, .geometric-shape, .shape-1, .shape-2, .shape-3, @keyframes rotate, @keyframes pulse remain the same) ... */
 
 body::before {
     content: '';
@@ -134,7 +137,8 @@ body::after {
 .course-info {
     background: var(--white);
     padding: 60px 40px;
-    margin: 40px auto;
+    /* Adjusted margin-top: no extra margin needed after fixed navbar */
+    margin: 20px auto 40px auto; 
     border-radius: var(--border-radius);
     text-align: center;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
@@ -287,55 +291,7 @@ body::after {
     color: white;
 }
 
-nav {
-    background: var(--white);
-    padding: 20px 0;
-    text-align: center;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-    border-radius: var(--border-radius);
-    margin: 20px auto;
-    width: 90%;
-    max-width: 1200px;
-}
-
-nav a {
-    margin: 0 20px;
-    text-decoration: none;
-    color: var(--text-medium);
-    cursor: pointer;
-    font-size: 1em;
-    font-weight: 600;
-    transition: var(--transition);
-    position: relative;
-    padding: 8px 15px;
-    display: inline-block;
-    border-radius: 8px;
-}
-
-nav a:hover {
-    color: var(--primary-purple);
-    background: #f0f4ff;
-}
-
-nav a::after {
-    content: '';
-    position: absolute;
-    width: 0;
-    height: 3px;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    background: linear-gradient(135deg, var(--primary-purple) 0%, var(--primary-light) 100%);
-    transition: var(--transition);
-    border-radius: 3px;
-}
-
-nav a:hover::after {
-    width: 80%;
-}
+/* REMOVED original sticky NAV styles */
 
 section {
     background: var(--white);
@@ -415,18 +371,36 @@ section li::before {
 }
 
 @media screen and (max-width: 768px) {
-    nav {
-        width: 95%;
-        padding: 15px 0;
+    /* Updated for the new, merged navbar layout */
+    .izumi-navbar {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 1rem 1.5rem;
+    }
+    .izumi-navbar-brand {
+        margin-bottom: 1rem;
+    }
+    .izumi-nav-links {
+        width: 100%;
+        justify-content: space-around;
+        gap: 0;
         overflow-x: auto;
         white-space: nowrap;
     }
-    
-    nav a {
-        margin: 0 10px;
-        font-size: 0.95em;
+    .izumi-nav-link {
+        margin: 0 5px;
+        padding: 8px 10px;
+        font-size: 0.9em;
     }
-    
+    .izumi-profile-container {
+        position: absolute;
+        top: 1rem;
+        right: 1.5rem;
+    }
+    body {
+        padding-top: 180px; /* Adjust padding for smaller screens with wrapped navbar */
+    }
+
     .course-info {
         padding: 40px 30px;
     }
@@ -447,6 +421,10 @@ section li::before {
     section h2 {
         font-size: 1.6em;
     }
+    
+    section p {
+        padding-left: 20px;
+    }
 }
 
 @media screen and (max-width: 576px) {
@@ -457,11 +435,6 @@ section li::before {
     .course-info button {
         padding: 14px 30px;
         font-size: 1em;
-    }
-    
-    nav a {
-        margin: 0 8px;
-        padding: 6px 10px;
     }
     
     .course-info .details {
@@ -478,17 +451,20 @@ section li::before {
     }
 }
 
-/* Izumi Navbar Styles */
+/* Izumi Navbar Styles - CRITICAL CHANGES HERE */
 .izumi-navbar {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
+    /* Added flex-wrap for better responsiveness of links */
+    flex-wrap: wrap; 
+    border-radius: 0; 
     background: linear-gradient(135deg, var(--primary-purple) 0%, var(--primary-light) 100%);
     color: white;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    /* Changed to align-items: stretch to let the bottom links use the full width on a second row */
+    align-items: center; 
     padding: 1rem 2.5rem;
     z-index: 1000;
     box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3);
@@ -498,18 +474,23 @@ section li::before {
     font-size: 1.5rem;
     font-weight: 700;
     letter-spacing: 1px;
+    margin-right: 2.5rem; /* Separator for brand and course links */
 }
 
 .izumi-nav-links {
     display: flex;
-    gap: 1rem;
+    /* Ensure course links are centered relative to each other */
+    align-items: center; 
+    flex-wrap: wrap; /* Allows links to wrap on smaller screens */
+    gap: 0.5rem; /* Reduced gap for more links */
 }
 
-.izumi-nav-link {
+/* New/Modified styles for the merged course links */
+.izumi-nav-links .course-nav-link {
     padding: 0.75rem 1.25rem;
     background: none;
     border: none;
-    font-size: 1rem;
+    font-size: 0.95rem; /* Slightly smaller for compactness */
     font-weight: 500;
     color: white;
     cursor: pointer;
@@ -517,18 +498,31 @@ section li::before {
     position: relative;
     text-decoration: none;
     border-radius: 8px;
+    /* Added to align with original hover effect */
+    display: inline-block; 
 }
 
-.izumi-nav-link:hover {
+.izumi-nav-links .course-nav-link:hover {
     background-color: rgba(255, 255, 255, 0.15);
 }
 
-.izumi-nav-link-active {
+/* Style for the active/current section, like the old sticky nav */
+.izumi-nav-links .course-nav-link.active-course-link {
     font-weight: 600;
     background-color: rgba(255, 255, 255, 0.2);
+    /* Adding a subtle bottom indicator */
+    border-bottom: 3px solid white; 
+    padding-bottom: 0.5rem;
+}
+
+.izumi-nav-link-active { /* Style for the main Home link */
+    font-weight: 600;
+    background-color: rgba(255, 255, 255, 0.2);
+    margin-right: 1.5rem;
 }
 
 .izumi-profile-container {
+    margin-left: auto; /* Push the profile container to the right */
     position: relative;
     cursor: pointer;
     width: 44px;
@@ -540,7 +534,6 @@ section li::before {
     transition: var(--transition);
     background: rgba(255, 255, 255, 0.1);
 }
-
 .izumi-profile-container:hover {
     background-color: rgba(255, 255, 255, 0.2);
 }
@@ -562,6 +555,7 @@ section li::before {
     transform-origin: top right;
     animation: scaleIn 0.2s ease-out;
     overflow: hidden;
+    z-index: 1001; /* Ensure dropdown is above everything */
 }
 
 @keyframes scaleIn {
@@ -618,133 +612,112 @@ section li::before {
     border-top: 1px solid #e2e8f0;
     margin: 0.5rem 0;
 }
-
-/* Adjust body padding for fixed navbar */
-body {
-    padding-top: 80px;
-}
-
-.course-info {
-    margin-top: 20px;
-}
-
-/* Izumi Navbar Styles */
-.izumi-navbar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    background: linear-gradient(135deg, var(--primary-purple) 0%, var(--primary-light) 100%);
-    color: white;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem 2.5rem;
-    z-index: 1000;
-    box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3);
-}
-
-.izumi-navbar-brand {
-    font-size: 1.5rem;
-    font-weight: 700;
-    letter-spacing: 1px;
-}
-
-.izumi-nav-links {
-    display: flex;
-    gap: 1rem;
-}
-
-.izumi-nav-link {
-    padding: 0.75rem 1.25rem;
-    background: none;
-    border: none;
-    font-size: 1rem;
-    font-weight: 500;
-    color: white;
-    cursor: pointer;
-    transition: var(--transition);
-    position: relative;
-    text-decoration: none;
-    border-radius: 8px;
-}
-
-.izumi-nav-link:hover {
-    background-color: rgba(255, 255, 255, 0.15);
-}
-
-.izumi-nav-link-active {
-    font-weight: 600;
-    background-color: rgba(255, 255, 255, 0.2);
-}
-
-.izumi-profile-container {
-    position: relative;
-    cursor: pointer;
-    width: 44px;
-    height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    transition: var(--transition);
-    background: rgba(255, 255, 255, 0.1);
-}
-
 </style>
 
-<div class="course-info">
-        <h1>Web Development Masterclass</h1>
-        <p>Learn modern web development from scratch. Master HTML, CSS, JavaScript, React, Node.js, and more. Build real-world projects and become a full-stack developer.</p>
-        <a href="/enroll?courseId=<%= courseId %>">
-            <button><i class="fas fa-check-circle"></i> Enroll Now</button>
-        </a>
-        <p class="enrollment-info"><strong>2,847</strong> students enrolled. <a href="#">Learn more</a></p>
+</head>
+<body>
+    <div class="geometric-shape shape-1"></div>
+    <div class="geometric-shape shape-2"></div>
+    <div class="geometric-shape shape-3"></div>
 
-        <div class="details">
-            <div>
-                <i class="fas fa-star"></i>
-                <strong>Average Rating</strong><br>
-                4.8 ★
-            </div>
-            <div>
-                <i class="fas fa-comment-dots"></i>
-                <strong>Reviews</strong><br>
-                1,234 reviews
-            </div>
-            <div>
-                <i class="fas fa-signal"></i>
-                <strong>Level</strong><br>
-                Beginner to Advanced
-            </div>
-            <div>
-                <i class="fas fa-clock"></i>
-                <strong>Duration</strong><br>
-                45 hours
-            </div>
-            <div>
-                <i class="fas fa-calendar-check"></i>
-                <strong>Flexibility</strong><br>
-                Self-paced learning
-            </div>
-            <div>
-                <i class="fas fa-hourglass-half"></i>
-                <strong>Completion Time</strong><br>
-                6-8 weeks
+    <nav class="izumi-navbar">
+        <div class="izumi-navbar-brand">Izumi</div>
+        <div class="izumi-nav-links">
+            <a
+                href="http://localhost:4000/"
+                class="izumi-nav-link izumi-nav-link-active"
+                data-page="home"
+                >Home</a
+            >
+            <a href="#overview" class="course-nav-link active-course-link">Overview</a>
+            <a href="#curriculum" class="course-nav-link">Curriculum</a>
+            <a href="#instructor" class="course-nav-link">Instructor</a>
+            <a href="#reviews" class="course-nav-link">Reviews</a>
+            <a href="#requirements" class="course-nav-link">Requirements</a>
+            <a href="#outcomes" class="course-nav-link">Learning Outcomes</a>
+        </div>
+        <div
+            class="izumi-profile-container"
+            aria-label="User menu"
+            role="button"
+            tabindex="0"
+        >
+            <i class="fa-solid fa-ellipsis-h izumi-profile-icon"></i>
+            <div class="izumi-dropdown-content" role="menu">
+                <div class="izumi-dropdown-items">
+                    <a href="/profile" class="izumi-dropdown-item" role="menuitem"
+                        ><i class="fa-regular fa-user"></i>Profile</a
+                    >
+                    <a href="#" class="izumi-dropdown-item" role="menuitem"
+                        ><i class="fa-regular fa-credit-card"></i>My Purchases</a
+                    >
+                    <a href="/delete-page" class="izumi-dropdown-item" role="menuitem"
+                        ><i class="fa-solid fa-gear"></i>Settings</a
+                    >
+                    <a href="#" class="izumi-dropdown-item" role="menuitem"
+                        ><i class="fa-regular fa-bell"></i>Updates</a
+                    >
+                    <div class="izumi-divider" role="separator"></div>
+                    <a href="#" class="izumi-dropdown-item" role="menuitem"
+                        ><i class="fa-regular fa-star"></i>Accomplishments</a
+                    >
+                    <a href="#" class="izumi-dropdown-item" role="menuitem"
+                        ><i class="fa-regular fa-circle-question"></i>Help Center</a
+                    >
+                    <div class="izumi-divider" role="separator"></div>
+                    <a
+                        href="/logout"
+                        class="izumi-dropdown-item izumi-logout"
+                        role="menuitem"
+                        ><i class="fa-solid fa-arrow-right-from-bracket"></i>Log Out</a
+                    >
+                </div>
             </div>
         </div>
-    </div>
-
-    <nav>
-        <a href="#overview">Overview</a>
-        <a href="#curriculum">Curriculum</a>
-        <a href="#instructor">Instructor</a>
-        <a href="#reviews">Reviews</a>
-        <a href="#requirements">Requirements</a>
-        <a href="#outcomes">Learning Outcomes</a>
     </nav>
-
     <div class="container">
+        <div class="course-info">
+            <h1>Web Development Masterclass</h1>
+            <p>Learn modern web development from scratch. Master HTML, CSS, JavaScript, React, Node.js, and more. Build real-world projects and become a full-stack developer.</p>
+            <a href="/enroll?courseId=<%= courseId %>">
+                <button><i class="fas fa-check-circle"></i> Enroll Now</button>
+            </a>
+            <p class="enrollment-info"><strong>2,847</strong> students enrolled. <a href="#">Learn more</a></p>
+
+            <div class="details">
+                <div>
+                    <i class="fas fa-star"></i>
+                    <strong>Average Rating</strong><br>
+                    4.8 ★
+                </div>
+                <div>
+                    <i class="fas fa-comment-dots"></i>
+                    <strong>Reviews</strong><br>
+                    1,234 reviews
+                </div>
+                <div>
+                    <i class="fas fa-signal"></i>
+                    <strong>Level</strong><br>
+                    Beginner to Advanced
+                </div>
+                <div>
+                    <i class="fas fa-clock"></i>
+                    <strong>Duration</strong><br>
+                    45 hours
+                </div>
+                <div>
+                    <i class="fas fa-calendar-check"></i>
+                    <strong>Flexibility</strong><br>
+                    Self-paced learning
+                </div>
+                <div>
+                    <i class="fas fa-hourglass-half"></i>
+                    <strong>Completion Time</strong><br>
+                    6-8 weeks
+                </div>
+            </div>
+        </div>
+
         <section id="overview">
             <h2>Course Overview</h2>
             <p>This comprehensive web development course takes you from absolute beginner to professional developer. You'll learn the fundamentals of HTML, CSS, and JavaScript, then progress to advanced topics including React, Node.js, databases, and deployment strategies.</p>
@@ -808,23 +781,65 @@ body {
 
     <script>
         // Smooth scrolling for navigation links
-        document.querySelectorAll('nav a').forEach(anchor => {
+        document.querySelectorAll('.izumi-nav-links a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
                 e.preventDefault();
                 const target = document.querySelector(this.getAttribute('href'));
+                
+                // Remove active class from all course links
+                document.querySelectorAll('.course-nav-link').forEach(link => {
+                    link.classList.remove('active-course-link');
+                });
+                // Add active class to the clicked link
+                this.classList.add('active-course-link');
+
                 if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
+                    // Calculate scroll position to account for the fixed navbar height
+                    const navbarHeight = document.querySelector('.izumi-navbar').offsetHeight;
+                    const targetPosition = target.offsetTop - navbarHeight - 20; // -20 for extra buffer
+
+                    window.scrollTo({
+                        top: targetPosition,
+                        behavior: 'smooth'
                     });
                 }
             });
         });
 
-    // Get studentId from session storage or URL parameter
-    const studentId = sessionStorage.getItem('studentId') || new URLSearchParams(window.location.search).get('studentId');
-    // Prefer server-provided courseId (rendered into the template). Fall back to URL param if absent.
-    const courseId = '<%= typeof courseId !== "undefined" ? courseId : "" %>' || new URLSearchParams(window.location.search).get('courseId') || '';
+        // Add scroll-spy-like functionality to highlight current section
+        const sections = document.querySelectorAll('section');
+        const courseLinks = document.querySelectorAll('.course-nav-link');
+
+        const options = {
+            root: null,
+            rootMargin: '-30% 0px -70% 0px', // Highlights when section is 30% from top
+            threshold: 0
+        };
+
+        const observer = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const id = entry.target.getAttribute('id');
+                    
+                    // Remove active from all and set active on the current one
+                    courseLinks.forEach(link => {
+                        link.classList.remove('active-course-link');
+                        if (link.getAttribute('href') === `#${id}`) {
+                            link.classList.add('active-course-link');
+                        }
+                    });
+                }
+            });
+        }, options);
+
+        sections.forEach(section => {
+            observer.observe(section);
+        });
+
+        // Get studentId from session storage or URL parameter
+        const studentId = sessionStorage.getItem('studentId') || new URLSearchParams(window.location.search).get('studentId');
+        // Prefer server-provided courseId (rendered into the template). Fall back to URL param if absent.
+        const courseId = '<%= typeof courseId !== "undefined" ? courseId : "" %>' || new URLSearchParams(window.location.search).get('courseId') || '';
 
         // Check enrollment status if studentId exists
         if (studentId) {
@@ -839,6 +854,26 @@ body {
             })
             .catch(err => console.error('Error checking enrollment:', err));
         }
+
+        /* Izumi Navbar Dropdown Script */
+        document.addEventListener('DOMContentLoaded', function() {
+            const profileContainer = document.querySelector(".izumi-profile-container");
+            const dropdownContent = document.querySelector(".izumi-dropdown-content");
+            
+            if (profileContainer && dropdownContent) {
+                profileContainer.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    dropdownContent.classList.toggle("active");
+                });
+
+                document.addEventListener("click", (e) => {
+                    if (!profileContainer.contains(e.target)) {
+                        dropdownContent.classList.remove("active");
+                    }
+                });
+            }
+        });
+        /* Izumi Navbar Dropdown Script - END */
     </script>
 
 </body>
