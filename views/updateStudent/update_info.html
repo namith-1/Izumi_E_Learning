@@ -47,6 +47,7 @@
             align-items: center;
             justify-content: center;
             padding: 20px;
+            padding-top: 60px;
             /* FIX: Removed 'overflow: hidden;' to allow scrolling */
             position: relative; /* Keep relative for pseudo-elements */
         }
@@ -361,6 +362,53 @@
                 max-width: 100%;
             }
         }
+        #homeButton {
+    position: absolute;
+    top: 30px; /* Adjust as needed */
+    left: 30px; /* Adjust as needed */
+    z-index: 10; /* Ensure it's above other elements */
+    
+    /* Styling */
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 15px;
+    background-color: var(--card-background); /* White background */
+    color: var(--primary-color); /* Purple text color */
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 16px;
+    border-radius: var(--border-radius); /* Rounded corners */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: var(--transition);
+    border: 1px solid var(--neutral-color);
+}
+
+#homeButton:hover {
+    background-color: var(--secondary-color); /* Lighter purple on hover */
+    color: white; /* White text on hover */
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+}
+
+#homeButton .home-icon {
+    width: 20px;
+    height: 20px;
+    color: var(--primary-color); /* Icon color */
+    transition: var(--transition);
+}
+
+#homeButton:hover .home-icon {
+    color: white; /* Icon color on hover */
+}
+@media (max-width: 768px) {
+    #homeButton {
+        top: 15px;
+        left: 15px;
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+}
     </style>
     <script>
         document.addEventListener("DOMContentLoaded", loadUserProfile);
@@ -526,6 +574,13 @@
     <div class="geometric-shape shape-1"></div>
     <div class="geometric-shape shape-2"></div>
     <div class="geometric-shape shape-3"></div>
+      <a id="homeButton" href="/home"> 
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="home-icon">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+        Home
+    </a>
 
     <div class="container">
         
