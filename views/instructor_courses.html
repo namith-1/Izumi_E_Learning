@@ -667,24 +667,18 @@
                 const response = await fetch('/courses_by');
                 const courses = await response.json();
                 const container = document.getElementById('course-list');
-                container.innerHTML = '';
+    container.innerHTML = `
+    <iframe 
+        id="courseIframe" 
+        src="http://localhost:4000/views/instructor/courseStatsInfo.html" 
+        width="1500px" 
+        height="2000px" 
+        frameborder="0"
+        style="border-radius: 8px; margin-top: 20px;">
+    </iframe>
+`;
 
-                if (courses.length === 0) {
-                    container.innerHTML = '<div class="empty-state">No course statistics available.</div>';
-                    return;
-                }
-
-                courses.forEach(course => {
-                    const card = document.createElement('div');
-                    card.classList.add('course-card');
-                    card.innerHTML = `
-                        <h3>${course.course_title}</h3>
-                        <p><strong>Instructor:</strong> ${course.instructor_name}</p>
-                        <p><strong>Enrolled Students:</strong> ${course.enrolled_count}</p>
-                        <p><strong>Revenue:</strong> $${course.revenue}</p>
-                    `;
-                    container.appendChild(card);
-                });
+                
             } catch (error) {
                 console.error("Error fetching courses:", error);
                 document.getElementById('course-list').innerHTML = '<div class="empty-state">Error loading statistics. Please try again.</div>';
