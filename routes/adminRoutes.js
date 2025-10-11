@@ -384,11 +384,10 @@ router.get('/Payments', isAdmin, async (req, res) => {
 
 // -------------------- PAYMENT DATA ROUTE --------------------
 router.get('/payments/data', isAdmin, async (req, res) => {
-    console.log('🔍 Starting payment data fetch...');
-    
     try {
-        // STEP 1: Fetch enrollments with related data
-        console.log('Step 1: Fetching enrollments...');
+        const range = req.query.range || 'daily';
+        console.log('📊 Received range parameter:', range);
+
         const enrollments = await Enrollment.aggregate([
             {
                 $lookup: {
@@ -410,140 +409,224 @@ router.get('/payments/data', isAdmin, async (req, res) => {
             { $unwind: { path: '$course', preserveNullAndEmptyArrays: true } },
             { $sort: { date_enrolled: -1 } }
         ]);
-        console.log(`✅ Found ${enrollments.length} enrollments`);
 
-        // STEP 2: Fetch course stats
-        console.log('Step 2: Fetching course stats...');
         const courseStats = await CourseStat.find().lean();
-        console.log(`✅ Found ${courseStats.length} course stats`);
-
         const statsMap = {};
-        courseStats.forEach(stat => {
-            statsMap[stat.course_id.toString()] = stat;
-        });
+        courseStats.forEach(stat => statsMap[stat.course_id.toString()] = stat);
 
-        // STEP 3: Build payment records
-        console.log('Step 3: Building payment records...');
         const payments = enrollments.map(enrollment => {
             const courseId = enrollment.course_id?._id?.toString();
             const courseStat = courseId ? statsMap[courseId] : null;
             const amount = courseStat?.price || 0;
-
             return {
                 _id: enrollment._id,
                 date: enrollment.date_enrolled,
                 user: enrollment.student?.name || 'Unknown Student',
                 course: enrollment.course?.title || 'Unknown Course',
-                amount: amount,
+                courseId: courseId,
+                amount,
                 status: enrollment.payment_status || 'completed',
                 method: enrollment.payment_method || 'Card'
             };
         });
-        console.log(`✅ Built ${payments.length} payment records`);
 
-        // STEP 4: Compute statistics
-        console.log('Step 4: Calculating statistics...');
-        const totalRevenue = payments.reduce((sum, p) =>
-            sum + (p.status === 'completed' ? p.amount : 0), 0);
-
+        // Statistics
+        const totalRevenue = payments.reduce((sum, p) => sum + (p.status === 'completed' ? p.amount : 0), 0);
         const currentMonth = new Date().getMonth();
         const currentYear = new Date().getFullYear();
-
         const monthlyPayments = payments.filter(p => {
             if (!p.date) return false;
-            const paymentDate = new Date(p.date);
-            return paymentDate.getMonth() === currentMonth &&
-                   paymentDate.getFullYear() === currentYear;
+            const pd = new Date(p.date);
+            return pd.getMonth() === currentMonth && pd.getFullYear() === currentYear;
         });
-
-        const monthRevenue = monthlyPayments.reduce((sum, p) =>
-            sum + (p.status === 'completed' ? p.amount : 0), 0);
-
+        const monthRevenue = monthlyPayments.reduce((sum, p) => sum + (p.status === 'completed' ? p.amount : 0), 0);
         const pendingPayments = payments.filter(p => p.status === 'pending');
         const pendingAmount = pendingPayments.reduce((sum, p) => sum + p.amount, 0);
-
         const completedPayments = payments.filter(p => p.status === 'completed');
-        const completedCount = completedPayments.length;
-        const avgTransaction = completedCount > 0
-            ? Math.round(totalRevenue / completedCount)
-            : 0;
+        const avgTransaction = completedPayments.length > 0 ? Math.round(totalRevenue / completedPayments.length) : 0;
 
-        // STEP 5: Chart data (Last 7 days revenue)
-console.log('Step 5: Generating chart data...');
-const last7Days = [];
-const revenueByDay = [];
+        // Filter payments based on time range for top courses calculation
+        const now = new Date();
+        let filteredPayments = payments;
 
-for (let i = 6; i >= 0; i--) {
-    const date = new Date();
-    date.setDate(date.getDate() - i);
+        console.log('🔍 Filtering payments for range:', range);
 
-    const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD for comparison
-    last7Days.push(date.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric'
-    }));
+        if (range === 'daily') {
+            const sevenDaysAgo = new Date(now);
+            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+            sevenDaysAgo.setHours(0, 0, 0, 0);
+            
+            filteredPayments = payments.filter(p => {
+                if (!p.date || p.status !== 'completed') return false;
+                const pd = new Date(p.date);
+                return pd >= sevenDaysAgo;
+            });
+            console.log(`📊 Filtered to ${filteredPayments.length} payments from last 7 days`);
+        } else if (range === 'monthly') {
+            const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+            sixMonthsAgo.setHours(0, 0, 0, 0);
+            
+            filteredPayments = payments.filter(p => {
+                if (!p.date || p.status !== 'completed') return false;
+                const pd = new Date(p.date);
+                return pd >= sixMonthsAgo;
+            });
+            console.log(`📊 Filtered to ${filteredPayments.length} payments from last 6 months`);
+        } else if (range === 'yearly') {
+            const fiveYearsAgo = new Date(now.getFullYear() - 4, 0, 1);
+            fiveYearsAgo.setHours(0, 0, 0, 0);
+            
+            filteredPayments = payments.filter(p => {
+                if (!p.date || p.status !== 'completed') return false;
+                const pd = new Date(p.date);
+                return pd >= fiveYearsAgo;
+            });
+            console.log(`📊 Filtered to ${filteredPayments.length} payments from last 5 years`);
+        }
 
-    const dayRevenue = payments
-        .filter(p => {
-            if (!p.date) return false;
-            const paymentDate = new Date(p.date);
-            const paymentDateStr = paymentDate.toISOString().split('T')[0];
-            return paymentDateStr === dateStr && p.status === 'completed';
-        })
-        .reduce((sum, p) => sum + p.amount, 0);
+        // Calculate top 5 courses by revenue
+        const courseRevenue = {};
+        filteredPayments.forEach(p => {
+            if (p.status === 'completed' && p.courseId) {
+                if (!courseRevenue[p.courseId]) {
+                    courseRevenue[p.courseId] = {
+                        course: p.course,
+                        revenue: 0,
+                        enrollments: 0
+                    };
+                }
+                courseRevenue[p.courseId].revenue += p.amount;
+                courseRevenue[p.courseId].enrollments += 1;
+            }
+        });
 
-    revenueByDay.push(Math.round(dayRevenue));
-}
+        console.log('💰 Course revenue map:', courseRevenue);
 
+        const topCourses = Object.values(courseRevenue)
+            .sort((a, b) => b.revenue - a.revenue)
+            .slice(0, 5)
+            .map(c => ({
+                course: c.course,
+                revenue: Math.round(c.revenue),
+                enrollments: c.enrollments
+            }));
 
-        // STEP 6: Status counts
-        const completed = completedPayments.length;
-        const pending = pendingPayments.length;
-        const failed = payments.filter(p => p.status === 'failed').length;
+        console.log('🏆 Top 5 courses for range', range, ':', topCourses);
 
-        // STEP 7: Send response
-        const response = {
+        // Chart data based on range
+        let labels = [];
+        let revenueByPeriod = [];
+
+        console.log('🔍 Processing range:', range);
+        console.log('📅 Current date:', now);
+        console.log('💾 Total payments to process:', payments.length);
+
+        if (range === 'daily') {
+            console.log('📆 Generating DAILY data (last 7 days)');
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date(now);
+                date.setDate(date.getDate() - i);
+                date.setHours(0, 0, 0, 0);
+                
+                const nextDate = new Date(date);
+                nextDate.setDate(nextDate.getDate() + 1);
+                
+                const label = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                labels.push(label);
+
+                const dayRevenue = payments
+                    .filter(p => {
+                        if (!p.date || p.status !== 'completed') return false;
+                        const paymentDate = new Date(p.date);
+                        return paymentDate >= date && paymentDate < nextDate;
+                    })
+                    .reduce((sum, p) => sum + p.amount, 0);
+
+                revenueByPeriod.push(Math.round(dayRevenue));
+                console.log(`  ${label}: $${Math.round(dayRevenue)}`);
+            }
+        } else if (range === 'monthly') {
+            console.log('📆 Generating MONTHLY data (last 6 months)');
+            for (let i = 5; i >= 0; i--) {
+                const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                monthDate.setHours(0, 0, 0, 0);
+                
+                const nextMonth = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 1);
+                nextMonth.setHours(0, 0, 0, 0);
+                
+                const label = monthDate.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+                labels.push(label);
+
+                const monthRevenueValue = payments
+                    .filter(p => {
+                        if (!p.date || p.status !== 'completed') return false;
+                        const pd = new Date(p.date);
+                        return pd >= monthDate && pd < nextMonth;
+                    })
+                    .reduce((sum, p) => sum + p.amount, 0);
+
+                revenueByPeriod.push(Math.round(monthRevenueValue));
+                console.log(`  ${label}: $${Math.round(monthRevenueValue)}`);
+            }
+        } else if (range === 'yearly') {
+            console.log('📆 Generating YEARLY data (last 5 years)');
+            for (let i = 4; i >= 0; i--) {
+                const year = now.getFullYear() - i;
+                const yearStart = new Date(year, 0, 1);
+                yearStart.setHours(0, 0, 0, 0);
+                
+                const yearEnd = new Date(year + 1, 0, 1);
+                yearEnd.setHours(0, 0, 0, 0);
+                
+                labels.push(year.toString());
+
+                const yearRevenueValue = payments
+                    .filter(p => {
+                        if (!p.date || p.status !== 'completed') return false;
+                        const pd = new Date(p.date);
+                        return pd >= yearStart && pd < yearEnd;
+                    })
+                    .reduce((sum, p) => sum + p.amount, 0);
+
+                revenueByPeriod.push(Math.round(yearRevenueValue));
+                console.log(`  ${year}: $${Math.round(yearRevenueValue)}`);
+            }
+        }
+
+        console.log('✅ Final labels:', labels);
+        console.log('✅ Final revenue:', revenueByPeriod);
+
+        const responseData = {
             payments,
             stats: {
                 totalRevenue: Math.round(totalRevenue),
                 monthRevenue: Math.round(monthRevenue),
                 monthCount: monthlyPayments.filter(p => p.status === 'completed').length,
                 pendingAmount: Math.round(pendingAmount),
-                pendingCount: pending,
+                pendingCount: pendingPayments.length,
                 avgTransaction
             },
             chartData: {
-                labels: last7Days,
-                revenue: revenueByDay,
-                completed,
-                pending,
-                failed
+                labels,
+                revenue: revenueByPeriod,
+                topCourses,
+                completed: completedPayments.length,
+                pending: pendingPayments.length,
+                failed: payments.filter(p => p.status === 'failed').length
             }
         };
 
-        console.log('✅ Sending response with', payments.length, 'records');
-        res.json(response);
+        console.log('📤 Sending response with chartData:', responseData.chartData);
+        console.log('🏆 Top Courses being sent:', topCourses);
+        res.json(responseData);
 
     } catch (error) {
         console.error('❌ Payment data error:', error);
         res.status(500).json({
             error: 'Error fetching payment data: ' + error.message,
             payments: [],
-            stats: {
-                totalRevenue: 0,
-                monthRevenue: 0,
-                monthCount: 0,
-                pendingAmount: 0,
-                pendingCount: 0,
-                avgTransaction: 0
-            },
-            chartData: {
-                labels: [],
-                revenue: [],
-                completed: 0,
-                pending: 0,
-                failed: 0
-            }
+            stats: { totalRevenue: 0, monthRevenue: 0, monthCount: 0, pendingAmount: 0, pendingCount: 0, avgTransaction: 0 },
+            chartData: { labels: [], revenue: [], topCourses: [], completed: 0, pending: 0, failed: 0 }
         });
     }
 });
