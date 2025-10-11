@@ -59,6 +59,12 @@ const StudentModel = {
   },
 
   isEnrolled: async (studentId, courseId) => {
+    // Validate courseId to avoid Mongoose CastError when a non-ObjectId is provided
+    if (!mongoose.Types.ObjectId.isValid(courseId)) {
+      // Treat invalid IDs as not enrolled (safe fallback)
+      return false;
+    }
+
     const enrollment = await Enrollment.findOne({
       student_id: studentId,
       course_id: courseId,
@@ -68,6 +74,10 @@ const StudentModel = {
 
   enroll: async (studentId, courseId) => {
     try {
+      // Validate courseId to ensure it's a proper ObjectId
+      if (!mongoose.Types.ObjectId.isValid(courseId)) {
+        throw new Error("Invalid Course ID.");
+      }
       const enrollment = new Enrollment({
         student_id: studentId,
         course_id: courseId,

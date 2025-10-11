@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Course Editor</title>
     <script defer src="/views/public/script_course.js"></script>
     <style>
@@ -31,9 +33,10 @@
     </nav>
     <h1>Course Editor</h1>
     <input id="courseTitle" placeholder="Course Title" />
-    <input type="number" id="price" placeholder="price"/>    <button onclick="addModule()">Add Module</button>
+    <input type="number" id="price" placeholder="Price" />
+    <button onclick="addModule()">Add Module</button>
     <button onclick="saveCourse()" id="s">Save</button>
-    <button onclick="saveCourse()" id="sc">Save_changes</button>
+    <button onclick="saveCourse()" id="sc">Save Changes</button>
     <button onclick="loadCourse()">Load</button>
     <ul id="modules"></ul>
 </body>

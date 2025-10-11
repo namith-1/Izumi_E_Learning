@@ -41,7 +41,13 @@ exports.getCourseDetails = async (req, res) => {
       },
     ];
 
-    res.render("course.ejs", { course, navLinks, sections });
+    // Ensure a simple string courseId is passed to the view so client-side JS can use it
+    res.render("course.ejs", {
+      course,
+      navLinks,
+      sections,
+      courseId: String(course.id),
+    });
   } catch (error) {
     console.error(error);
     return res.status(500).send("Database error: " + error.message);
