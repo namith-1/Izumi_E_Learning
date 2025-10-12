@@ -607,28 +607,25 @@
         </div>
     </footer>
 
-    <script>
-        let messages = [];
-        let instructorCourses = [];
+<script>
+    let messages = [];
+    let instructorCourses = [];
 
-        // Load courses on page load
-        async function loadCourses() {
-            try {
-                const response = await fetch("/instructor-courses");
-                const courses = await response.json();
-                instructorCourses = courses; // Store for contact form
-                const courseList = document.getElementById("courseList");
-                courseList.innerHTML = "";
+    // Load courses on page load
+    async function loadCourses() {
+        try {
+            const response = await fetch("/instructor-courses");
+            const courses = await response.json();
+            instructorCourses = courses; // Store for contact form
+            const courseList = document.getElementById("courseList");
+            courseList.innerHTML = "";
 
-                if (courses.length === 0) {
-                    courseList.innerHTML = '<div class="empty-state">No courses found. Create your first course!</div>';
-                    return;
-                }
-
+            if (courses.length === 0) {
+                courseList.innerHTML = '<div class="empty-state">No courses found. Create your first course!</div>';
+            } else {
                 courses.forEach(course => {
                     const courseDiv = document.createElement("div");
                     courseDiv.className = "course-list-item";
-
                     courseDiv.innerHTML = `
                         <span class="course-title">${course.title}</span>
                         <div class="course-actions">
@@ -636,188 +633,203 @@
                             <a href="/view_course?courseID=${course._id}" class="view-btn">View</a>
                         </div>
                     `;
-
                     courseList.appendChild(courseDiv);
                 });
-
-                // Populate course select dropdown
-                populateCourseSelect();
-            } catch (error) {
-                console.error("Error loading courses:", error);
-                document.getElementById("courseList").innerHTML = '<div class="empty-state">Error loading courses. Please try again.</div>';
-            }
-        }
-
-        // Populate course select dropdown for contact form
-        function populateCourseSelect() {
-            const courseSelect = document.getElementById('courseSelect');
-            courseSelect.innerHTML = '<option value="">-- Select a course --</option>';
-            
-            instructorCourses.forEach(course => {
-                const option = document.createElement('option');
-                option.value = course._id;
-                option.textContent = course.title;
-                courseSelect.appendChild(option);
-            });
-        }
-
-        // Fetch courses with statistics
-        async function fetchCourses() {
-            try {
-                const response = await fetch('/courses_by');
-                const courses = await response.json();
-                const container = document.getElementById('course-list');
-                container.innerHTML = '';
-
-                if (courses.length === 0) {
-                    container.innerHTML = '<div class="empty-state">No course statistics available.</div>';
-                    return;
-                }
-
-                courses.forEach(course => {
-                    const card = document.createElement('div');
-                    card.classList.add('course-card');
-                    card.innerHTML = `
-                        <h3>${course.course_title}</h3>
-                        <p><strong>Instructor:</strong> ${course.instructor_name}</p>
-                        <p><strong>Enrolled Students:</strong> ${course.enrolled_count}</p>
-                        <p><strong>Revenue:</strong> $${course.revenue}</p>
-                    `;
-                    container.appendChild(card);
-                });
-            } catch (error) {
-                console.error("Error fetching courses:", error);
-                document.getElementById('course-list').innerHTML = '<div class="empty-state">Error loading statistics. Please try again.</div>';
-            }
-        }
-
-        // Navigation function
-        function navigate(view) {
-            const sections = document.querySelectorAll('.page-section');
-            sections.forEach(section => section.classList.remove('active'));
-            
-            const targetSection = document.getElementById(view);
-            if (targetSection) {
-                targetSection.classList.add('active');
             }
 
-            // Update active nav link
-            const navLinks = document.querySelectorAll('.izumi-nav-link');
-            navLinks.forEach(link => {
-                link.classList.remove('izumi-nav-link-active');
-                if (link.getAttribute('data-page') === view) {
-                    link.classList.add('izumi-nav-link-active');
-                }
-            });
-
-            // Load iframe for My Info section
-            const iframe = document.getElementById('my_info_iframe');
-            if (view === 'my-info') {
-                iframe.src = '/instructor/details';
-            }
+            populateCourseSelect();
+        } catch (error) {
+            console.error("Error loading courses:", error);
+            document.getElementById("courseList").innerHTML = '<div class="empty-state">Error loading courses. Please try again.</div>';
         }
+    }
 
-        // Comment form submission
-        const contactAdminForm = document.getElementById('contactAdminForm');
-        const messageHistory = document.getElementById('messageHistory');
+    // Populate dropdown with courses + "General"
+    function populateCourseSelect() {
+        const courseSelect = document.getElementById('courseSelect');
+        courseSelect.innerHTML = '<option value="">General</option>'; // General option first
 
-        contactAdminForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const courseId = document.getElementById('courseSelect').value;
-            const courseName = document.getElementById('courseSelect').options[document.getElementById('courseSelect').selectedIndex].text;
-            const priority = document.getElementById('priorityLevel').value;
-            const messageText = document.getElementById('message').value;
-            
-            const newMessage = {
-                courseId: courseId,
-                courseName: courseName,
-                priority: priority,
-                message: messageText,
-                date: new Date().toLocaleString(),
-                status: 'Sent'
-            };
-            
-            messages.unshift(newMessage);
-            displayMessages();
-            contactAdminForm.reset();
-            alert('Your message has been sent to the admin successfully!');
+        instructorCourses.forEach(course => {
+            const option = document.createElement('option');
+            option.value = course._id;
+            option.textContent = course.title;
+            courseSelect.appendChild(option);
+        });
+    }
+
+    // Fetch courses with statistics (iframe part)
+    async function fetchCourses() {
+        try {
+            const response = await fetch('/courses_by');
+            const courses = await response.json();
+            const container = document.getElementById('course-list');
+            container.innerHTML = `
+                <iframe 
+                    id="courseIframe" 
+                    src="http://localhost:4000/views/instructor/courseStatsInfo.html" 
+                    width="1500px" 
+                    height="2000px" 
+                    frameborder="0"
+                    style="border-radius: 8px; margin-top: 20px;">
+                </iframe>
+            `;
+        } catch (error) {
+            console.error("Error fetching courses:", error);
+            document.getElementById('course-list').innerHTML = '<div class="empty-state">Error loading statistics. Please try again.</div>';
+        }
+    }
+
+    // Navigation function
+    function navigate(view) {
+        const sections = document.querySelectorAll('.page-section');
+        sections.forEach(section => section.classList.remove('active'));
+        
+        const targetSection = document.getElementById(view);
+        if (targetSection) targetSection.classList.add('active');
+
+        const navLinks = document.querySelectorAll('.izumi-nav-link');
+        navLinks.forEach(link => {
+            link.classList.remove('izumi-nav-link-active');
+            if (link.getAttribute('data-page') === view) link.classList.add('izumi-nav-link-active');
         });
 
-        function displayMessages() {
-            if (messages.length === 0) {
-                messageHistory.innerHTML = '<div class="no-comments">No messages sent yet.</div>';
-                return;
+        const iframe = document.getElementById('my_info_iframe');
+        if (view === 'my-info') iframe.src = '/instructor/details';
+    }
+
+    // Contact Admin form submission
+    const contactAdminForm = document.getElementById('contactAdminForm');
+    const messageHistory = document.getElementById('messageHistory');
+
+    contactAdminForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const courseId = document.getElementById('courseSelect').value || null; // null = General
+        const messageText = document.getElementById('message').value;
+        const priority = document.getElementById('priorityLevel').value;
+
+        try {
+            const res = await fetch('/contact-admin/send-message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ courseId, message: messageText, priority })
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                messages.unshift({
+                    courseId,
+                    courseName: courseId ? document.getElementById('courseSelect').selectedOptions[0].text : "General",
+                    priority,
+                    message: messageText,
+                    date: new Date().toLocaleString(),
+                    status: "Pending",
+                    token_number: data.data.token_number
+                });
+                displayMessages();
+                contactAdminForm.reset();
+                alert('Your message has been sent with Token: ' + data.data.token_number);
+            } else {
+                alert(data.error || 'Failed to send message');
             }
-            
-            messageHistory.innerHTML = messages.map(msg => `
-                <div class="comment-item">
-                    <div class="comment-header">
-                        <span class="comment-author">${msg.courseName}</span>
-                        <span class="priority-badge priority-${msg.priority}">${msg.priority}</span>
-                    </div>
-                    <div class="comment-date" style="margin-bottom: 0.5rem;">${msg.date} • Status: ${msg.status}</div>
-                    <div class="comment-text">${msg.message}</div>
+        } catch (err) {
+            console.error(err);
+            alert('Server error, try again.');
+        }
+    });
+
+    // Display messages dynamically
+    function displayMessages() {
+        if (messages.length === 0) {
+            messageHistory.innerHTML = '<div class="no-comments">No messages sent yet.</div>';
+            return;
+        }
+
+        messageHistory.innerHTML = messages.map(msg => `
+            <div class="comment-item">
+                <div class="comment-header">
+                    <span class="comment-author">${msg.courseName}</span>
+                    <span class="priority-badge priority-${msg.priority}">${msg.priority}</span>
                 </div>
-            `).join('');
+                <div class="comment-date" style="margin-bottom: 0.5rem;">
+                    ${msg.date} • Status: <strong>${msg.status}</strong> • Token: ${msg.token_number}
+                </div>
+                <div class="comment-text">${msg.message}</div>
+            </div>
+        `).join('');
+    }
+
+    // Refresh messages from backend every 5 seconds
+    async function refreshMessages() {
+        try {
+            const res = await fetch('/contact-admin/messages');
+            const updatedMessages = await res.json();
+            messages = updatedMessages.map(msg => ({
+                courseId: msg.course_id?._id || null,
+                courseName: msg.course_id?.title || "General",
+                priority: msg.priority,
+                message: msg.message,
+                date: new Date(msg.created_at).toLocaleString(),
+                status: msg.status,
+                token_number: msg.token_number
+            }));
+            displayMessages();
+        } catch (err) {
+            console.error("Error refreshing messages:", err);
+        }
+    }
+
+    // Profile dropdown + navigation
+    document.addEventListener('DOMContentLoaded', function() {
+        const profileContainer = document.querySelector('.izumi-profile-container');
+        const dropdownContent = document.querySelector('.izumi-dropdown-content');
+
+        if (profileContainer && dropdownContent) {
+            profileContainer.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdownContent.classList.toggle('active');
+            });
+            document.addEventListener('click', () => dropdownContent.classList.remove('active'));
+
+            dropdownContent.addEventListener('click', (e) => {
+                if (e.target.closest('[data-page]')) {
+                    e.preventDefault();
+                    const page = e.target.closest('[data-page]').getAttribute('data-page');
+                    navigate(page);
+                    dropdownContent.classList.remove('active');
+                }
+            });
         }
 
-        // Profile dropdown
-        document.addEventListener('DOMContentLoaded', function() {
-            const profileContainer = document.querySelector('.izumi-profile-container');
-            const dropdownContent = document.querySelector('.izumi-dropdown-content');
+        const navLinks = document.querySelectorAll('.izumi-nav-link');
+        navLinks.forEach(link => link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const page = this.getAttribute('data-page');
+            navigate(page);
+        }));
 
-            if (profileContainer && dropdownContent) {
-                profileContainer.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    dropdownContent.classList.toggle('active');
-                });
-
-                document.addEventListener('click', () => {
-                    dropdownContent.classList.remove('active');
-                });
-
-                // Handle dropdown menu item clicks
-                dropdownContent.addEventListener('click', (e) => {
-                    if (e.target.closest('[data-page]')) {
-                        e.preventDefault();
-                        const page = e.target.closest('[data-page]').getAttribute('data-page');
-                        navigate(page);
-                        dropdownContent.classList.remove('active');
-                    }
-                });
-            }
-
-            // Navigation setup
-            const navLinks = document.querySelectorAll('.izumi-nav-link');
-            navLinks.forEach(link => {
-                link.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const page = this.getAttribute('data-page');
-                    navigate(page);
-                });
+        document.querySelectorAll('.footer-section a[data-page]').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const page = this.getAttribute('data-page');
+                navigate(page);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             });
-
-            // Footer links
-            document.querySelectorAll('.footer-section a[data-page]').forEach(link => {
-                link.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const page = this.getAttribute('data-page');
-                    navigate(page);
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                });
-            });
-
-            // Load initial data
-            loadCourses();
-            fetchCourses();
         });
 
-        // Load data on page load
-        window.onload = function() {
-            loadCourses();
-            fetchCourses();
-        };
-    </script>
+        // Initial load
+        loadCourses();
+        fetchCourses();
+        refreshMessages();
+        setInterval(refreshMessages, 5000); // Poll every 5s
+    });
+
+    window.onload = function() {
+        loadCourses();
+        fetchCourses();
+        refreshMessages();
+    };
+</script>
+
 </body>
 </html>

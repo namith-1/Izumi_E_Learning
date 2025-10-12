@@ -48,6 +48,10 @@ const instructorCourseRoutes = require("./routes/instructorCourseRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const commonInstructor = require("./routes/instructor/commonRoutes.js")
 const magazineController = require("./controllers/magazineController");
+const courseInfoInstructor = require("./routes/instructor/courseInfoRoutes");
+const contactAdminRoutes = require("./routes/instructor/contactRoutes.js");
+
+
 app.get("/magazines", magazineController.index);
 
 app.use("/", authRoutes); // post(login,signup) , get(/,home,login,signup)
@@ -61,7 +65,8 @@ app.use("/", gamifyRoutes);
 app.use("/", instructorCourseRoutes);
 app.use("/admin", adminRoutes); // Admin routes
 app.use("/api", commonInstructor);
-
+app.use("/", courseInfoInstructor);
+app.use("/contact-admin", contactAdminRoutes);
 // Load course and modules
 //course/id gets the course and modules as json to build the tree for both view_course and coure_edit
 //included instructorCourseRoutes.js
