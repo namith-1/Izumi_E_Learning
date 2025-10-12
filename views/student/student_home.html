@@ -17,9 +17,13 @@
             --yellow-accent: #fef3c7;
             --pale-cyan: #d4f1ee;
             --izumi-primary: #8b5cf6;
-            /* Replaced Bright Cyan with your original primary purple */
             --izumi-secondary: #a78bfa;
-
+            
+            /* NEW NAVBAR COLORS */
+            --navbar-bg: #5b36a1; /* Solid dark purple for the bar */
+            --nav-active-bg: #8c67c9; /* Lighter purple for the active pill */
+            --nav-text: #ffffff;
+            
             --background: #f5f5f5;
             --white: #ffffff;
             --text-dark: #2d3748;
@@ -48,66 +52,70 @@
             flex-direction: column;
         }
 
+        /* ========================================
+        NAVBAR STYLES - MODIFIED TO MATCH IMAGE
+        ========================================
+        */
         .navbar {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
-            background: white;
-            color: var(--text-dark);
+            background: var(--navbar-bg); /* SOLID PURPLE */
+            color: var(--nav-text);
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 1rem 3rem;
             z-index: 1000;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            box-shadow: none; /* Removed shadow */
         }
 
         .navbar-brand {
             font-size: 1.75rem;
             font-weight: 700;
             letter-spacing: 0.5px;
-            background: linear-gradient(135deg, var(--primary-purple) 0%, var(--primary-light) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: var(--nav-text); /* SOLID WHITE TEXT */
+            /* Override existing gradient color */
+            background: none; 
+            -webkit-text-fill-color: unset;
         }
 
         .nav-center {
             display: flex;
-            gap: 0.5rem;
+            gap: 0.75rem; /* Increased gap */
             position: absolute;
             left: 50%;
             transform: translateX(-50%);
         }
 
         .nav-link {
-            padding: 0.625rem 1.5rem;
+            padding: 0.625rem 1.75rem; /* Slightly more padding */
             background: none;
             border: none;
-            font-size: 0.95rem;
+            font-size: 1.05rem; /* Slightly larger font */
             font-weight: 500;
-            color: var(--text-dark);
+            color: var(--nav-text); /* White text for inactive links */
             cursor: pointer;
             transition: var(--transition);
             position: relative;
             text-decoration: none;
-            border-radius: 8px;
+            border-radius: 50px; /* Fully rounded corners */
         }
 
         .nav-link:hover {
-            background-color: #f5f5f5;
+            background-color: rgba(255, 255, 255, 0.1); /* Subtle white hover effect on purple */
         }
 
         .nav-link.active {
             font-weight: 600;
-            background-color: #f0f0f0;
+            background-color: var(--nav-active-bg); /* Lighter purple pill background */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Soft shadow on the pill */
         }
 
         .profile-container {
             position: relative;
             cursor: pointer;
-            /* Increased size for better tap target and visibility */
             width: 48px;
             height: 48px;
             display: flex;
@@ -115,36 +123,37 @@
             justify-content: center;
             border-radius: 50%;
             background-color: transparent;
-            /* Start with transparent background */
             transition: var(--transition);
         }
 
         .profile-container:hover {
-            /* Subtle hover effect */
-            background-color: var(--border-color);
+            background-color: rgba(255, 255, 255, 0.1); /* Subtle hover for consistency */
         }
 
         .profile-icon {
-            /* Larger icon for better visibility */
             font-size: 28px;
-            /* Gradient color effect for the icon */
-            background: linear-gradient(135deg, var(--izumi-primary) 0%, var(--izumi-secondary) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: var(--nav-text); /* SOLID WHITE for high contrast on purple */
+            /* Remove gradient effect */
+            background: none;
+            -webkit-background-clip: unset;
+            -webkit-text-fill-color: unset;
+            background-clip: unset;
             transition: var(--transition);
         }
+        /* ========================================
+        END NAVBAR STYLES
+        ========================================
+        */
 
         .profile-container:hover .profile-icon {
-            /* Slightly darker/more saturated color on hover */
-            opacity: 0.85;
+            opacity: 1; /* Keep it solid white */
         }
 
         .dropdown-content {
             display: none;
             position: absolute;
             right: 0;
-            top: 50px;
+            top: 55px; /* Adjust dropdown position */
             background: white;
             min-width: 260px;
             border-radius: 12px;
@@ -388,7 +397,7 @@
 
         .announcements li strong {
             font-weight: 600;
-            color: var(--text-dark);
+            color: var(--text-medium);
         }
 
         @media (max-width: 768px) {
@@ -565,6 +574,11 @@
                 padding: 0.875rem 1rem 0.875rem 3rem;
             }
 
+            .announcements li i {
+                left: 1rem;
+                font-size: 1.1rem;
+            }
+
             .footer-column {
                 min-width: 100%;
             }
@@ -606,11 +620,12 @@
                     <a href="/profile" class="dropdown-item" role="menuitem"><i
                             class="fa-regular fa-user"></i>Profile</a>
                     <a href="/my_purchases" class="dropdown-item" role="menuitem"><i
-                            class="fa-regular fa-credit-card"></i>My Purchases</a> 
-                    <a href="/delete-page" class="dropdown-item" role="menuitem"><i class="fa-solid fa-gear"></i>Settings</a>
-                    
+                            class="fa-regular fa-credit-card"></i>My Purchases</a>
+                    <a href="/delete-page" class="dropdown-item" role="menuitem"><i
+                            class="fa-solid fa-gear"></i>Settings</a>
+
                     <div class="divider" role="separator"></div>
-                    
+
                     <a href="/logout" class="dropdown-item logout" role="menuitem"><i
                             class="fa-solid fa-arrow-right-from-bracket"></i>Log Out</a>
                 </div>
