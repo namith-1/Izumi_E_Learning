@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { isAdmin } = require('../middlewares/authMiddleware');
 const { Student, Instructor, Course, CourseStat, Module, Enrollment } = require('../required/db');
+const contactAdmin = require('../models/instructor/contactModel');
 const bcrypt = require('bcrypt');
 
 // Get courses for content forms
@@ -956,4 +957,76 @@ router.delete('/payments/:id', isAdmin, async (req, res) => {
     }
 });
 
+router.get('/requests', async (req, res) => {
+    try {
+        const requests = await contactAdmin.find()
+            .populate('instructor_id', 'name')
+            .populate('course_id', 'title')
+            .sort({ created_at: -1 })
+            .lean();
+
+        res.render('admin/requests', { requests });
+    } catch (error) {
+        console.error('Error fetching requests:', error);
+        res.status(500).send('Error loading requests');
+    }
+});
+
+// GET - Fetch requests data (for AJAX refresh)
+router.get('/requests/data', async (req, res) => {
+    try {
+        const requests = await contactAdmin.find()
+            .populate('instructor_id', 'name')
+            .populate('course_id', 'title')
+            .sort({ created_at: -1 })
+            .lean();
+
+        res.json(requests);
+    } catch (error) {
+        console.error('Error fetching requests:', error);
+        res.status(500).json({ success: false, message: 'Error fetching requests' });
+    }
+});
+
+// PUT - Update request status
+router.put('/requests/:id', async (req, res) => {
+    try {
+        const { status, priority } = req.body;
+        const updateData = {};
+
+        if (status) updateData.status = status;
+        if (priority) updateData.priority = priority;
+
+        const request = await contactAdmin.findByIdAndUpdate(
+            req.params.id,
+            updateData,
+            { new: true }
+        ).populate('instructor_id', 'name').populate('course_id', 'title');
+
+        if (!request) {
+            return res.status(404).json({ success: false, message: 'Request not found' });
+        }
+
+        res.json({ success: true, request });
+    } catch (error) {
+        console.error('Error updating request:', error);
+        res.status(500).json({ success: false, message: 'Error updating request' });
+    }
+});
+
+// DELETE - Delete request
+router.delete('/requests/:id', async (req, res) => {
+    try {
+        const request = await contactAdmin.findByIdAndDelete(req.params.id);
+
+        if (!request) {
+            return res.status(404).json({ success: false, message: 'Request not found' });
+        }
+
+        res.json({ success: true, message: 'Request deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting request:', error);
+        res.status(500).json({ success: false, message: 'Error deleting request' });
+    }
+});
 module.exports = router; 
