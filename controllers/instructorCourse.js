@@ -1,7 +1,7 @@
 const path = require("path");
 const model = require("../models/instructorCourseModel"); // Import the Mongoose-based model
 const mongoose = require("mongoose");
-const { CourseStat,Course } = require("../required/db");
+const { CourseStat, Course } = require("../required/db");
 exports.getCourseDetails_moduleTree = async (req, res) => {
   const courseId = req.params.courseId;
 
@@ -36,13 +36,41 @@ exports.getCourseDetails_moduleTree = async (req, res) => {
 
 exports.getAllCourses = async (req, res) => {
   try {
-    const courses = await model.getAllCourses();
+    // Use aggregation to include instructor name and a subject fallback
+    const Course = require("../required/db").Course;
+    const courses = await Course.aggregate([
+      { $match: {} },
+      {
+        $lookup: {
+          from: "instructors",
+          localField: "instructor_id",
+          foreignField: "_id",
+          as: "instructor",
+        },
+      },
+      { $unwind: { path: "$instructor", preserveNullAndEmptyArrays: true } },
+      {
+        $project: {
+          _id: 1,
+          title: 1,
+          subject: { $ifNull: ["$subject", "Unknown"] },
+          instructor_id: {
+            _id: "$instructor._id",
+            name: { $ifNull: ["$instructor.name", "Unknown"] },
+          },
+        },
+      },
+    ]).exec();
 
     // Deduplicate courses by title + instructor_id to avoid showing duplicate cards
     const seen = new Set();
     const uniqueCourses = [];
     for (const c of courses) {
-      const key = `${c.title}::${c.instructor_id}`;
+      const instrId =
+        c.instructor_id && c.instructor_id._id
+          ? c.instructor_id._id.toString()
+          : "";
+      const key = `${c.title}::${instrId}`;
       if (!seen.has(key)) {
         seen.add(key);
         uniqueCourses.push(c);
@@ -70,12 +98,16 @@ exports.getInstructorCourses = async (req, res) => {
 exports.saveCourse = async (req, res) => {
   if (!req.session.instructor)
     return res.status(403).json({ error: "Unauthorized." });
-
-  const { title, modules, price } = req.body;
+  const { title, modules, price, overview, tagline, whatYouWillLearn } =
+    req.body;
   const instructorId = req.session.instructor;
 
   try {
-    const courseId = await model.insertCourse(title, instructorId);
+    const courseId = await model.insertCourse(title, instructorId, {
+      overview,
+      tagline,
+      whatYouWillLearn,
+    });
     const stat = await CourseStat.create({
       course_id: courseId,
       enrolled_count: 0,
@@ -117,7 +149,7 @@ exports.saveCourseChanges = async (req, res) => {
     return res.status(403).json({ error: "Unauthorized." });
 
   const { courseId } = req.query;
-  const { title, modules } = req.body;
+  const { title, modules, overview, tagline, whatYouWillLearn } = req.body;
   const instructorId = req.session.instructor;
 
   try {
@@ -135,7 +167,19 @@ exports.saveCourseChanges = async (req, res) => {
         .status(404)
         .json({ error: "Course not found or unauthorized." });
 
+    // Update title and optional metadata on the Course document
     await model.updateCourseTitle(courseId, title);
+    try {
+      await Course.findByIdAndUpdate(courseId, {
+        overview: overview || "",
+        tagline: tagline || "",
+        whatYouWillLearn: Array.isArray(whatYouWillLearn)
+          ? whatYouWillLearn
+          : [],
+      }).exec();
+    } catch (e) {
+      console.warn("Could not update course metadata:", e.message || e);
+    }
 
     await model.deleteModulesByCourse(courseId);
 

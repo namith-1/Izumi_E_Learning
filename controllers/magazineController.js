@@ -1,44 +1,34 @@
-const Magazine = require('../required/db.js').Magazine; // Adjust the path if needed
+const Magazine = require("../required/db.js").Magazine; // Adjust the path if needed
 
-Magazine.insertMany([
-  {
-    "title": "Tech Monthly",
-    "description": "The latest trends and breakthroughs in the world of technology.",
-    "image_url": "http://localhost:4000/views/images/test.jpeg",
-    "content_url": "https://www.example.com/tech-monthly-latest-issue"
-  },
-  {
-    "title": "Food & Travel",
-    "description": "Delicious recipes and inspiring travel destinations from around the globe.",
-    "image_url": "https://img.freepik.com/free-photo/digital-art-ai-technology-background_23-2151719636.jpg?t=st=1746783077~exp=1746786677~hmac=bbb0824aaaef5950bf611e346250e8ce36931ac6e0bb25469de9c5e21a54cf58&w=1800",
-    "content_url": "https://www.example.com/food-travel-adventures"
-  },
-  {
-    "title": "Science Today",
-    "description": "Exploring the wonders of science, from the cosmos to the microscopic world.",
-    "image_url": "http://localhost:4000/views/images/test.jpeg",
-    "content_url": "https://wallpapers.com/images/high/mathematics-algebra-formulas-fvd2hz84yf8lonsz.webp"
-  },
-  {
-    "title": "Art & Culture",
-    "description": "A celebration of creativity, history, and cultural expressions.",
-    "image_url": "http://localhost:4000/views/images/test.jpeg",
-    "content_url": "https://www.example.com/art-culture-insights"
-  },
-  {
-    "title": "Business Review",
-    "description": "In-depth analysis and insights into the world of business and finance.",
-    "image_url": "http://localhost:4000/views/images/test.jpeg",
-    "content_url": "https://www.example.com/business-review-analysis"
-  }
-]);
-
+// Controller: serve either HTML (EJS) or JSON for dynamic loading.
+// - If client requests JSON (Accept: application/json) or uses ?lastId=, return JSON list.
+// - Otherwise render the `magazine/index` EJS view with magazines.
 exports.index = async (req, res) => {
-    try {
-        const magazines = await Magazine.find();
-        res.render('magazine/index', { magazines: magazines });
-    } catch (err) {
-        console.error(err);
-        res.status(500).send('Error fetching magazines');
+  try {
+    // Simple pagination by ObjectId string: return records with _id > lastId if provided
+    const { lastId, limit } = req.query;
+    const pageLimit = parseInt(limit, 10) || 10;
+
+    let query = {};
+    if (lastId) {
+      // When lastId provided, fetch documents with _id greater than lastId (lexicographic)
+      // This assumes ObjectId string ordering; for stable pagination consider using createdAt.
+      query = { _id: { $gt: lastId } };
     }
+
+    const magazines = await Magazine.find(query).limit(pageLimit).lean();
+
+    // If the request expects JSON (AJAX) or had lastId, return JSON
+    const acceptsJson =
+      req.xhr || req.get("Accept")?.includes("application/json") || lastId;
+    if (acceptsJson) {
+      return res.json(magazines);
+    }
+
+    // Otherwise render HTML view
+    res.render("magazine/index", { magazines });
+  } catch (err) {
+    console.error("Error in magazineController.index:", err);
+    res.status(500).send("Error fetching magazines");
+  }
 };

@@ -48,6 +48,11 @@
                                 <i class="fas fa-book me-2"></i>Courses
                             </a>
                         </li>
+                         <li class="nav-item">
+                            <a class="nav-link active" href="/admin/requests">
+                                <i class="fas fa-envelope me-2"></i>Requests
+                            </a>
+                        </li>
                         <li class="nav-item">
                             <a class="nav-link active" href="/admin/content">
                                 <i class="fas fa-file-alt me-2"></i>Content
@@ -65,11 +70,17 @@
             <!-- Main Content -->
             <div class="col-md-9 col-lg-10 p-4">
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h2>Content Management</h2>
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addContentModal">
-                        <i class="fas fa-plus me-2"></i>Add New Content
-                    </button>
-                </div>
+    <h2>Content Management</h2>
+    <div>
+        <button class="btn btn-secondary me-2" id="refreshContentBtn">
+            <i class="fas fa-sync-alt me-2"></i>Refresh
+        </button>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addContentModal">
+            <i class="fas fa-plus me-2"></i>Add New Content
+        </button>
+    </div>
+</div>
+
 
                 <!-- Search and Filter -->
                 <div class="card mb-4">
@@ -219,162 +230,148 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Function to populate course dropdowns
-            async function populateCourses() {
-                try {
-                    const response = await fetch('/admin/courses/list');
-                    const courses = await response.json();
-                    
-                    const courseSelects = document.querySelectorAll('select[name="course_id"]');
-                    courseSelects.forEach(select => {
-                        // Clear existing options except the first one
-                        while (select.options.length > 1) {
-                            select.remove(1);
-                        }
-                        
-                        // Add course options
-                        courses.forEach(course => {
-                            const option = document.createElement('option');
-                            option.value = course._id;
-                            option.textContent = course.title;
-                            select.appendChild(option);
-                        });
-                    });
-                } catch (error) {
-                    console.error('Error fetching courses:', error);
-                }
-            }
+  <script>
+document.addEventListener('DOMContentLoaded', function() {
 
-            // Populate courses when page loads
-            populateCourses();
-
-            // Populate courses when add modal opens
-            const addContentModal = document.getElementById('addContentModal');
-            if (addContentModal) {
-                addContentModal.addEventListener('show.bs.modal', populateCourses);
-            }
-
-            // Populate courses when edit modal opens
-            const editContentModal = document.getElementById('editContentModal');
-            if (editContentModal) {
-                editContentModal.addEventListener('show.bs.modal', populateCourses);
-            }
-
-            const searchInput = document.querySelector('input[placeholder="Search content..."]');
-            const courseFilter = document.querySelector('select');
-            const tableRows = document.querySelectorAll('tbody tr');
-
-            function filterTable() {
-                const searchTerm = searchInput.value.toLowerCase();
-                const selectedCourse = courseFilter.value.toLowerCase();
-
-                tableRows.forEach(row => {
-                    const title = row.cells[0].textContent.toLowerCase();
-                    const course = row.cells[1].textContent.toLowerCase();
-                    const content = row.cells[2].textContent.toLowerCase();
-                    
-                    const matchesSearch = title.includes(searchTerm) || content.includes(searchTerm);
-                    const matchesCourse = !selectedCourse || course === selectedCourse;
-
-                    row.style.display = matchesSearch && matchesCourse ? '' : 'none';
-                });
-            }
-
-            if (searchInput) searchInput.addEventListener('input', filterTable);
-            if (courseFilter) courseFilter.addEventListener('change', filterTable);
-
-            // Delete content
-            const deleteButtons = document.querySelectorAll('.btn-danger');
-            deleteButtons.forEach(button => {
-                button.addEventListener('click', async function() {
-                    const row = this.closest('tr');
-                    const moduleId = row.getAttribute('data-id');
-
-                    if (confirm('Are you sure you want to delete this content?')) {
-                        try {
-                            const response = await fetch(`/admin/content/${moduleId}`, {
-                                method: 'DELETE',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                }
-                            });
-                            const data = await response.json();
-                            
-                            if (data.success) {
-                                row.remove();
-                            } else {
-                                alert('Error deleting content');
-                            }
-                        } catch (error) {
-                            console.error('Error:', error);
-                            alert('Error deleting content');
-                        }
-                    }
+    async function populateCourses() {
+        try {
+            const response = await fetch('/admin/courses/list');
+            const courses = await response.json();
+            const selects = document.querySelectorAll('select[name="course_id"]');
+            selects.forEach(select => {
+                while (select.options.length > 1) select.remove(1);
+                courses.forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c._id;
+                    opt.textContent = c.title;
+                    select.appendChild(opt);
                 });
             });
+        } catch (err) {
+            console.error('Error fetching courses:', err);
+        }
+    }
 
-            // Edit content
-            const editButtons = document.querySelectorAll('.btn-info');
-            editButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    const row = this.closest('tr');
-                    const moduleId = row.getAttribute('data-id');
-                    const title = row.cells[0].textContent;
-                    const courseId = row.cells[1].querySelector('a')?.getAttribute('href')?.split('/').pop() || '';
-                    const text = row.cells[2].textContent;
-                    const url = row.cells[3].querySelector('a')?.href || '';
+    async function refreshContentTable() {
+        try {
+            const res = await fetch('/admin/content/data');
+            const modules = await res.json();
+            const tbody = document.querySelector('table tbody');
+            tbody.innerHTML = '';
+            if (!modules.length) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center">No content found</td></tr>`;
+                return;
+            }
 
-                    // Populate edit modal
-                    const editModal = new bootstrap.Modal(document.getElementById('editContentModal'));
-                    const form = document.getElementById('editContentForm');
-                    
-                    if (form) {
-                        // Set form data
-                        form.setAttribute('data-id', moduleId);
-                        form.querySelector('[name="title"]').value = title;
-                        form.querySelector('[name="course_id"]').value = courseId;
-                        form.querySelector('[name="text"]').value = text;
-                        form.querySelector('[name="url"]').value = url;
-
-                        // Show modal
-                        editModal.show();
-                    }
-                });
+            modules.forEach(mod => {
+                const tr = document.createElement('tr');
+                tr.dataset.id = mod._id;
+                tr.innerHTML = `
+                    <td>${mod.title}</td>
+                    <td>${mod.course_title}</td>
+                    <td>${mod.text}</td>
+                    <td>${mod.url ? `<a href="${mod.url}" target="_blank" class="btn btn-sm btn-link"><i class="fas fa-external-link-alt"></i> View</a>` : '<span class="text-muted">No URL</span>'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-info edit-btn"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-sm btn-danger delete-btn"><i class="fas fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
             });
 
-            // Handle edit form submission
-            const editForm = document.getElementById('editContentForm');
-            if (editForm) {
-                editForm.addEventListener('submit', async function(e) {
-                    e.preventDefault();
-                    const moduleId = this.getAttribute('data-id');
-                    const formData = new FormData(this);
-                    const data = Object.fromEntries(formData.entries());
+            bindContentActions();
+        } catch (err) {
+            console.error(err);
+        }
+    }
 
+    function bindContentActions() {
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.onclick = async function() {
+                const row = this.closest('tr');
+                const id = row.dataset.id;
+                if (confirm('Delete this content?')) {
                     try {
-                        const response = await fetch(`/admin/content/${moduleId}`, {
-                            method: 'PUT',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify(data)
-                        });
-                        const result = await response.json();
-                        
-                        if (result.success) {
-                            window.location.reload();
-                        } else {
-                            alert('Error updating content');
-                        }
-                    } catch (error) {
-                        console.error('Error:', error);
-                        alert('Error updating content');
-                    }
-                });
-            }
+                        const res = await fetch(`/admin/content/${id}`, { method:'DELETE', headers:{'Content-Type':'application/json'} });
+                        const data = await res.json();
+                        if (data.success) row.remove();
+                        else alert('Delete failed');
+                    } catch(err) { console.error(err); alert('Delete failed'); }
+                }
+            };
         });
-    </script>
+
+        document.querySelectorAll('.edit-btn').forEach(btn => {
+            btn.onclick = function() {
+                const row = this.closest('tr');
+                const id = row.dataset.id;
+                const form = document.getElementById('editContentForm');
+                form.dataset.id = id;
+                form.title.value = row.cells[0].textContent;
+
+                const courseSelect = form.course_id;
+                for (let opt of courseSelect.options) {
+                    opt.selected = opt.textContent === row.cells[1].textContent;
+                }
+
+                form.text.value = row.cells[2].textContent;
+                form.url.value = row.cells[3].querySelector('a')?.href || '';
+                new bootstrap.Modal(document.getElementById('editContentModal')).show();
+            };
+        });
+
+        // Filter/Search
+        const searchInput = document.querySelector('input[placeholder="Search content..."]');
+        const courseFilter = document.querySelector('select');
+        const tableRows = document.querySelectorAll('tbody tr');
+
+        function filterTable() {
+            const term = searchInput.value.toLowerCase();
+            const selected = courseFilter.value.toLowerCase();
+            document.querySelectorAll('tbody tr').forEach(row => {
+                const title = row.cells[0].textContent.toLowerCase();
+                const course = row.cells[1].textContent.toLowerCase();
+                const text = row.cells[2].textContent.toLowerCase();
+                const show = (title.includes(term) || text.includes(term)) && (!selected || course === selected);
+                row.style.display = show ? '' : 'none';
+            });
+        }
+
+        if(searchInput) searchInput.addEventListener('input', filterTable);
+        if(courseFilter) courseFilter.addEventListener('change', filterTable);
+    }
+
+    populateCourses();
+    refreshContentTable();
+const refreshBtn = document.getElementById('refreshContentBtn');
+if (refreshBtn) {
+    refreshBtn.addEventListener('click', () => {
+        refreshContentTable();
+    });
+}
+ setInterval(() => {
+    refreshContentTable();
+  }, 15000);
+
+    const editForm = document.getElementById('editContentForm');
+    if(editForm){
+        editForm.addEventListener('submit', async e => {
+            e.preventDefault();
+            const id = editForm.dataset.id;
+            const data = Object.fromEntries(new FormData(editForm).entries());
+            try {
+                const res = await fetch(`/admin/content/${id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
+                const result = await res.json();
+                if(result.success){
+                    refreshContentTable();
+                    bootstrap.Modal.getInstance(document.getElementById('editContentModal')).hide();
+                } else alert('Update failed');
+            } catch(err){ console.error(err); alert('Update failed'); }
+        });
+    }
+
+});
+</script>
+
 </body>
 </html> 

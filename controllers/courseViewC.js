@@ -1,20 +1,82 @@
 const path = require("path");
-const Course = require("../models/courseModel"); // Use the Mongoose model
+const CourseModel = require("../models/courseModel"); // helper model
+const { Course, Instructor } = require("../required/db.js");
 
 exports.viewCourse = (req, res) => {
   res.sendFile(path.join(__dirname, "../views/public", "view_course.html"));
 };
 
+// Render the server-side course page with enriched courseData
 exports.getCourseDetails = async (req, res) => {
   const courseId = req.params.courseId;
 
   try {
-    const course = await Course.getCourseInfo(courseId);
+    // Attempt to load lightweight aggregated info first
+    let courseInfo = await CourseModel.getCourseInfo(courseId);
 
-    if (!course) {
-      return res.status(404).send("Course not found");
+    // If aggregation didn't find the course, try to load the raw Course doc
+    if (!courseInfo) {
+      const rawCourse = await Course.findById(courseId).lean().exec();
+      if (!rawCourse) return res.status(404).send("Course not found");
+      courseInfo = {
+        id: rawCourse._id,
+        title: rawCourse.title,
+        enrolled_count: 0,
+        avg_rating: 0,
+        review_count: 0,
+        raw: rawCourse,
+      };
     }
 
+    // Load instructor info if available
+    let instructor = {
+      name: "TBA",
+      title: "",
+      bio: "",
+      avatarUrl: "/images/default-avatar.png",
+    };
+    try {
+      if (courseInfo.raw && courseInfo.raw.instructor_id) {
+        const inst = await Instructor.findById(courseInfo.raw.instructor_id)
+          .lean()
+          .exec();
+        if (inst) {
+          instructor = {
+            name: inst.name || "TBA",
+            title: inst.title || "",
+            bio: inst.bio || "",
+            avatarUrl: inst.avatarUrl || "/images/default-avatar.png",
+          };
+        }
+      }
+    } catch (e) {
+      // non-fatal - leave instructor as fallback
+      console.warn("Could not load instructor details:", e.message || e);
+    }
+
+    // Compose courseData with fields used by the template
+    const details =
+      courseInfo.raw && courseInfo.raw.details ? courseInfo.raw.details : {};
+    const courseData = {
+      id: String(courseInfo.id || courseInfo._id),
+      title: courseInfo.title || "Untitled Course",
+      overview: details.overview || courseInfo.overview || "",
+      whatYouWillLearn: Array.isArray(details.whatYouWillLearn)
+        ? details.whatYouWillLearn
+        : Array.isArray(courseInfo.whatYouWillLearn)
+        ? courseInfo.whatYouWillLearn
+        : [],
+      tagline: details.tagline || courseInfo.tagline || "",
+      enrollmentCount: Number(courseInfo.enrolled_count || 0),
+      rating: Number(courseInfo.avg_rating || 0),
+      reviewsCount: Number(courseInfo.review_count || 0),
+      avgCompletionTime: courseInfo.avg_completion_time || null,
+      instructor,
+      details,
+      raw: courseInfo.raw || {},
+    };
+
+    // Nav links may be used by client-side; keep compatibility
     const navLinks = [
       { href: "overview", text: "Overview" },
       { href: "curriculum", text: "Curriculum" },
@@ -22,47 +84,11 @@ exports.getCourseDetails = async (req, res) => {
       { href: "faq", text: "FAQ" },
     ];
 
-    const sections = [
-      { id: "overview", title: "Course Overview", content: "nothing" },
-      {
-        id: "curriculum",
-        title: "Curriculum",
-        content: "Detailed course modules will be listed here.",
-      },
-      {
-        id: "reviews",
-        title: "Student Reviews",
-        content: `${course.review_count || 0} reviews available.`,
-      },
-      {
-        id: "faq",
-        title: "Frequently Asked Questions",
-        content: "Common queries about this course.",
-      },
-    ];
-
-    // Ensure a simple string courseId is passed to the view so client-side JS can use it
-    // Normalize course object into `courseData` to match template expectations
-    const courseData = {
-      id: course.id || course._id,
-      title: course.title || "Untitled Course",
-      enrollmentCount: Number(
-        course.enrolled_count || course.enrollmentCount || 0
-      ),
-      rating: Number(course.avg_rating || course.rating || 0),
-      reviewsCount: Number(course.review_count || course.reviewsCount || 0),
-      avgCompletionTime:
-        course.avg_completion_time || course.avgCompletionTime || null,
-      // include original raw object for any additional fields used elsewhere
-      raw: course,
-    };
-
     res.render("course.ejs", {
-      course,
+      course: courseInfo,
       courseData,
       navLinks,
-      sections,
-      courseId: String(course.id),
+      courseId: String(courseData.id),
     });
   } catch (error) {
     console.error(error);
