@@ -36,13 +36,41 @@ exports.getCourseDetails_moduleTree = async (req, res) => {
 
 exports.getAllCourses = async (req, res) => {
   try {
-    const courses = await model.getAllCourses();
+    // Use aggregation to include instructor name and a subject fallback
+    const Course = require("../required/db").Course;
+    const courses = await Course.aggregate([
+      { $match: {} },
+      {
+        $lookup: {
+          from: "instructors",
+          localField: "instructor_id",
+          foreignField: "_id",
+          as: "instructor",
+        },
+      },
+      { $unwind: { path: "$instructor", preserveNullAndEmptyArrays: true } },
+      {
+        $project: {
+          _id: 1,
+          title: 1,
+          subject: { $ifNull: ["$subject", "Unknown"] },
+          instructor_id: {
+            _id: "$instructor._id",
+            name: { $ifNull: ["$instructor.name", "Unknown"] },
+          },
+        },
+      },
+    ]).exec();
 
     // Deduplicate courses by title + instructor_id to avoid showing duplicate cards
     const seen = new Set();
     const uniqueCourses = [];
     for (const c of courses) {
-      const key = `${c.title}::${c.instructor_id}`;
+      const instrId =
+        c.instructor_id && c.instructor_id._id
+          ? c.instructor_id._id.toString()
+          : "";
+      const key = `${c.title}::${instrId}`;
       if (!seen.has(key)) {
         seen.add(key);
         uniqueCourses.push(c);
