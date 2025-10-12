@@ -1,7 +1,7 @@
 const path = require("path");
 const model = require("../models/instructorCourseModel"); // Import the Mongoose-based model
 const mongoose = require("mongoose");
-const { CourseStat } = require("../required/db");
+const { CourseStat,Course } = require("../required/db");
 exports.getCourseDetails_moduleTree = async (req, res) => {
   const courseId = req.params.courseId;
 
@@ -78,7 +78,7 @@ exports.saveCourse = async (req, res) => {
     const courseId = await model.insertCourse(title, instructorId);
     const stat = await CourseStat.create({
       course_id: courseId,
-      enrolled_count: 10,
+      enrolled_count: 0,
       avg_rating: 4.5,
       avg_completion_time: 120,
       price: price,

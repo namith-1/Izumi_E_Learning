@@ -10,3 +10,4 @@ router.get("/course-edit", courseController.editCourse);
 router.get("/courses-list", courseController.listCourses);
 
 module.exports = router;
+

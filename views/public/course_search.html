@@ -1,124 +1,218 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Courses by Subject</title>
-    <style>
-        body {
-            font-family: sans-serif;
-            margin: 20px;
-        }
-        .course-row {
-            display: flex;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-        }
-        .course {
-            border: 1px solid #ddd;
-            padding: 10px;
-            margin: 5px;
-            width: calc(50% - 10px);
-            box-sizing: border-box;
-        }
-        .subject-header {
-            text-align: center;
-            margin-bottom: 10px;
-            font-weight: bold;
-            font-size: 1.2em;
-            width: 100%;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Courses by Subject</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 20px;
+    }
 
-    </style>
-    <link rel="stylesheet" href="/views/public/test.css">
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    h1 {
+      margin: 0 0 10px 0;
+    }
+
+    input[type="text"] {
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      margin-right: 10px;
+      min-width: 200px;
+    }
+
+    button {
+      padding: 8px 14px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    .course-row {
+      display: flex;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .course {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 12px;
+      margin: 5px;
+      width: calc(50% - 10px);
+      box-sizing: border-box;
+      transition: 0.2s ease;
+    }
+
+    .course:hover {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .subject-header {
+      text-align: center;
+      margin-bottom: 10px;
+      font-weight: bold;
+      font-size: 1.2em;
+      width: 100%;
+    }
+
+    .course h3 {
+      margin-top: 0;
+      margin-bottom: 8px;
+    }
+
+    .course p {
+      margin: 5px 0;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+
+    select {
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      margin-bottom: 20px;
+    }
+  </style>
 </head>
 <body>
+  <header>
     <h1>Courses by Subject</h1>
-
-    <label for="subject-select">Select Subject:</label>
-    <select id="subject-select">
-        <option value="all">All Subjects</option>
-    </select>
-
-    <div id="courses-container">
+    <div>
+      <input type="text" id="search-input" placeholder="Search by course or instructor">
+      <button id="progress-btn">View Progress</button>
     </div>
+  </header>
 
-    <script>
-        async function fetchCourses() {
-            try {
-                const response = await fetch('/courses_l');
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const courses = await response.json();
-                console.log("Fetched Courses:", courses);
-                displayCourses(courses);
-                populateSubjects(courses);
-            } catch (error) {
-                console.error('Error fetching courses:', error);
-                document.getElementById('courses-container').innerHTML = '<p>Failed to load courses.</p>';
-            }
+  <label for="subject-select">Select Subject:</label>
+  <select id="subject-select">
+    <option value="all">All Subjects</option>
+  </select>
+
+  <div id="courses-container"></div>
+
+  <script>
+    const searchInput = document.getElementById("search-input");
+    const subjectSelect = document.getElementById("subject-select");
+    const progressBtn = document.getElementById("progress-btn");
+    const coursesContainer = document.getElementById("courses-container");
+
+    let coursesData = []; // store all courses globally
+
+    // Redirect to progress page
+    progressBtn.addEventListener("click", () => {
+      window.location.href = "/progress"; // replace with actual page
+    });
+
+    searchInput.addEventListener("input", () => {
+      const query = searchInput.value.toLowerCase();
+      const filtered = coursesData.filter(course => {
+        const title = course.title.toLowerCase();
+        const instructor = (course.instructor_id?.name || "").toLowerCase();
+        return title.includes(query) || instructor.includes(query);
+      });
+      displayCourses(filtered, subjectSelect.value);
+    });
+
+    subjectSelect.addEventListener("change", () => {
+      const selectedSubject = subjectSelect.value;
+      const query = searchInput.value.toLowerCase();
+      const filtered = coursesData.filter(course => {
+        const title = course.title.toLowerCase();
+        const instructor = (course.instructor_id?.name || "").toLowerCase();
+        return title.includes(query) || instructor.includes(query);
+      });
+      displayCourses(filtered, selectedSubject);
+    });
+
+    async function fetchCourses() {
+      try {
+        const response = await fetch('/courses_l');
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+        coursesData = await response.json(); // save globally
+        console.log("Fetched Courses:", coursesData);
+
+        populateSubjects(coursesData);
+        displayCourses(coursesData);
+      } catch (error) {
+        console.error('Error fetching courses:', error);
+        coursesContainer.innerHTML = '<p>Failed to load courses.</p>';
+      }
+    }
+
+    function displayCourses(courses, selectedSubject = 'all') {
+      coursesContainer.innerHTML = '';
+
+      const filteredCourses = selectedSubject === 'all'
+        ? courses
+        : courses.filter(course => course.subject === selectedSubject);
+
+      const subjects = [...new Set(filteredCourses.map(course => course.subject))];
+      subjects.sort();
+
+      subjects.forEach(subject => {
+        const subjectCourses = filteredCourses.filter(course => course.subject === subject);
+        if (subjectCourses.length > 0) {
+          const subjectHeader = document.createElement('div');
+          subjectHeader.className = 'subject-header';
+          subjectHeader.textContent = subject;
+          coursesContainer.appendChild(subjectHeader);
+
+          const courseRow = document.createElement('div');
+          courseRow.className = 'course-row';
+
+          subjectCourses.forEach(course => {
+            const courseDiv = document.createElement('div');
+            courseDiv.className = 'course';
+            courseDiv.innerHTML = `
+              <a href="/is_enrolled?courseId=${course._id}" target="_top" style="text-decoration:none;color:inherit;">
+                <h3>${course.title}</h3>
+                <p><strong>Instructor:</strong> ${course.instructor_id?.name || 'Unknown'}</p>
+                <p><strong>Subject:</strong> ${course.subject}</p>
+              </a>
+            `;
+            courseRow.appendChild(courseDiv);
+          });
+
+          coursesContainer.appendChild(courseRow);
         }
+      });
+    }
 
-        function displayCourses(courses, selectedSubject = 'all') {
-            const container = document.getElementById('courses-container');
-            container.innerHTML = '';
+    function populateSubjects(courses) {
+      const subjects = [...new Set(courses.map(course => course.subject))];
+      subjects.sort();
 
-            const filteredCourses = selectedSubject === 'all'
-                ? courses
-                : courses.filter(course => course.subject === selectedSubject);
+      subjects.forEach(subject => {
+        const option = document.createElement('option');
+        option.value = subject;
+        option.textContent = subject;
+        subjectSelect.appendChild(option);
+      });
+    }
 
-            const subjects = [...new Set(filteredCourses.map(course => course.subject))];
-            subjects.sort();
-
-            subjects.forEach(subject => {
-                const subjectCourses = filteredCourses.filter(course => course.subject === subject);
-
-                if (subjectCourses.length > 0) {
-                    const subjectHeader = document.createElement('div');
-                    subjectHeader.className = 'subject-header';
-                    subjectHeader.textContent = subject;
-                    container.appendChild(subjectHeader);
-
-                    const courseRow = document.createElement('div');
-                    courseRow.className = 'course-row';
-
-                    subjectCourses.forEach(course => {
-                        const courseDiv = document.createElement('div');
-                        courseDiv.className = 'course';
-                        courseDiv.innerHTML = `
-                            <a href="/is_enrolled?courseId=${course._id}" target="_top">
-                            <h3>${course.title}</h3>
-                            <p>Instructor ID: ${course.instructor_id}</p>
-                            </a>
-                        `;
-                        courseRow.appendChild(courseDiv);
-                    });
-
-                    container.appendChild(courseRow);
-                }
-            });
-        }
-
-        function populateSubjects(courses) {
-            const subjectSelect = document.getElementById('subject-select');
-            const subjects = [...new Set(courses.map(course => course.subject))];
-            subjects.sort();
-
-            subjects.forEach(subject => {
-                const option = document.createElement('option');
-                option.value = subject;
-                option.textContent = subject;
-                subjectSelect.appendChild(option);
-            });
-
-            subjectSelect.addEventListener('change', () => {
-                const selectedSubject = subjectSelect.value;
-                displayCourses(courses, selectedSubject);
-            });
-        }
-
-        fetchCourses();
-    </script>
+    fetchCourses();
+  </script>
 </body>
 </html>

@@ -88,11 +88,12 @@ exports.enrollStudent = async (req, res) => {
 };
 
 exports.fetchStudentProgress = async (req, res) => {
-  const studentId = req.params.studentId;
-  console.log("Fetching progress for student:", studentId);
+  const studentId = req.session.student;
+  // console.log("Fetching progress for student:", studentId);
 
   try {
     const rows = await StudentCourse.getStudentCourseProgress(studentId);
+    // console.log(rows);
     const progressRows = rows.map((row) => ({
       ...row,
       progress:
