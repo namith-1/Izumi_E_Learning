@@ -17,16 +17,15 @@ The system supports three roles — **Admin**, **Instructor**, and **Student** �
 ### 👨‍🏫 Instructor
 - Create, edit, and manage **Courses**
 - Add **Modules** and **Subtopics** with text, videos, or documents
-- Track **student enrollments** for each course
-- Monitor **student progress**
-- View **earnings and revenue reports** for their courses
+- Monitor **student enrollments**
+- Raising complaints to admin
 
 ### 🎓 Student
 - Register, enroll in, and learn from **available courses**
 - Track **progress** through interactive dashboards
 - Play **educational games** to strengthen understanding of concepts
 - Access **digital magazines** to stay updated and engaged
-- Earn **badges or points** for completing activities (gamified experience)
+
 
 ---
 
@@ -50,9 +49,9 @@ The system supports three roles — **Admin**, **Instructor**, and **Student** �
 |-------|-------------|
 | **Frontend** | HTML5, CSS3, JavaScript, Bootstrap 5 |
 | **Backend** | Node.js, Express.js |
-| **Database** | MongoDB with Mongoose |
+| **Database** | MongoDB with Mongoose and atlas |
 | **Templating Engine** | EJS (Embedded JavaScript) |
-| **Authentication** | JWT / Session-based login/bcrypt/DOM-validation |
+| **Authentication** | Session-based login/bcrypt/DOM-validation |
 | **Game Integration** | API Based|
 | **Version Control** | Git + GitHub |
 
