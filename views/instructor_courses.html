@@ -474,7 +474,6 @@
     </style>
 </head>
 <body>
-    <!-- Navbar -->
     <nav class="izumi-navbar">
         <div class="izumi-navbar-brand">🎓 Izumi Learning</div>
         <div class="izumi-nav-links">
@@ -496,9 +495,7 @@
         </div>
     </nav>
 
-    <!-- Main Content -->
     <main>
-        <!-- Course Info Section -->
         <section id="course-info" class="page-section active">
             <h1>Your Courses</h1>
             <div id="courseList"></div>
@@ -507,13 +504,11 @@
             </div>
         </section>
 
-        <!-- Student Info Section -->
         <section id="student-info" class="page-section">
             <h1>Courses and Statistics</h1>
             <div class="course-container" id="course-list"></div>
         </section>
 
-        <!-- My Info Section -->
         <section id="my-info" class="page-section">
             <h1>My Information</h1>
             <div class="iframe-container">
@@ -521,11 +516,9 @@
             </div>
         </section>
 
-        <!-- Comments Section -->
         <section id="contact-admin" class="page-section">
             <h1>Contact Admin</h1>
             
-            <!-- Contact Admin Form -->
             <div class="comment-form">
                 <h2>Send Message to Admin</h2>
                 <form id="contactAdminForm">
@@ -553,7 +546,6 @@
                 </form>
             </div>
 
-            <!-- Message History -->
             <div class="comments-list">
                 <h2>Your Messages</h2>
                 <div id="messageHistory">
@@ -562,7 +554,6 @@
             </div>
         </section>
 
-        <!-- About Section -->
         <section id="about" class="page-section">
             <h1>About Izumi Learning</h1>
             <div class="comment-form">
@@ -582,7 +573,6 @@
         </section>
     </main>
 
-    <!-- Footer -->
     <footer>
         <div class="footer-content">
             <div class="footer-section">
@@ -594,7 +584,6 @@
                 <a href="#" data-page="course-info">Course Info</a>
                 <a href="#" data-page="student-info">Student Info</a>
                 <a href="#" data-page="my-info">My Info</a>
-                <a href="#" data-page="comments">Comments</a>
             </div>
             <div class="footer-section">
                 <h3>Contact</h3>
@@ -611,7 +600,7 @@
         let messages = [];
         let instructorCourses = [];
 
-        // Load courses on page load
+        // Load courses for the Course Info tab
         async function loadCourses() {
             try {
                 const response = await fetch("/instructor-courses");
@@ -661,7 +650,7 @@
             });
         }
 
-        // Fetch courses with statistics
+        // Fetch courses with statistics for the Student Info tab
         async function fetchCourses() {
             try {
                 const response = await fetch('/courses_by');
@@ -677,11 +666,15 @@
                 courses.forEach(course => {
                     const card = document.createElement('div');
                     card.classList.add('course-card');
+                    
+                    // Format revenue to be a number/string
+                    const revenue = course.revenue ? course.revenue.toLocaleString() : 'N/A';
+                    
                     card.innerHTML = `
                         <h3>${course.course_title}</h3>
                         <p><strong>Instructor:</strong> ${course.instructor_name}</p>
                         <p><strong>Enrolled Students:</strong> ${course.enrolled_count}</p>
-                        <p><strong>Revenue:</strong> $${course.revenue}</p>
+                        <p><strong>Revenue:</strong> $${revenue}</p>
                     `;
                     container.appendChild(card);
                 });
@@ -701,7 +694,7 @@
                 targetSection.classList.add('active');
             }
 
-            // Update active nav link
+            // Update active nav link: Check main nav links and profile dropdown links
             const navLinks = document.querySelectorAll('.izumi-nav-link');
             navLinks.forEach(link => {
                 link.classList.remove('izumi-nav-link-active');
@@ -710,10 +703,23 @@
                 }
             });
 
+            // Special handling for dropdown items that don't have the main .izumi-nav-link class
+            const dropdownLinks = document.querySelectorAll('.izumi-dropdown-item');
+            dropdownLinks.forEach(link => {
+                if (link.getAttribute('data-page') === view) {
+                    // You might want to visually indicate which dropdown item was selected if needed
+                }
+            });
+
+
             // Load iframe for My Info section
             const iframe = document.getElementById('my_info_iframe');
             if (view === 'my-info') {
                 iframe.src = '/instructor/details';
+            }
+            // Clear iframe source when navigating away to prevent potential resource leaks/background loading
+            else if (iframe.src) {
+                iframe.src = ''; 
             }
         }
 
@@ -724,11 +730,19 @@
         contactAdminForm.addEventListener('submit', function(e) {
             e.preventDefault();
             
-            const courseId = document.getElementById('courseSelect').value;
-            const courseName = document.getElementById('courseSelect').options[document.getElementById('courseSelect').selectedIndex].text;
+            // Get selected course name, handling the case where nothing is selected
+            const courseSelectElement = document.getElementById('courseSelect');
+            const courseId = courseSelectElement.value;
+            const courseName = courseSelectElement.options[courseSelectElement.selectedIndex].text;
             const priority = document.getElementById('priorityLevel').value;
             const messageText = document.getElementById('message').value;
             
+            // Basic client-side validation check (although 'required' attributes should cover this)
+            if (!courseId || !priority || !messageText) {
+                alert('Please fill out all required fields.');
+                return;
+            }
+
             const newMessage = {
                 courseId: courseId,
                 courseName: courseName,
@@ -779,16 +793,18 @@
 
                 // Handle dropdown menu item clicks
                 dropdownContent.addEventListener('click', (e) => {
-                    if (e.target.closest('[data-page]')) {
+                    // Check if the clicked element or any of its parents has the data-page attribute
+                    const targetLink = e.target.closest('[data-page]');
+                    if (targetLink) {
                         e.preventDefault();
-                        const page = e.target.closest('[data-page]').getAttribute('data-page');
+                        const page = targetLink.getAttribute('data-page');
                         navigate(page);
                         dropdownContent.classList.remove('active');
                     }
                 });
             }
 
-            // Navigation setup
+            // Navigation setup for main links
             const navLinks = document.querySelectorAll('.izumi-nav-link');
             navLinks.forEach(link => {
                 link.addEventListener('click', function(e) {
@@ -798,7 +814,7 @@
                 });
             });
 
-            // Footer links
+            // Footer links setup
             document.querySelectorAll('.footer-section a[data-page]').forEach(link => {
                 link.addEventListener('click', function(e) {
                     e.preventDefault();
@@ -808,16 +824,10 @@
                 });
             });
 
-            // Load initial data
+            // Load initial data *once* on DOM content loaded
             loadCourses();
             fetchCourses();
         });
-
-        // Load data on page load
-        window.onload = function() {
-            loadCourses();
-            fetchCourses();
-        };
     </script>
 </body>
 </html>
