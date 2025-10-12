@@ -1,33 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Izumi Learning Platform</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
     <style>
         :root {
-    /* Original Palette */
-    --primary-purple: #8b5cf6;
-    --primary-light: #a78bfa;
-    --cyan-accent: #b8e0dc;
-    --yellow-accent: #fef3c7;
-    --pale-cyan: #d4f1ee;
-     --izumi-primary: #8b5cf6; /* Replaced Bright Cyan with your original primary purple */
-    --izumi-secondary: #a78bfa; 
-    
-    --background: #f5f5f5;
-    --white: #ffffff;
-    --text-dark: #2d3748;
-    --text-medium: #4a5568;
-    --text-light: #718096;
-    --danger-color: #ef4444;
-    --success-color: #10b981;
-    --border-color: #e5e7eb;
-    --transition: all 0.3s ease;
-    --font-main: 'Poppins', sans-serif;
-}
+            /* Original Palette */
+            --primary-purple: #8b5cf6;
+            --primary-light: #a78bfa;
+            --cyan-accent: #b8e0dc;
+            --yellow-accent: #fef3c7;
+            --pale-cyan: #d4f1ee;
+            --izumi-primary: #8b5cf6;
+            /* Replaced Bright Cyan with your original primary purple */
+            --izumi-secondary: #a78bfa;
+
+            --background: #f5f5f5;
+            --white: #ffffff;
+            --text-dark: #2d3748;
+            --text-medium: #4a5568;
+            --text-light: #718096;
+            --danger-color: #ef4444;
+            --success-color: #10b981;
+            --border-color: #e5e7eb;
+            --transition: all 0.3s ease;
+            --font-main: 'Poppins', sans-serif;
+        }
 
         * {
             margin: 0;
@@ -104,22 +107,37 @@
         .profile-container {
             position: relative;
             cursor: pointer;
-            width: 40px;
-            height: 40px;
+            /* Increased size for better tap target and visibility */
+            width: 48px;
+            height: 48px;
             display: flex;
             align-items: center;
             justify-content: center;
             border-radius: 50%;
+            background-color: transparent;
+            /* Start with transparent background */
             transition: var(--transition);
         }
 
         .profile-container:hover {
-            background-color: #f5f5f5;
+            /* Subtle hover effect */
+            background-color: var(--border-color);
         }
 
         .profile-icon {
-            font-size: 20px;
-            color: var(--text-dark);
+            /* Larger icon for better visibility */
+            font-size: 28px;
+            /* Gradient color effect for the icon */
+            background: linear-gradient(135deg, var(--izumi-primary) 0%, var(--izumi-secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            transition: var(--transition);
+        }
+
+        .profile-container:hover .profile-icon {
+            /* Slightly darker/more saturated color on hover */
+            opacity: 0.85;
         }
 
         .dropdown-content {
@@ -138,8 +156,15 @@
         }
 
         @keyframes scaleIn {
-            from { transform: scale(0.95); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
+            from {
+                transform: scale(0.95);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
         }
 
         .dropdown-content.active {
@@ -244,132 +269,149 @@
         }
 
         @keyframes float {
-            0%, 100% { transform: translate(0, 0); }
-            50% { transform: translate(15px, -15px); }
+
+            0%,
+            100% {
+                transform: translate(0, 0);
+            }
+
+            50% {
+                transform: translate(15px, -15px);
+            }
         }
 
         @keyframes floatRotate {
-            0%, 100% { transform: rotate(25deg) translate(0, 0); }
-            50% { transform: rotate(30deg) translate(20px, -20px); }
+
+            0%,
+            100% {
+                transform: rotate(25deg) translate(0, 0);
+            }
+
+            50% {
+                transform: rotate(30deg) translate(20px, -20px);
+            }
         }
 
-.announcements {
-    background: var(--white);
-    padding: 2.5rem;
-    margin-bottom: 3.5rem;
-    border-radius: 20px;
-    width: 100%;
-    max-width: 1000px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-    position: relative;
-    z-index: 10;
-    overflow: hidden;
-    transform: perspective(1000px) rotateX(0deg) translateZ(0);
-    transition: var(--transition);
-    border: 1px solid rgba(255, 255, 255, 0.8);
-}
+        .announcements {
+            background: var(--white);
+            padding: 2.5rem;
+            margin-bottom: 3.5rem;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 1000px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            position: relative;
+            z-index: 10;
+            overflow: hidden;
+            transform: perspective(1000px) rotateX(0deg) translateZ(0);
+            transition: var(--transition);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
 
-.announcements:hover {
-    transform: perspective(1000px) rotateX(1deg) translateZ(5px);
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
-}
+        .announcements:hover {
+            transform: perspective(1000px) rotateX(1deg) translateZ(5px);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+        }
 
-.announcements h2 {
-    margin: -2.5rem -2.5rem 1.5rem -2.5rem;
-    padding: 1.5rem 2.5rem;
-    color: var(--white);
-    font-size: 1.6rem;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    background: linear-gradient(135deg, var(--izumi-primary) 0%, var(--izumi-secondary) 100%);
-    border-top-left-radius: 20px;
-    border-top-right-radius: 20px;
-    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-}
+        .announcements h2 {
+            margin: -2.5rem -2.5rem 1.5rem -2.5rem;
+            padding: 1.5rem 2.5rem;
+            color: var(--white);
+            font-size: 1.6rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            background: linear-gradient(135deg, var(--izumi-primary) 0%, var(--izumi-secondary) 100%);
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
 
-.announcements h2 i {
-    margin-right: 15px;
-    color: var(--yellow-accent);
-    font-size: 1.5rem;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
-}
+        .announcements h2 i {
+            margin-right: 15px;
+            color: var(--yellow-accent);
+            font-size: 1.5rem;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
 
-.announcements ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 1.2rem;
-}
+        .announcements ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+        }
 
-.announcements li {
-    padding: 1.25rem 1.5rem 1.25rem 4rem;
-    position: relative;
-    line-height: 1.5;
-    background: #fcfcfc;
-    border-radius: 12px;
-    transition: var(--transition);
-    border-left: 5px solid var(--border-color);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
+        .announcements li {
+            padding: 1.25rem 1.5rem 1.25rem 4rem;
+            position: relative;
+            line-height: 1.5;
+            background: #fcfcfc;
+            border-radius: 12px;
+            transition: var(--transition);
+            border-left: 5px solid var(--border-color);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
 
-.announcements li:hover {
-    background: #f0f8ff;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-}
+        .announcements li:hover {
+            background: #f0f8ff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
 
-.announcements li i {
-    position: absolute;
-    left: 1.5rem;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 1.3rem;
-    transition: var(--transition);
-}
+        .announcements li i {
+            position: absolute;
+            left: 1.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.3rem;
+            transition: var(--transition);
+        }
 
-.announcements li:nth-child(1) {
-    border-left-color: var(--izumi-primary);
-}
+        .announcements li:nth-child(1) {
+            border-left-color: var(--izumi-primary);
+        }
 
-.announcements li:nth-child(1) i { 
-    color: var(--izumi-primary); 
-}
+        .announcements li:nth-child(1) i {
+            color: var(--izumi-primary);
+        }
 
-.announcements li:nth-child(2) {
-    border-left-color: var(--success-color);
-}
+        .announcements li:nth-child(2) {
+            border-left-color: var(--success-color);
+        }
 
-.announcements li:nth-child(2) i { 
-    color: var(--success-color); 
-}
+        .announcements li:nth-child(2) i {
+            color: var(--success-color);
+        }
 
-.announcements li strong {
-    font-weight: 600;
-    color: var(--text-dark);
-}
+        .announcements li strong {
+            font-weight: 600;
+            color: var(--text-dark);
+        }
 
-@media (max-width: 768px) {
-    .announcements {
-        padding: 1.5rem;
-        margin-bottom: 2rem;
-    }
-    .announcements h2 {
-        margin: -1.5rem -1.5rem 1rem -1.5rem;
-        padding: 1rem 1.5rem;
-        font-size: 1.3rem;
-    }
-    .announcements li {
-        padding: 0.875rem 1rem 0.875rem 3rem;
-    }
-    .announcements li i {
-        left: 1rem;
-        font-size: 1.1rem;
-    }
-}
+        @media (max-width: 768px) {
+            .announcements {
+                padding: 1.5rem;
+                margin-bottom: 2rem;
+            }
+
+            .announcements h2 {
+                margin: -1.5rem -1.5rem 1rem -1.5rem;
+                padding: 1rem 1.5rem;
+                font-size: 1.3rem;
+            }
+
+            .announcements li {
+                padding: 0.875rem 1rem 0.875rem 3rem;
+            }
+
+            .announcements li i {
+                left: 1rem;
+                font-size: 1.1rem;
+            }
+        }
 
         .iframes-container {
             width: 100%;
@@ -391,8 +433,13 @@
             background-color: white;
         }
 
-        .frame-small { height: 650px; }
-        .frame-large { height: 900px; }
+        .frame-small {
+            height: 650px;
+        }
+
+        .frame-large {
+            height: 900px;
+        }
 
         .footer {
             background: #1a1a1a;
@@ -542,28 +589,30 @@
         }
     </style>
 </head>
+
 <body>
 
     <nav class="navbar">
         <div class="navbar-brand">Izumi</div>
-        <div class="nav-center">
+        <div class="nav-center" role="tablist">
             <a href="#" class="nav-link active" data-page="home" role="tab" aria-selected="true">Home</a>
             <a href="#" class="nav-link" data-page="courses" role="tab" aria-selected="false">Learn</a>
             <a href="#" class="nav-link" data-page="my-learning" role="tab" aria-selected="false">Simulations</a>
         </div>
         <div class="profile-container" aria-label="User menu" role="button" tabindex="0">
-            <i class="fa-solid fa-ellipsis-vertical profile-icon"></i>
+            <i class="fa-regular fa-user-circle profile-icon"></i>
             <div class="dropdown-content" role="menu">
                 <div class="dropdown-items">
-                    <a href="/profile" class="dropdown-item" role="menuitem"><i class="fa-regular fa-user"></i>Profile</a>
-                    <a href="#" class="dropdown-item" role="menuitem"><i class="fa-regular fa-credit-card"></i>My Purchases</a>
+                    <a href="/profile" class="dropdown-item" role="menuitem"><i
+                            class="fa-regular fa-user"></i>Profile</a>
+                    <a href="/my_purchases" class="dropdown-item" role="menuitem"><i
+                            class="fa-regular fa-credit-card"></i>My Purchases</a> 
                     <a href="/delete-page" class="dropdown-item" role="menuitem"><i class="fa-solid fa-gear"></i>Settings</a>
-                    <a href="#" class="dropdown-item" role="menuitem"><i class="fa-regular fa-bell"></i>Updates</a>
+                    
                     <div class="divider" role="separator"></div>
-                    <a href="#" class="dropdown-item" role="menuitem"><i class="fa-regular fa-star"></i>Accomplishments</a>
-                    <a href="#" class="dropdown-item" role="menuitem"><i class="fa-regular fa-circle-question"></i>Help Center</a>
-                    <div class="divider" role="separator"></div>
-                    <a href="/logout" class="dropdown-item logout" role="menuitem"><i class="fa-solid fa-arrow-right-from-bracket"></i>Log Out</a>
+                    
+                    <a href="/logout" class="dropdown-item logout" role="menuitem"><i
+                            class="fa-solid fa-arrow-right-from-bracket"></i>Log Out</a>
                 </div>
             </div>
         </div>
@@ -574,19 +623,21 @@
         <div class="geometric-bg shape-small-circle"></div>
         <div class="geometric-bg shape-small-yellow"></div>
         <div class="geometric-bg shape-bottom-cyan"></div>
-<section id="announcements_1" class="announcements">
-    <h2><i class="fas fa-bullhorn"></i>Daily Insight</h2>
-    <ul>
-        <li>
-            <i class="fas fa-brain"></i> 
-            <span style="font-weight: 600; color: var(--text-medium);">Deep Dive:</span> Systematic Review of the Literature
-        </li>
-        <li>
-            <i class="fas fa-check-circle"></i>
-            <span style="font-weight: 600; color: var(--text-medium);">Action Item:</span> Complete your profile for personalized recommendations
-        </li>
-    </ul>
-</section>
+        <section id="announcements_1" class="announcements">
+            <h2><i class="fas fa-bullhorn"></i>Daily Insight</h2>
+            <ul>
+                <li>
+                    <i class="fas fa-brain"></i>
+                    <span style="font-weight: 600; color: var(--text-medium);">Deep Dive:</span> Systematic Review of
+                    the Literature
+                </li>
+                <li>
+                    <i class="fas fa-check-circle"></i>
+                    <span style="font-weight: 600; color: var(--text-medium);">Action Item:</span> Complete your profile
+                    for personalized recommendations
+                </li>
+            </ul>
+        </section>
         <div class="iframes-container">
             <iframe id="main-frame-0" class="frame frame-small" title="Student Badge Content"></iframe>
             <iframe id="main-frame" class="frame frame-small" title="Main Content"></iframe>
@@ -637,7 +688,7 @@
     </footer>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             initializeFrames();
             setupProfileDropdown();
             setupNavigationTabs();
@@ -679,7 +730,7 @@
         function setupNavigationTabs() {
             const navLinks = document.querySelectorAll('.nav-link');
             navLinks.forEach(link => {
-                link.addEventListener('click', function(event) {
+                link.addEventListener('click', function (event) {
                     event.preventDefault();
                     const page = this.getAttribute('data-page');
                     fetchIframe(page);
@@ -703,44 +754,44 @@
             const page = urlParams.get('page');
             if (page) {
                 fetchIframe(page);
-                
+
                 const tabs = document.querySelectorAll('.nav-link');
                 tabs.forEach(tab => {
                     tab.classList.remove('active');
                     tab.setAttribute('aria-selected', 'false');
                 });
-                
-                const targetTab = Array.from(tabs).find(tab => 
+
+                const targetTab = Array.from(tabs).find(tab =>
                     tab.getAttribute('data-page') === page
                 );
-                
+
                 if (targetTab) {
                     targetTab.classList.add('active');
                     targetTab.setAttribute('aria-selected', 'true');
                 }
             }
         }
-        
+
         function fetchIframe(page) {
             const mainFrame = document.getElementById("main-frame");
             const secondFrame = document.getElementById("main-frame-2");
             const topFrame = document.getElementById("main-frame-0");
-            
+
             const url = new URL(window.location);
             url.searchParams.set('page', page);
             history.pushState({}, '', url);
-            
-            switch(page) {
+
+            switch (page) {
                 case 'courses':
                     secondFrame.style.display = "none";
                     topFrame.style.display = "none";
-                    mainFrame.style.display = "block";  
+                    mainFrame.style.display = "block";
                     mainFrame.src = "http://localhost:4000/courses-list";
                     mainFrame.classList.remove("frame-small");
                     mainFrame.classList.add("frame-large");
                     document.getElementById("announcements_1").style.display = "none";
                     break;
-                    
+
                 case 'home':
                     secondFrame.style.display = "block";
                     topFrame.style.display = "block";
@@ -751,7 +802,7 @@
                     topFrame.src = "http://localhost:4000/student_badge";
                     document.getElementById("announcements_1").style.display = "block";
                     break;
-                    
+
                 case 'my-learning':
                     secondFrame.style.display = "none";
                     topFrame.style.display = "none";
@@ -761,11 +812,11 @@
                     mainFrame.classList.add("frame-large");
                     document.getElementById("announcements_1").style.display = "none";
                     break;
-                    
+
                 case 'QnA':
                     secondFrame.style.display = "none";
                     topFrame.style.display = "none";
-                    mainFrame.style.display = "block";  
+                    mainFrame.style.display = "block";
                     mainFrame.src = "http://localhost:4000/my-questions";
                     mainFrame.classList.remove("frame-small");
                     mainFrame.classList.add("frame-large");
@@ -775,4 +826,5 @@
         }
     </script>
 </body>
+
 </html>

@@ -4,7 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Course Viewer</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <style>
       :root {
         --primary-purple: #8b5cf6;
@@ -19,15 +22,15 @@
         --success-color: #10b981;
         --border-radius: 16px;
         --transition: all 0.3s ease;
-        --font-main: 'Poppins', sans-serif;
+        --font-main: "Poppins", sans-serif;
       }
-      
+
       * {
         margin: 0;
         padding: 0;
         box-sizing: border-box;
       }
-      
+
       body {
         display: flex;
         font-family: var(--font-main);
@@ -41,7 +44,7 @@
       }
 
       body::before {
-        content: '';
+        content: "";
         position: fixed;
         top: 10%;
         right: 5%;
@@ -56,7 +59,7 @@
       }
 
       body::after {
-        content: '';
+        content: "";
         position: fixed;
         bottom: 10%;
         left: 5%;
@@ -71,8 +74,13 @@
       }
 
       @keyframes float {
-        0%, 100% { transform: translate(0, 0) scale(1); }
-        50% { transform: translate(30px, -30px) scale(1.1); }
+        0%,
+        100% {
+          transform: translate(0, 0) scale(1);
+        }
+        50% {
+          transform: translate(30px, -30px) scale(1.1);
+        }
       }
 
       .geometric-shape {
@@ -147,13 +155,24 @@
       }
 
       @keyframes rotate {
-        from { transform: rotate(45deg); }
-        to { transform: rotate(405deg); }
+        from {
+          transform: rotate(45deg);
+        }
+        to {
+          transform: rotate(405deg);
+        }
       }
 
       @keyframes pulse {
-        0%, 100% { transform: scale(1); opacity: 0.15; }
-        50% { transform: scale(1.2); opacity: 0.25; }
+        0%,
+        100% {
+          transform: scale(1);
+          opacity: 0.15;
+        }
+        50% {
+          transform: scale(1.2);
+          opacity: 0.25;
+        }
       }
 
       .app-container {
@@ -183,7 +202,11 @@
       }
 
       .sidebar h3 {
-        background: linear-gradient(135deg, var(--primary-purple) 0%, var(--primary-light) 100%);
+        background: linear-gradient(
+          135deg,
+          var(--primary-purple) 0%,
+          var(--primary-light) 100%
+        );
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
@@ -278,7 +301,11 @@
 
       #module-flag {
         display: inline-block;
-        background: linear-gradient(135deg, var(--success-color) 0%, #059669 100%);
+        background: linear-gradient(
+          135deg,
+          var(--success-color) 0%,
+          #059669 100%
+        );
         color: white;
         text-decoration: none;
         padding: 14px 28px;
@@ -292,13 +319,18 @@
       }
 
       #module-flag::before {
-        content: '';
+        content: "";
         position: absolute;
         top: 0;
         left: -100%;
         width: 100%;
         height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.3),
+          transparent
+        );
         transition: left 0.6s ease;
       }
 
@@ -337,7 +369,11 @@
       }
 
       .module button.active {
-        background: linear-gradient(135deg, var(--primary-purple) 0%, var(--primary-light) 100%);
+        background: linear-gradient(
+          135deg,
+          var(--primary-purple) 0%,
+          var(--primary-light) 100%
+        );
         color: white;
         border-color: var(--primary-purple);
         box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
@@ -375,7 +411,11 @@
       }
 
       .comments-section h3 {
-        background: linear-gradient(135deg, var(--primary-purple) 0%, var(--primary-light) 100%);
+        background: linear-gradient(
+          135deg,
+          var(--primary-purple) 0%,
+          var(--primary-light) 100%
+        );
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
@@ -446,7 +486,11 @@
       }
 
       .comment-form button {
-        background: linear-gradient(135deg, var(--primary-purple) 0%, var(--primary-light) 100%);
+        background: linear-gradient(
+          135deg,
+          var(--primary-purple) 0%,
+          var(--primary-light) 100%
+        );
         color: white;
         border: none;
         padding: 14px 28px;
@@ -462,13 +506,18 @@
       }
 
       .comment-form button::before {
-        content: '';
+        content: "";
         position: absolute;
         top: 0;
         left: -100%;
         width: 100%;
         height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.3),
+          transparent
+        );
         transition: left 0.6s ease;
       }
 
@@ -511,7 +560,11 @@
         top: 0;
         left: 0;
         width: 100%;
-        background: linear-gradient(135deg, var(--primary-purple) 0%, var(--primary-light) 100%);
+        background: linear-gradient(
+          135deg,
+          var(--primary-purple) 0%,
+          var(--primary-light) 100%
+        );
         color: white;
         display: flex;
         justify-content: space-between;
@@ -630,7 +683,7 @@
       .toggle-container {
         margin-bottom: 16px;
       }
-      
+
       .toggle-label {
         font-size: 0.95rem;
         display: flex;
@@ -681,12 +734,12 @@
         font-weight: 600;
         font-size: 15px;
       }
-      
+
       .drop-alert.show {
         display: block;
         animation: dropFade 320ms ease;
       }
-      
+
       @keyframes dropFade {
         from {
           opacity: 0;
@@ -733,22 +786,22 @@
             <a href="/profile" class="izumi-dropdown-item" role="menuitem"
               ><i class="fa-regular fa-user"></i>Profile</a
             >
-            <a href="#" class="izumi-dropdown-item" role="menuitem"
+            <a href="/my_purchases" class="izumi-dropdown-item" role="menuitem"
               ><i class="fa-regular fa-credit-card"></i>My Purchases</a
             >
             <a href="/delete-page" class="izumi-dropdown-item" role="menuitem"
               ><i class="fa-solid fa-gear"></i>Settings</a
             >
-            <a href="#" class="izumi-dropdown-item" role="menuitem"
+            <!-- <a href="#" class="izumi-dropdown-item" role="menuitem"
               ><i class="fa-regular fa-bell"></i>Updates</a
-            >
-            <div class="izumi-divider" role="separator"></div>
+            > -->
+            <!-- <div class="izumi-divider" role="separator"></div>
             <a href="#" class="izumi-dropdown-item" role="menuitem"
-              ><i class="fa-regular fa-star"></i>Accomplishments</a
-            >
-            <a href="#" class="izumi-dropdown-item" role="menuitem"
-              ><i class="fa-regular fa-circle-question"></i>Help Center</a
-            >
+              ><i class="fa-regular fa-star"></i>Accomplishments</a -->
+
+            <!-- <a href="#" class="izumi-dropdown-item" role="menuitem"
+              ><i class="fa-regular fa-circle-question"></i>Help Center</a -->
+
             <div class="izumi-divider" role="separator"></div>
             <a
               href="/logout"

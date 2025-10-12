@@ -4,56 +4,339 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Delete Account</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        :root {
+            /* General Palette - Copied from Update Profile */
+            --primary-color: #8A2BE2; /* Vibrant Purple */
+            --secondary-color: #e0b0ff; /* Lighter, complementary purple/lilac */
+            --accent-color: #FFD700; /* Gold */
+            --neutral-color-light: #f0f0f5; /* For the home button border */
+            --text-primary: #333333;
+            --text-secondary: #666666;
+            --background-color: #f9f9f9; /* Original background for body */
+            --card-background: #ffffff;
+            --border-radius: 12px;
+            --box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+            --transition: all 0.3s ease;
+            --font-main: 'Poppins', sans-serif;
+
+            /* Adjusted for more visibility */
+            --cyan-accent: #b8e0dc; /* Keep original color */
+            --yellow-accent: #fef3c7; /* Keep original color */
+            --bg-shape-opacity-large: 0.6; /* INCREASED OPACITY */
+            --bg-shape-opacity-small: 0.4; /* INCREASED OPACITY */
+            --bg-shape-blur: 60px; /* SLIGHTLY REDUCED BLUR for more definition */
+
+            /* SPECIFICALLY FOR DELETE ACCOUNT */
+            --danger-red: #ff3366; /* Bright, modern red */
+            --danger-hover: #cc0033;
+            --danger-shadow: 0 4px 10px rgba(255, 51, 102, 0.4);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'Poppins', sans-serif;
-            background-color: #121212;
-            color: #ffffff;
-            text-align: center;
-            padding: 50px;
-        }
-        .container {
-            background-color: #1e1e1e;
+            font-family: var(--font-main);
+            /* Light mode background gradient from Update Profile */
+            background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-            display: inline-block;
+            position: relative;
+            /* Ensure shapes are visible and not clipped by overflow */
+            overflow: hidden; 
         }
+
+        /* Animated Background Shapes (Copied from Update Profile - MODIFIED) */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 10%;
+            right: 5%;
+            width: 400px;
+            height: 400px;
+            background: var(--cyan-accent);
+            opacity: var(--bg-shape-opacity-large); /* MODIFIED */
+            border-radius: 50%;
+            filter: blur(var(--bg-shape-blur)); /* MODIFIED */
+            animation: float 8s ease-in-out infinite;
+            z-index: -1; 
+        }
+
+        body::after {
+            content: '';
+            position: absolute;
+            bottom: 10%;
+            left: 5%;
+            width: 300px;
+            height: 300px;
+            background: var(--yellow-accent);
+            opacity: var(--bg-shape-opacity-large); /* MODIFIED */
+            border-radius: 50%;
+            filter: blur(var(--bg-shape-blur)); /* MODIFIED */
+            animation: float 10s ease-in-out infinite reverse;
+            z-index: -1; 
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(30px, -30px) scale(1.1); }
+        }
+        /* --- End Background Shapes --- */
+
+        /* Smaller Geometric Shapes (Copied from Update Profile - MODIFIED) */
+        .geometric-shape {
+            position: absolute;
+            opacity: var(--bg-shape-opacity-small); /* MODIFIED */
+            z-index: -1; 
+            filter: blur(5px); /* Add a slight blur to these too for softness */
+        }
+
+        .shape-1 {
+            top: 15%;
+            left: 15%;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: var(--secondary-color); /* Maintain purple */
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .shape-2 {
+            bottom: 20%;
+            right: 20%;
+            width: 120px;
+            height: 120px;
+            border-radius: 20px; /* Square with rounded corners */
+            transform: rotate(45deg);
+            background: var(--accent-color); /* Maintain gold */
+            animation: rotate 20s linear infinite;
+        }
+
+        .shape-3 {
+            top: 50%;
+            right: 10%;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%; /* Circle */
+            background: var(--primary-color); /* Maintain primary purple */
+            animation: pulse 4s ease-in-out infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(45deg) scale(1); }
+            to { transform: rotate(405deg) scale(1.05); } /* Slightly larger scale on rotate */
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: var(--bg-shape-opacity-small); }
+            50% { transform: scale(1.2); opacity: calc(var(--bg-shape-opacity-small) + 0.1); } /* More visible pulse */
+        }
+
+        .container {
+            /* Card styling from Update Profile */
+            background-color: var(--card-background);
+            padding: 40px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            width: 100%;
+            max-width: 450px; 
+            text-align: center;
+            position: relative;
+            z-index: 2; /* Increased z-index for the main content to ensure it's on top */
+        }
+
+        /* Icon Styling - Emphasizing Danger */
+        .icon-box {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--danger-red); 
+            box-shadow: 0 4px 15px rgba(255, 51, 102, 0.5);
+        }
+
+        .icon-box i {
+            font-size: 40px;
+            color: white;
+        }
+
+        h2 {
+            font-size: 28px;
+            font-weight: 600;
+            color: var(--danger-red); 
+            margin-bottom: 10px;
+        }
+
+        .warning-message {
+            color: var(--text-secondary);
+            font-size: 16px;
+            margin-bottom: 30px;
+            line-height: 1.5;
+            padding: 0 10px;
+        }
+
+        /* Home Button Styling (Copied from Update Profile) */
+        #homeButton {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 15px;
+            background-color: var(--card-background);
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 16px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: var(--transition);
+            border: 1px solid var(--neutral-color-light); /* Using a lighter neutral color for consistency */
+        }
+
+        #homeButton:hover {
+            background-color: var(--secondary-color);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        #homeButton .home-icon {
+            width: 20px;
+            height: 20px;
+            color: var(--primary-color);
+            transition: var(--transition);
+        }
+
+        #homeButton:hover .home-icon {
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            #homeButton {
+                top: 15px;
+                left: 15px;
+                padding: 8px 12px;
+                font-size: 14px;
+            }
+        }
+        /* End Home Button Styling */
+
+
+        /* Delete Button Styling */
         button {
-            background-color: #ff1744;
+            width: 100%;
+            background: var(--danger-red); 
             color: white;
             border: none;
-            padding: 10px 20px;
-            font-size: 16px;
+            padding: 15px 20px;
+            font-size: 18px;
+            font-weight: 600;
             cursor: pointer;
-            border-radius: 8px;
-            transition: all 0.3s ease;
+            border-radius: var(--border-radius);
+            transition: var(--transition);
+            box-shadow: var(--danger-shadow);
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
         }
+        
+        button::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.2), transparent); 
+        }
+
         button:hover {
-            background-color: #d50000;
+            background: var(--danger-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 51, 102, 0.5);
+        }
+
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 4px 10px rgba(255, 51, 102, 0.3);
         }
     </style>
     <script>
         function confirmDelete() {
-            if (confirm('Are you sure you want to delete your account? .')) {
+            if (confirm('🚨 FINAL WARNING 🚨\n\nAre you absolutely sure you want to permanently delete your account? This action cannot be undone and all your data will be lost.')) {
+                
+                const deleteButton = document.querySelector('button');
+                deleteButton.textContent = 'Processing Deletion...';
+                deleteButton.disabled = true;
+
                 fetch('/delete', {
-                    method: 'GET',
+                    method: 'GET', 
                     credentials: 'include',
                     headers: {
                         'Content-Type': 'application/json'
                     }
                 })
-                .then(response => response.json())
-                .then(data => alert(data.message))
-                .catch(error => alert(' deleting account'));
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => { throw new Error(err.message || 'Server error'); });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    alert(`✅ Success: ${data.message || 'Account deleted successfully! Redirecting...'}`);
+                    window.location.href = "/login"; 
+                })
+                .catch(error => {
+                    console.error('Deletion error:', error);
+                    alert(`❌ Error deleting account: ${error.message || 'Please try again.'}`);
+                    deleteButton.textContent = 'Delete Account';
+                    deleteButton.disabled = false;
+                });
             }
         }
     </script>
 </head>
 <body>
+    <div class="geometric-shape shape-1"></div>
+    <div class="geometric-shape shape-2"></div>
+    <div class="geometric-shape shape-3"></div>
+
+    <a id="homeButton" href="/home"> 
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="home-icon">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+        Home
+    </a>
+
     <div class="container">
+        <div class="icon-box">
+            <i class="fas fa-trash-alt"></i>
+        </div>
+        
         <h2>Delete Your Account</h2>
-        <p>This action is permanent and cannot be undone.</p>
+        <p class="warning-message">
+            By clicking the button below, you will permanently delete **all** your data and account information. 
+            This action is **permanent and cannot be undone**.
+        </p>
+        
         <button onclick="confirmDelete()">Delete Account</button>
     </div>
 </body>
