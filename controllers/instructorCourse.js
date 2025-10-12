@@ -1,7 +1,7 @@
 const path = require("path");
 const model = require("../models/instructorCourseModel"); // Import the Mongoose-based model
 const mongoose = require("mongoose");
-const { CourseStat,Course } = require("../required/db");
+const { CourseStat, Course } = require("../required/db");
 exports.getCourseDetails_moduleTree = async (req, res) => {
   const courseId = req.params.courseId;
 
@@ -70,12 +70,16 @@ exports.getInstructorCourses = async (req, res) => {
 exports.saveCourse = async (req, res) => {
   if (!req.session.instructor)
     return res.status(403).json({ error: "Unauthorized." });
-
-  const { title, modules, price } = req.body;
+  const { title, modules, price, overview, tagline, whatYouWillLearn } =
+    req.body;
   const instructorId = req.session.instructor;
 
   try {
-    const courseId = await model.insertCourse(title, instructorId);
+    const courseId = await model.insertCourse(title, instructorId, {
+      overview,
+      tagline,
+      whatYouWillLearn,
+    });
     const stat = await CourseStat.create({
       course_id: courseId,
       enrolled_count: 0,
@@ -117,7 +121,7 @@ exports.saveCourseChanges = async (req, res) => {
     return res.status(403).json({ error: "Unauthorized." });
 
   const { courseId } = req.query;
-  const { title, modules } = req.body;
+  const { title, modules, overview, tagline, whatYouWillLearn } = req.body;
   const instructorId = req.session.instructor;
 
   try {
@@ -135,7 +139,19 @@ exports.saveCourseChanges = async (req, res) => {
         .status(404)
         .json({ error: "Course not found or unauthorized." });
 
+    // Update title and optional metadata on the Course document
     await model.updateCourseTitle(courseId, title);
+    try {
+      await Course.findByIdAndUpdate(courseId, {
+        overview: overview || "",
+        tagline: tagline || "",
+        whatYouWillLearn: Array.isArray(whatYouWillLearn)
+          ? whatYouWillLearn
+          : [],
+      }).exec();
+    } catch (e) {
+      console.warn("Could not update course metadata:", e.message || e);
+    }
 
     await model.deleteModulesByCourse(courseId);
 
