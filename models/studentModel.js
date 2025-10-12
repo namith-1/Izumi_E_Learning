@@ -10,6 +10,10 @@ const bcrypt = require("bcrypt");
 const mongoose = require("mongoose");
 
 const StudentModel = {
+  // ────────────────────────────────
+  // 🔍 Basic Finders
+  // ────────────────────────────────
+
   findByEmail: async (email) => {
     return await Student.findOne({ email });
   },
@@ -17,6 +21,18 @@ const StudentModel = {
   findActiveByEmail: async (email) => {
     return await Student.findOne({ email, is_deleted: 0 });
   },
+
+  findById: async (id) => {
+    return await Student.findById(id);
+  },
+
+  getStudentById: async (id) => {
+    return await Student.findById(id).select("_id name email contact address");
+  },
+
+  // ────────────────────────────────
+  // 🧾 Account Operations
+  // ────────────────────────────────
 
   create: async (name, email, contact, address, password) => {
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -30,23 +46,17 @@ const StudentModel = {
     return await student.save();
   },
 
-  findById: async (id) => {
-    return await Student.findById(id);
-  },
-
   updateField: async (id, field, value) => {
     const allowedFields = ["name", "email", "contact", "address"];
     if (!allowedFields.includes(field)) {
       throw new Error("Invalid field");
     }
+
     try {
-      const result = await Student.updateOne(
-        { _id: id },
-        { [field]: value }
-      ).exec();
-      return result; // Return the full result
+      const result = await Student.updateOne({ _id: id }, { [field]: value });
+      return result;
     } catch (error) {
-      throw new Error("Error updating field: " + error.message); // Wrap the error
+      throw new Error("Error updating field: " + error.message);
     }
   },
 
@@ -55,16 +65,15 @@ const StudentModel = {
   },
 
   restoreAccount: async (email) => {
-    await Student.updateOne({ email: email }, { is_deleted: 0 });
+    await Student.updateOne({ email }, { is_deleted: 0 });
   },
 
-  isEnrolled: async (studentId, courseId) => {
-    // Validate courseId to avoid Mongoose CastError when a non-ObjectId is provided
-    if (!mongoose.Types.ObjectId.isValid(courseId)) {
-      // Treat invalid IDs as not enrolled (safe fallback)
-      return false;
-    }
+  // ────────────────────────────────
+  // 🎓 Enrollment Logic
+  // ────────────────────────────────
 
+  isEnrolled: async (studentId, courseId) => {
+    if (!mongoose.Types.ObjectId.isValid(courseId)) return false;
     const enrollment = await Enrollment.findOne({
       student_id: studentId,
       course_id: courseId,
@@ -74,17 +83,17 @@ const StudentModel = {
 
   enroll: async (studentId, courseId) => {
     try {
-      // Validate courseId to ensure it's a proper ObjectId
       if (!mongoose.Types.ObjectId.isValid(courseId)) {
         throw new Error("Invalid Course ID.");
       }
+
       const enrollment = new Enrollment({
         student_id: studentId,
         course_id: courseId,
       });
       await enrollment.save();
 
-      // Increment the CourseStat enrolled_count for the course (upsert if necessary)
+      // Increment enrolled_count
       await CourseStat.findOneAndUpdate(
         { course_id: courseId },
         { $inc: { enrolled_count: 1 } },
@@ -92,16 +101,26 @@ const StudentModel = {
       );
     } catch (error) {
       if (error.code === 11000) {
-        // MongoDB duplicate key error code
         throw new Error("Student is already enrolled in this course.");
       }
       throw error;
     }
   },
 
+  // ────────────────────────────────
+  // 📊 Course Progress Tracking
+  // ────────────────────────────────
+
+  /**
+   * Get all courses with progress for a student
+   */
   getStudentCourseProgress: async (studentId) => {
+    if (!mongoose.Types.ObjectId.isValid(studentId)) return [];
+
+    const studentObjId = new mongoose.Types.ObjectId(studentId);
+
     return await Enrollment.aggregate([
-      { $match: { student_id: studentId } },
+      { $match: { student_id: studentObjId } },
       {
         $lookup: {
           from: "courses",
@@ -122,21 +141,9 @@ const StudentModel = {
       {
         $lookup: {
           from: "studentmodules",
-          let: { studentId: studentId, courseId: "$course_id" },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $and: [
-                    { $eq: ["$student_id", "$$studentId"] },
-                    { $in: ["$module_id", "$modules._id"] },
-                    { $eq: ["$is_completed", 1] },
-                  ],
-                },
-              },
-            },
-          ],
-          as: "completedModules",
+          localField: "student_id",
+          foreignField: "student_id",
+          as: "studentModules",
         },
       },
       {
@@ -144,42 +151,66 @@ const StudentModel = {
           course_id: "$courseInfo._id",
           title: "$courseInfo.title",
           total_modules: { $size: "$modules" },
-          completed_modules: { $size: "$completedModules" },
+          completed_modules: {
+            $size: {
+              $filter: {
+                input: "$studentModules",
+                as: "sm",
+                cond: {
+                  $and: [
+                    { $eq: ["$$sm.is_completed", 1] },
+                    { $in: ["$$sm.module_id", "$modules._id"] },
+                  ],
+                },
+              },
+            },
+          },
           _id: 0,
         },
       },
     ]);
   },
 
+  /**
+   * Get completed modules for a specific course
+   */
   getCompletedModules: async (studentId, courseId) => {
-    // Validate courseId before using it in queries
-    if (!mongoose.Types.ObjectId.isValid(courseId)) {
-      // Return empty list if invalid courseId to avoid CastError
-      return [];
-    }
+    if (!mongoose.Types.ObjectId.isValid(courseId)) return [];
 
-    const moduleIds = await Module.find({ course_id: courseId }).distinct(
+    const studentObjId = new mongoose.Types.ObjectId(studentId);
+    const courseObjId = new mongoose.Types.ObjectId(courseId);
+
+    const moduleIds = await Module.find({ course_id: courseObjId }).distinct(
       "_id"
     );
+
     const completedModules = await StudentModule.find({
-      student_id: studentId,
+      student_id: studentObjId,
       module_id: { $in: moduleIds },
       is_completed: 1,
     }).select("module_id -_id");
+
     return completedModules.map((m) => m.module_id);
   },
 
-  getStudentById: async (id) => {
-    return await Student.findById(id).select("_id name email contact address");
-  },
-
+  /**
+   * Mark a specific module as complete for a student
+   */
   markModuleAsComplete: async (studentId, moduleId) => {
+    if (!mongoose.Types.ObjectId.isValid(moduleId)) {
+      throw new Error("Invalid Module ID");
+    }
+
+    const studentObjId = new mongoose.Types.ObjectId(studentId);
+    const moduleObjId = new mongoose.Types.ObjectId(moduleId);
+
     await StudentModule.updateOne(
-      { student_id: studentId, module_id: moduleId },
+      { student_id: studentObjId, module_id: moduleObjId },
       { is_completed: 1 },
-      { upsert: true } // Creates a new document if it doesn't exist
+      { upsert: true }
     );
-    return { changes: 1 }; //  Consistent return
+
+    return { changes: 1 };
   },
 };
 

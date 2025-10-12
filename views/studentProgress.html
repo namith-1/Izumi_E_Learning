@@ -82,7 +82,7 @@
     let hasOngoing = false;
     let hasCompleted = false;
 
-    fetch(`http://localhost:4000/student-progress/${studentId}`)
+    fetch(`http://localhost:4000/student-progress`)
         .then(response => response.json())
         .then(data => {
             console.log("API Response:", data);

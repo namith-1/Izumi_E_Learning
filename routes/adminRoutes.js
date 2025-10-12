@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { isAdmin } = require('../middlewares/authMiddleware');
 const { Student, Instructor, Course, CourseStat, Module, Enrollment } = require('../required/db');
+const contactAdmin = require('../models/instructor/contactModel');
 const bcrypt = require('bcrypt');
 
 // Get courses for content forms
@@ -78,6 +79,19 @@ router.get('/dashboard', isAdmin, async (req, res) => {
         res.status(500).render('error', { message: 'Error loading dashboard' });
     }
 });
+router.get('/dashboard/stats', isAdmin, async (req, res) => {
+    try {
+        const totalStudents = await Student.countDocuments({ is_deleted: 0 });
+        const totalInstructors = await Instructor.countDocuments({ is_deleted: 0 });
+        const totalCourses = await Course.countDocuments();
+        const totalEnrollments = await Enrollment.countDocuments();
+
+        res.json({ totalStudents, totalInstructors, totalCourses, totalEnrollments });
+    } catch (error) {
+        console.error('Dashboard stats error:', error);
+        res.status(500).json({ error: 'Error loading dashboard stats' });
+    }
+});
 
 // User management
 router.get('/users', isAdmin, async (req, res) => {
@@ -92,6 +106,16 @@ router.get('/users', isAdmin, async (req, res) => {
     } catch (error) {
         console.error('Users error:', error);
         res.status(500).render('error', { message: 'Error loading users' });
+    }
+});
+router.get('/users/data', isAdmin, async (req, res) => {
+    try {
+        const students = await Student.find({ is_deleted: 0 }).select('name email contact address');
+        const instructors = await Instructor.find({ is_deleted: 0 }).select('name email contact address');
+        res.json({ students, instructors });
+    } catch (error) {
+        console.error('Users data error:', error);
+        res.status(500).json({ success: false, message: 'Error fetching users' });
     }
 });
 
@@ -146,6 +170,58 @@ router.get('/courses', isAdmin, async (req, res) => {
         res.status(500).render('error', { message: 'Error loading courses' });
     }
 });
+router.get('/courses/data', isAdmin, async (req, res) => {
+    try {
+        const courses = await Course.aggregate([
+            {
+                $lookup: {
+                    from: 'instructors',
+                    localField: 'instructor_id',
+                    foreignField: '_id',
+                    as: 'instructor'
+                }
+            },
+            {
+                $lookup: {
+                    from: 'coursestats',
+                    localField: '_id',
+                    foreignField: 'course_id',
+                    as: 'stats'
+                }
+            },
+            {
+                $unwind: {
+                    path: '$instructor',
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            {
+                $unwind: {
+                    path: '$stats',
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            {
+                $project: {
+                    _id: 1,
+                    title: 1,
+                    subject: 1,
+                    instructor_name: '$instructor.name',
+                    enrolled_count: { $ifNull: ['$stats.enrolled_count', 0] },
+                    price: { $ifNull: ['$stats.price', 0] },
+                    avg_rating: { $ifNull: ['$stats.avg_rating', 0] }
+                }
+            }
+        ]);
+
+        res.json(courses); // 👈 Return JSON instead of rendering a view
+    } catch (error) {
+        console.error('Courses data error:', error);
+        res.status(500).json({ message: 'Error loading courses data' });
+    }
+});
+
+
 
 // Content management
 router.get('/content', isAdmin, async (req, res) => {
@@ -177,6 +253,37 @@ router.get('/content', isAdmin, async (req, res) => {
     } catch (error) {
         console.error('Content error:', error);
         res.status(500).render('error', { message: 'Error loading content' });
+    }
+});
+router.get('/content/data', isAdmin, async (req, res) => {
+    try {
+        const modules = await Module.aggregate([
+            {
+                $lookup: {
+                    from: 'courses',
+                    localField: 'course_id',
+                    foreignField: '_id',
+                    as: 'course'
+                }
+            },
+            {
+                $unwind: '$course'
+            },
+            {
+                $project: {
+                    _id: 1,
+                    title: 1,
+                    text: 1,
+                    url: 1,
+                    course_title: '$course.title'
+                }
+            }
+        ]);
+
+        res.json(modules);
+    } catch (error) {
+        console.error('Content data error:', error);
+        res.status(500).json({ error: 'Error fetching content' });
     }
 });
 
@@ -850,4 +957,76 @@ router.delete('/payments/:id', isAdmin, async (req, res) => {
     }
 });
 
+router.get('/requests', async (req, res) => {
+    try {
+        const requests = await contactAdmin.find()
+            .populate('instructor_id', 'name')
+            .populate('course_id', 'title')
+            .sort({ created_at: -1 })
+            .lean();
+
+        res.render('admin/requests', { requests });
+    } catch (error) {
+        console.error('Error fetching requests:', error);
+        res.status(500).send('Error loading requests');
+    }
+});
+
+// GET - Fetch requests data (for AJAX refresh)
+router.get('/requests/data', async (req, res) => {
+    try {
+        const requests = await contactAdmin.find()
+            .populate('instructor_id', 'name')
+            .populate('course_id', 'title')
+            .sort({ created_at: -1 })
+            .lean();
+
+        res.json(requests);
+    } catch (error) {
+        console.error('Error fetching requests:', error);
+        res.status(500).json({ success: false, message: 'Error fetching requests' });
+    }
+});
+
+// PUT - Update request status
+router.put('/requests/:id', async (req, res) => {
+    try {
+        const { status, priority } = req.body;
+        const updateData = {};
+
+        if (status) updateData.status = status;
+        if (priority) updateData.priority = priority;
+
+        const request = await contactAdmin.findByIdAndUpdate(
+            req.params.id,
+            updateData,
+            { new: true }
+        ).populate('instructor_id', 'name').populate('course_id', 'title');
+
+        if (!request) {
+            return res.status(404).json({ success: false, message: 'Request not found' });
+        }
+
+        res.json({ success: true, request });
+    } catch (error) {
+        console.error('Error updating request:', error);
+        res.status(500).json({ success: false, message: 'Error updating request' });
+    }
+});
+
+// DELETE - Delete request
+router.delete('/requests/:id', async (req, res) => {
+    try {
+        const request = await contactAdmin.findByIdAndDelete(req.params.id);
+
+        if (!request) {
+            return res.status(404).json({ success: false, message: 'Request not found' });
+        }
+
+        res.json({ success: true, message: 'Request deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting request:', error);
+        res.status(500).json({ success: false, message: 'Error deleting request' });
+    }
+});
 module.exports = router; 

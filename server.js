@@ -6,8 +6,7 @@ const bcrypt = require("bcrypt");
 const path = require("path");
 const cors = require("cors");
 
-require('dotenv').config(); 
-
+require("dotenv").config();
 
 const app = express();
 const port = process.env.PORT || 4000;
@@ -46,8 +45,13 @@ const qna = require("./routes/questions.js");
 const gamifyRoutes = require("./routes/gamifyRoutes");
 const instructorCourseRoutes = require("./routes/instructorCourseRoutes");
 const adminRoutes = require("./routes/adminRoutes");
-const commonInstructor = require("./routes/instructor/commonRoutes.js")
+const commonInstructor = require("./routes/instructor/commonRoutes.js");
 const magazineController = require("./controllers/magazineController");
+const courseInfoInstructor = require("./routes/instructor/courseInfoRoutes");
+const contactAdminRoutes = require("./routes/instructor/contactRoutes.js");
+const goalRoutes = require("./routes/goalRoutes");
+const consistencyRoutes = require("./routes/consistencyRoutes");
+
 app.get("/magazines", magazineController.index);
 
 app.use("/", authRoutes); // post(login,signup) , get(/,home,login,signup)
@@ -61,7 +65,12 @@ app.use("/", gamifyRoutes);
 app.use("/", instructorCourseRoutes);
 app.use("/admin", adminRoutes); // Admin routes
 app.use("/api", commonInstructor);
-
+app.use("/", courseInfoInstructor);
+app.use("/contact-admin", contactAdminRoutes);
+// Goals API
+app.use("/api/goals", goalRoutes);
+// Consistency API (student consistency calendar dates)
+app.use("/api/consistency", consistencyRoutes);
 // Load course and modules
 //course/id gets the course and modules as json to build the tree for both view_course and coure_edit
 //included instructorCourseRoutes.js
