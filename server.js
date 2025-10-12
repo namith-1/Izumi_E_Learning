@@ -52,7 +52,7 @@ const contactAdminRoutes = require("./routes/instructor/contactRoutes.js");
 const goalRoutes = require("./routes/goalRoutes");
 const consistencyRoutes = require("./routes/consistencyRoutes");
 
-//app.get("/magazines", magazineController.index);
+app.get("/magazines", magazineController.index);
 
 app.use("/", authRoutes); // post(login,signup) , get(/,home,login,signup)
 app.use("/", instructorRoutes); // All instructor routes
