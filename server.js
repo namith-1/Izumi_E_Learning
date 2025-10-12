@@ -47,12 +47,12 @@ const gamifyRoutes = require("./routes/gamifyRoutes");
 const instructorCourseRoutes = require("./routes/instructorCourseRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const commonInstructor = require("./routes/instructor/commonRoutes.js")
-const magazineController = require("./controllers/magazineController");
+//const magazineController = require("./controllers/magazineController");
 const courseInfoInstructor = require("./routes/instructor/courseInfoRoutes");
 const contactAdminRoutes = require("./routes/instructor/contactRoutes.js");
 
 
-app.get("/magazines", magazineController.index);
+//app.get("/magazines", magazineController.index);
 
 app.use("/", authRoutes); // post(login,signup) , get(/,home,login,signup)
 app.use("/", instructorRoutes); // All instructor routes
