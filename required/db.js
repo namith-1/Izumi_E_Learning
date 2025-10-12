@@ -4,22 +4,22 @@ require("dotenv").config(); // Load .env first
 // Use Atlas if available, else fallback to local MongoDB
 const uri = process.env.MONGO_URI || "mongodb://localhost:27017/izumi3";
 
-mongoose.connect(uri, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => {
-  // Detect if using Atlas or local
-  if (uri.startsWith("mongodb+srv://")) {
-    console.log("✅ Connected to MongoDB Atlas cluster successfully");
-  } else {
-    console.log("✅ Connected to local MongoDB database successfully");
-  }
-})
-.catch((err) => {
-  console.error("❌ MongoDB connection error:", err.message);
-});
-
+mongoose
+  .connect(uri, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => {
+    // Detect if using Atlas or local
+    if (uri.startsWith("mongodb+srv://")) {
+      console.log("✅ Connected to MongoDB Atlas cluster successfully");
+    } else {
+      console.log("✅ Connected to local MongoDB database successfully");
+    }
+  })
+  .catch((err) => {
+    console.error("❌ MongoDB connection error:", err.message);
+  });
 
 // Define Schemas (this is where Mongoose comes in)
 const studentSchema = new mongoose.Schema({
@@ -38,22 +38,29 @@ const instructorSchema = new mongoose.Schema({
   address: { type: String, required: true },
   hashed_password: { type: String, required: true },
   is_deleted: { type: Number, default: 0 },
+  bio: { type: String, default: "" },
+  avatarUrl: { type: String, default: "/images/default-avatar.png" },
 });
 
 const courseSchema = new mongoose.Schema({
   title: { type: String, required: true },
   instructor_id: { type: mongoose.Schema.Types.ObjectId, ref: "Instructor" }, // Reference to Instructor
   subject: { type: String },
+  overview: { type: String, default: "" },
+  tagline: { type: String, default: "" },
+  whatYouWillLearn: { type: [String], default: [] },
 });
-
 
 //schema
 
-const enrollmentSchema = new mongoose.Schema({
-    student_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Student' },
-    course_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Course' },
-    date_enrolled: { type: Date, default: Date.now }
-}, { timestamps: true }); // added timestamps for createdAt and updatedAt
+const enrollmentSchema = new mongoose.Schema(
+  {
+    student_id: { type: mongoose.Schema.Types.ObjectId, ref: "Student" },
+    course_id: { type: mongoose.Schema.Types.ObjectId, ref: "Course" },
+    date_enrolled: { type: Date, default: Date.now },
+  },
+  { timestamps: true }
+); // added timestamps for createdAt and updatedAt
 
 //
 const magazineSchema = new mongoose.Schema({
@@ -81,8 +88,6 @@ const courseStatsSchema = new mongoose.Schema({
   price: { type: Number, default: 0 },
   review_count: { type: Number, default: 0 },
 });
-
-
 
 const moduleSchema = new mongoose.Schema({
   course_id: { type: mongoose.Schema.Types.ObjectId, ref: "Course" },
