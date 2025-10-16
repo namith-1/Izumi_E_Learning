@@ -121,6 +121,7 @@ function saveCourse() {
     overview: (document.getElementById("overview") || { value: "" }).value,
     tagline: (document.getElementById("tagline") || { value: "" }).value,
     whatYouWillLearn,
+    sub
   };
 
   const url = courseID
