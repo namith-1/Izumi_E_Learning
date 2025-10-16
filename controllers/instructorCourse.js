@@ -97,25 +97,30 @@ exports.getInstructorCourses = async (req, res) => {
 exports.saveCourse = async (req, res) => {
   if (!req.session.instructor)
     return res.status(403).json({ error: "Unauthorized." });
-  const { title, modules, price, overview, tagline, whatYouWillLearn } =
-    req.body;
+
+  const { title, modules, price, overview, tagline, whatYouWillLearn, subject } = req.body;
   const instructorId = req.session.instructor;
 
   try {
-    const courseId = await model.insertCourse(title, instructorId, {
+    // Pass separate strings, not an object
+    const courseId = await model.insertCourse(
+      title,
+      instructorId,
       overview,
       tagline,
-      whatYouWillLearn,
-    });
-    const stat = await CourseStat.create({
+      subject
+    );
+
+    await CourseStat.create({
       course_id: courseId,
       enrolled_count: 0,
       avg_rating: 4.5,
       avg_completion_time: 120,
-      price: price,
+      price,
       review_count: 2,
     });
 
+    // Recursively insert modules
     const insertModuleRecursive = async (mod, parentId = null) => {
       const moduleId = await model.insertModule(
         courseId,
@@ -136,12 +141,14 @@ exports.saveCourse = async (req, res) => {
         await insertModuleRecursive(mod);
       }
     }
+
     res.json({ message: "Course saved successfully!", courseId });
   } catch (error) {
     console.error("Error saving course:", error);
     res.status(500).json({ error: error.message });
   }
 };
+
 
 exports.saveCourseChanges = async (req, res) => {
   if (!req.session.instructor)
