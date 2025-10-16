@@ -5,10 +5,7 @@ require("dotenv").config(); // Load .env first
 const uri = process.env.MONGO_URI || "mongodb://localhost:27017/izumi3";
 
 mongoose
-  .connect(uri, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
+  .connect(uri)
   .then(() => {
     // Detect if using Atlas or local
     if (uri.startsWith("mongodb+srv://")) {

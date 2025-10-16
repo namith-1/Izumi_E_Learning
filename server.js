@@ -70,7 +70,11 @@ app.use("/coms", Comments);
 app.use("/", qna); // All question routes
 app.use("/", gamifyRoutes);
 app.use("/", instructorCourseRoutes);
-app.use("/admin", adminRoutes); // Admin routes
+
+// Fix: Define ADMIN_BASE_PATH before using it
+const ADMIN_BASE_PATH = "/admin"; 
+app.use(ADMIN_BASE_PATH, adminRoutes);
+
 app.use("/api", commonInstructor);
 app.use("/", courseInfoInstructor);
 app.use("/contact-admin", contactAdminRoutes);
@@ -83,5 +87,8 @@ app.use("/api/consistency", consistencyRoutes);
 //included instructorCourseRoutes.js
 
 app.listen(port, () => {
+  const adminLoginPath = `${ADMIN_BASE_PATH}/login`;
   console.log(`Server running on http://localhost:${port}`);
+  // ✅ Added Console Output for Admin Path
+  console.log(`🔑 Admin Login Path: http://localhost:${port}${adminLoginPath}`);
 });
