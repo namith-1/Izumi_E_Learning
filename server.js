@@ -10,6 +10,7 @@ require("dotenv").config();
 
 const app = express();
 const port = process.env.PORT || 4000;
+const ADMIN_BASE_PATH = "/-nsstn123-admin"; // Changed admin path for security
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
