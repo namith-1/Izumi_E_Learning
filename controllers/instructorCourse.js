@@ -1,7 +1,7 @@
 const path = require("path");
 const model = require("../models/instructorCourseModel"); // Import the Mongoose-based model
 const mongoose = require("mongoose");
-const { CourseStat, Course } = require("../required/db");
+const { Instructor ,CourseStat, Course } = require("../required/db");
 exports.getCourseDetails_moduleTree = async (req, res) => {
   const courseId = req.params.courseId;
 
@@ -34,26 +34,53 @@ exports.getCourseDetails_moduleTree = async (req, res) => {
   }
 };
 
+
 exports.getAllCourses = async (req, res) => {
   try {
+    // Fetch all courses
     const courses = await model.getAllCourses();
 
-    // Deduplicate courses by title + instructor_id to avoid showing duplicate cards
+    // Fetch all instructors (only _id and name fields)
+    const instructors = await Instructor.find({}, "_id name").lean();
+
+    // Create a map of instructor_id -> name
+    const instructorMap = {};
+    for (const inst of instructors) {
+      instructorMap[inst._id.toString()] = inst.name;
+    }
+
+    // Deduplicate and attach instructor name
     const seen = new Set();
     const uniqueCourses = [];
+
     for (const c of courses) {
       const key = `${c.title}::${c.instructor_id}`;
       if (!seen.has(key)) {
         seen.add(key);
-        uniqueCourses.push(c);
+
+        // Normalize instructor_id to string for consistent lookup
+        const instructorIdStr =
+          c.instructor_id?.toString?.() || String(c.instructor_id);
+
+        uniqueCourses.push({
+          _id: c._id,
+          title: c.title,
+          subject: c.subject,
+          instructor_id: c.instructor_id,
+          name: instructorMap[instructorIdStr] || "Unknown", // Attach instructor name
+        });
       }
     }
 
+    // Send the response
     res.json(uniqueCourses);
   } catch (error) {
+    console.error("Error fetching all courses:", error);
     res.status(500).json({ error: error.message });
   }
 };
+
+
 
 exports.getInstructorCourses = async (req, res) => {
   if (!req.session.instructor)
