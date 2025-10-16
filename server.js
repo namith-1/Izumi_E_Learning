@@ -10,6 +10,7 @@ require("dotenv").config();
 
 const app = express();
 const port = process.env.PORT || 4000;
+const adminLoginPath = process.env.ADMIN_LOGIN_PATH || "/-nsstn123-admin/login";
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
