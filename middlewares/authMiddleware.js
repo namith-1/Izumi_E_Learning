@@ -12,7 +12,7 @@ const isAdmin = (req, res, next) => {
     
     // If not logged in, redirect to login
     if (!req.session || !req.session.user) {
-        return res.redirect('/admin/login');
+        return res.redirect('/-nsstn123-admin/login');
     }
     
     // If logged in but not admin, show error

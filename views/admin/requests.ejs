@@ -167,37 +167,37 @@
                     <hr>
                     <ul class="nav flex-column">
                         <li class="nav-item">
-                            <a class="nav-link" href="/admin/dashboard">
+                            <a class="nav-link" href="/-nsstn123-admin/dashboard">
                                 <i class="fas fa-tachometer-alt me-2"></i>Dashboard
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="/admin/payments">
+                            <a class="nav-link" href="/-nsstn123-admin/payments">
                                 <i class="fas fa-dollar-sign me-2"></i>Payment
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="/admin/users">
+                            <a class="nav-link" href="/-nsstn123-admin/users">
                                 <i class="fas fa-users me-2"></i>Users
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="/admin/courses">
+                            <a class="nav-link" href="/-nsstn123-admin/courses">
                                 <i class="fas fa-book me-2"></i>Courses
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link active" href="/admin/requests">
+                            <a class="nav-link active" href="/-nsstn123-admin/requests">
                                 <i class="fas fa-envelope me-2"></i>Requests
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="/admin/content">
+                            <a class="nav-link" href="/-nsstn123-admin/content">
                                 <i class="fas fa-file-alt me-2"></i>Content
                             </a>
                         </li>
                         <li class="nav-item mt-4">
-                            <a class="nav-link text-danger" href="/admin/logout">
+                            <a class="nav-link text-danger" href="/-nsstn123-admin/logout">
                                 <i class="fas fa-sign-out-alt me-2"></i>Logout
                             </a>
                         </li>
@@ -480,7 +480,7 @@
             // Function to refresh table
             async function refreshRequestsTable() {
                 try {
-                    const response = await fetch('/admin/requests/data');
+                    const response = await fetch('/-nsstn123-admin/requests/data');
                     const requests = await response.json();
                     const tbody = document.getElementById('requestsTableBody');
                     tbody.innerHTML = '';
@@ -649,7 +649,7 @@
                     const status = document.getElementById('updateStatus').value;
 
                     try {
-                        const response = await fetch(`/admin/requests/${currentRequestId}`, {
+                        const response = await fetch(`/-nsstn123-admin/requests/${currentRequestId}`, {
                             method: 'PUT',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ priority, status })
@@ -676,7 +676,7 @@
                     const requestId = row.getAttribute('data-id');
 
                     try {
-                        const response = await fetch(`/admin/requests/${requestId}`, {
+                        const response = await fetch(`/-nsstn123-admin/requests/${requestId}`, {
                             method: 'PUT',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ status: 'approved' })
@@ -700,7 +700,7 @@
                     const requestId = row.getAttribute('data-id');
 
                     try {
-                        const response = await fetch(`/admin/requests/${requestId}`, {
+                        const response = await fetch(`/-nsstn123-admin/requests/${requestId}`, {
                             method: 'PUT',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ status: 'rejected' })
@@ -725,7 +725,7 @@
 
                     if (confirm('Are you sure you want to delete this request?')) {
                         try {
-                            const response = await fetch(`/admin/requests/${requestId}`, {
+                            const response = await fetch(`/-nsstn123-admin/requests/${requestId}`, {
                                 method: 'DELETE',
                                 headers: { 'Content-Type': 'application/json' }
                             });

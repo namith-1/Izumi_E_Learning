@@ -36,38 +36,38 @@
                     <hr>
                     <ul class="nav flex-column">
                         <li class="nav-item">
-                            <a class="nav-link" href="/admin/dashboard">
+                            <a class="nav-link" href="/-nsstn123-admin/dashboard">
                                 <i class="fas fa-tachometer-alt me-2"></i>Dashboard
                             </a>
                         </li>
                            <li class="nav-item">
-                            <a class="nav-link active" href="/admin/payments">
+                            <a class="nav-link active" href="/-nsstn123-admin/payments">
                                 <i class="fas fa-dollar-sign me-2"></i>payment
                             </a>
                         </li>
                      
                         <li class="nav-item">
-                            <a class="nav-link active" href="/admin/users">
+                            <a class="nav-link active" href="/-nsstn123-admin/users">
                                 <i class="fas fa-users me-2"></i>Users
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="/admin/courses">
+                            <a class="nav-link" href="/-nsstn123-admin/courses">
                                 <i class="fas fa-book me-2"></i>Courses
                             </a>
                         </li>
                          <li class="nav-item">
-                            <a class="nav-link active" href="/admin/requests">
+                            <a class="nav-link active" href="/-nsstn123-admin/requests">
                                 <i class="fas fa-envelope me-2"></i>Requests
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="/admin/content">
+                            <a class="nav-link" href="/-nsstn123-admin/content">
                                 <i class="fas fa-file-alt me-2"></i>Content
                             </a>
                         </li>
                         <li class="nav-item mt-4">
-                            <a class="nav-link text-danger" href="/admin/logout">
+                            <a class="nav-link text-danger" href="/-nsstn123-admin/logout">
                                 <i class="fas fa-sign-out-alt me-2"></i>Logout
                             </a>
                         </li>
@@ -191,7 +191,7 @@
             ></button>
           </div>
           <div class="modal-body">
-            <form action="/admin/users" method="POST">
+            <form action="/-nsstn123-admin/users" method="POST">
               <div class="mb-3">
                 <label class="form-label">Name</label>
                 <input type="text" name="name" class="form-control" required />
@@ -372,7 +372,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const role = row.dataset.role;
         if (!confirm("Are you sure you want to delete this user?")) return;
         try {
-          const res = await fetch(`/admin/users/${userId}?role=${role}`, { method: "DELETE" });
+          const res = await fetch(`/-nsstn123-admin/users/${userId}?role=${role}`, { method: "DELETE" });
           const data = await res.json();
           if (data.success) row.remove();
           filterTable();
@@ -404,7 +404,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   async function refreshUsersTable() {
     try {
-      const res = await fetch('/admin/users/data');
+      const res = await fetch('/-nsstn123-admin/users/data');
       const data = await res.json();
       const tbody = document.querySelector('table tbody');
       tbody.innerHTML = '';
