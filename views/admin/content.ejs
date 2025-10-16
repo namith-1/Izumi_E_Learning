@@ -30,36 +30,36 @@
                     <hr>
                     <ul class="nav flex-column">
                         <li class="nav-item">
-                            <a class="nav-link" href="/-nsstn123-admin/dashboard">
+                            <a class="nav-link" href="/admin/dashboard">
                                 <i class="fas fa-tachometer-alt me-2"></i>Dashboard
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link active" href="/-nsstn123-admin/payments">
+                            <a class="nav-link active" href="/admin/payments">
                                 <i class="fas fa-dollar-sign me-2"></i>payment
                             </a>
                         <li class="nav-item">
-                            <a class="nav-link" href="/-nsstn123-admin/users">
+                            <a class="nav-link" href="/admin/users">
                                 <i class="fas fa-users me-2"></i>Users
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="/-nsstn123-admin/courses">
+                            <a class="nav-link" href="/admin/courses">
                                 <i class="fas fa-book me-2"></i>Courses
                             </a>
                         </li>
                          <li class="nav-item">
-                            <a class="nav-link active" href="/-nsstn123-admin/requests">
+                            <a class="nav-link active" href="/admin/requests">
                                 <i class="fas fa-envelope me-2"></i>Requests
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link active" href="/-nsstn123-admin/content">
+                            <a class="nav-link active" href="/admin/content">
                                 <i class="fas fa-file-alt me-2"></i>Content
                             </a>
                         </li>
                         <li class="nav-item mt-4">
-                            <a class="nav-link text-danger" href="/-nsstn123-admin/logout">
+                            <a class="nav-link text-danger" href="/admin/logout">
                                 <i class="fas fa-sign-out-alt me-2"></i>Logout
                             </a>
                         </li>
@@ -162,7 +162,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form action="/-nsstn123-admin/content" method="POST">
+                    <form action="/admin/content" method="POST">
                         <div class="mb-3">
                             <label class="form-label">Title</label>
                             <input type="text" name="title" class="form-control" required>
@@ -235,7 +235,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function populateCourses() {
         try {
-            const response = await fetch('/-nsstn123-admin/courses/list');
+            const response = await fetch('/admin/courses/list');
             const courses = await response.json();
             const selects = document.querySelectorAll('select[name="course_id"]');
             selects.forEach(select => {
@@ -254,7 +254,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function refreshContentTable() {
         try {
-            const res = await fetch('/-nsstn123-admin/content/data');
+            const res = await fetch('/admin/content/data');
             const modules = await res.json();
             const tbody = document.querySelector('table tbody');
             tbody.innerHTML = '';
@@ -292,7 +292,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const id = row.dataset.id;
                 if (confirm('Delete this content?')) {
                     try {
-                        const res = await fetch(`/-nsstn123-admin/content/${id}`, { method:'DELETE', headers:{'Content-Type':'application/json'} });
+                        const res = await fetch(`/admin/content/${id}`, { method:'DELETE', headers:{'Content-Type':'application/json'} });
                         const data = await res.json();
                         if (data.success) row.remove();
                         else alert('Delete failed');
@@ -360,7 +360,7 @@ if (refreshBtn) {
             const id = editForm.dataset.id;
             const data = Object.fromEntries(new FormData(editForm).entries());
             try {
-                const res = await fetch(`/-nsstn123-admin/content/${id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
+                const res = await fetch(`/admin/content/${id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
                 const result = await res.json();
                 if(result.success){
                     refreshContentTable();

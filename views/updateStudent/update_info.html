@@ -411,183 +411,164 @@
 }
     </style>
     <script>
-    document.addEventListener("DOMContentLoaded", loadUserProfile);
-
-    function loadUserProfile() {
-        // Show loading state
-        const formControls = document.querySelectorAll('.form-control');
-        formControls.forEach(control => {
-            control.style.opacity = '0.7';
-            control.placeholder = 'Loading...';
-            control.disabled = true;
-        });
-
-        // Simulating the fetch call
-        fetch("/load_user_info")
-            .then(response => response.json())
-            .then(user => {
-                // Fill form fields
-                document.getElementById("userId").value = user._id;
-                document.getElementById("name").value = user.name;
-                document.getElementById("email").value = user.email;
-                document.getElementById("contact").value = user.contact;
-                document.getElementById("address").value = user.address;
-
-                // Remove loading state
-                formControls.forEach(control => {
-                    control.style.opacity = '1';
-                    control.disabled = false;
-                });
-
-                // Update placeholder texts
-                document.getElementById("name").placeholder = 'Enter your name';
-                document.getElementById("email").placeholder = 'Enter your email';
-                document.getElementById("contact").placeholder = 'Enter your contact number';
-                document.getElementById("address").placeholder = 'Enter your address';
-            })
-            .catch(error => {
-                console.error("Error loading profile:", error);
-                // Remove loading state
-                formControls.forEach(control => {
-                    control.style.opacity = '1';
-                    control.disabled = false;
-                });
-            });
-    }
-
-    // --- UPDATED VALIDATION FUNCTION ---
-    function validateForm() {
-        let isValid = true;
-
-        // 1. Validate Full Name (Strict: Letters, single spaces, hyphens, and apostrophes only)
-        const nameInput = document.getElementById("name");
-        // Regex: Must contain 2 to 50 characters, allowing letters (unicode-friendly), space, hyphen, and apostrophe.
-        const nameRegex = /^(?!\s*$)[\p{L}\s'-]{2,50}$/u; 
+        document.addEventListener("DOMContentLoaded", loadUserProfile);
         
-        if (!nameInput.value.trim()) {
-            showInvalidFeedback(nameInput, "Full Name is required.");
-            isValid = false;
-        } else if (!nameRegex.test(nameInput.value.trim())) {
-            showInvalidFeedback(nameInput, "Name must be 2-50 letters and can only include spaces, hyphens (-), or apostrophes (').");
-            isValid = false;
-        } else if (/\s{2,}|[-']{2,}/.test(nameInput.value.trim())) {
-            // Further check to disallow multiple consecutive spaces/hyphens/apostrophes
-            showInvalidFeedback(nameInput, "Name cannot contain multiple consecutive spaces or special characters.");
-            isValid = false;
-        } else {
-            hideInvalidFeedback(nameInput);
-        }
-
-        // 2. Validate Email (Standard strict email format)
-        const emailInput = document.getElementById("email");
-        // Strict Email Regex
-        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/; 
-        if (!emailRegex.test(emailInput.value)) {
-            showInvalidFeedback(emailInput, "Please enter a valid email address (e.g., user@domain.com).");
-            isValid = false;
-        } else {
-            hideInvalidFeedback(emailInput);
-        }
-
-        // 3. Validate Contact (Strict: Exactly 10 digits)
-        const contactInput = document.getElementById("contact");
-        const contactRegex = /^\d{10}$/;
-        if (!contactRegex.test(contactInput.value)) {
-            showInvalidFeedback(contactInput, "Contact number must be exactly 10 digits.");
-            isValid = false;
-        } else {
-            hideInvalidFeedback(contactInput);
-        }
-
-        // 4. Validate Address (Allows letters, numbers, spaces, and common punctuation for addresses)
-        const addressInput = document.getElementById("address");
-        // Regex: 5 to 100 characters, allowing letters, numbers, spaces, commas, periods, and hyphens.
-        const addressRegex = /^(?!\s*$)[a-zA-Z0-9\s,\.\-]{5,100}$/;
-        if (!addressInput.value.trim()) {
-            showInvalidFeedback(addressInput, "Address is required.");
-            isValid = false;
-        } else if (!addressRegex.test(addressInput.value.trim())) {
-            showInvalidFeedback(addressInput, "Address must be 5-100 characters and can only contain letters, numbers, spaces, commas, periods, and hyphens.");
-            isValid = false;
-        } else {
-            hideInvalidFeedback(addressInput);
-        }
-
-        return isValid;
-    }
-
-    function showInvalidFeedback(input, message) {
-        input.classList.add('invalid');
-        const feedbackElement = input.nextElementSibling;
-        if (feedbackElement && feedbackElement.classList.contains('invalid-feedback')) {
-            feedbackElement.textContent = message;
-            feedbackElement.style.display = 'block';
-        }
-    }
-
-    function hideInvalidFeedback(input) {
-        input.classList.remove('invalid');
-        const feedbackElement = input.nextElementSibling;
-        if (feedbackElement && feedbackElement.classList.contains('invalid-feedback')) {
-            feedbackElement.style.display = 'none';
-        }
-    }
-
-    function updateUserProfile() {
-        if (!validateForm()) {
-            return;
-        }
-
-        // Show loading state on button
-        const updateBtn = document.querySelector('.btn');
-        const originalText = updateBtn.textContent;
-        updateBtn.textContent = 'Updating...';
-        updateBtn.disabled = true;
-
-        const userId = document.getElementById("userId").value;
-        const fields = ["name", "email", "contact", "address"];
-        const promises = [];
-
-        fields.forEach(field => {
-            const value = document.getElementById(field).value;
-            // NOTE: The server should re-validate the data, as client-side validation can be bypassed.
-            const promise = fetch("/updateUser", {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ id: userId, field, value })
-            })
-            .then(response => response.text())
-            .then(message => console.log(`${field} updated: ${message}`)) 
-            .catch(error => console.error(`Error updating ${field}:`, error));
-
-            promises.push(promise);
-        });
-
-
-        Promise.all(promises)
-            .then(() => {
-                // Show success message
-                const successMessage = document.getElementById('successMessage');
-                successMessage.classList.add('show');
-
-                // Reset button
-                updateBtn.textContent = originalText;
-                updateBtn.disabled = false;
-
-                // Hide success message after 3 seconds
-                setTimeout(() => {
-                    successMessage.classList.remove('show');
-                }, 3000);
-            })
-            .catch(error => {
-                console.error("Error updating profile:", error);
-                // Reset button
-                updateBtn.textContent = originalText;
-                updateBtn.disabled = false;
-                alert("Error updating profile. Please try again.");
+        function loadUserProfile() {
+            // Show loading state
+            const formControls = document.querySelectorAll('.form-control');
+            formControls.forEach(control => {
+                control.style.opacity = '0.7';
+                control.placeholder = 'Loading...';
+                control.disabled = true;
             });
-    }
-</script>
+            
+            fetch("/load_user_info")
+                .then(response => response.json())
+                .then(user => {
+                    // Fill form fields
+                    document.getElementById("userId").value = user._id;
+                    document.getElementById("name").value = user.name;
+                    document.getElementById("email").value = user.email;
+                    document.getElementById("contact").value = user.contact;
+                    document.getElementById("address").value = user.address;
+                    
+                    // Remove loading state
+                    formControls.forEach(control => {
+                        control.style.opacity = '1';
+                        control.disabled = false;
+                    });
+                    
+                    // Update placeholder texts
+                    document.getElementById("name").placeholder = 'Enter your name';
+                    document.getElementById("email").placeholder = 'Enter your email';
+                    document.getElementById("contact").placeholder = 'Enter your contact number';
+                    document.getElementById("address").placeholder = 'Enter your address';
+                })
+                .catch(error => {
+                    console.error("Error loading profile:", error);
+                    // Remove loading state
+                    formControls.forEach(control => {
+                        control.style.opacity = '1';
+                        control.disabled = false;
+                    });
+                });
+        }
+        
+        function validateForm() {
+            let isValid = true;
+            
+            // Validate name
+            const nameInput = document.getElementById("name");
+            if (!nameInput.value.trim()) {
+                showInvalidFeedback(nameInput, "Name is required");
+                isValid = false;
+            } else {
+                hideInvalidFeedback(nameInput);
+            }
+            
+            // Validate email
+            const emailInput = document.getElementById("email");
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(emailInput.value)) {
+                showInvalidFeedback(emailInput, "Please enter a valid email");
+                isValid = false;
+            } else {
+                hideInvalidFeedback(emailInput);
+            }
+            
+            // Validate contact
+            const contactInput = document.getElementById("contact");
+            const contactRegex = /^\d{10}$/;
+            if (!contactRegex.test(contactInput.value)) {
+                showInvalidFeedback(contactInput, "Contact must be 10 digits");
+                isValid = false;
+            } else {
+                hideInvalidFeedback(contactInput);
+            }
+            
+            // Validate address
+            const addressInput = document.getElementById("address");
+            if (!addressInput.value.trim()) {
+                showInvalidFeedback(addressInput, "Address is required");
+                isValid = false;
+            } else {
+                hideInvalidFeedback(addressInput);
+            }
+            
+            return isValid;
+        }
+        
+        function showInvalidFeedback(input, message) {
+            input.classList.add('invalid');
+            const feedbackElement = input.nextElementSibling;
+            if (feedbackElement && feedbackElement.classList.contains('invalid-feedback')) {
+                feedbackElement.textContent = message;
+                feedbackElement.style.display = 'block';
+            }
+        }
+        
+        function hideInvalidFeedback(input) {
+            input.classList.remove('invalid');
+            const feedbackElement = input.nextElementSibling;
+            if (feedbackElement && feedbackElement.classList.contains('invalid-feedback')) {
+                feedbackElement.style.display = 'none';
+            }
+        }
+        
+        function updateUserProfile() {
+            if (!validateForm()) {
+                return;
+            }
+            
+            // Show loading state on button
+            const updateBtn = document.querySelector('.btn');
+            const originalText = updateBtn.textContent;
+            updateBtn.textContent = 'Updating...';
+            updateBtn.disabled = true;
+
+            const userId = document.getElementById("userId").value;
+            const fields = ["name", "email", "contact", "address"];
+            const promises = [];
+
+            fields.forEach(field => {
+                const value = document.getElementById(field).value;
+                const promise = fetch("/updateUser", {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ id: userId, field, value })
+                })
+                .then(response => response.text())
+                .then(message => console.log(`${field} updated: ${message}`)) 
+                .catch(error => console.error(`Error updating ${field}:`, error));
+
+                promises.push(promise);
+            });
+
+
+            Promise.all(promises)
+                .then(() => {
+                    // Show success message
+                    const successMessage = document.getElementById('successMessage');
+                    successMessage.classList.add('show');
+                    
+                    // Reset button
+                    updateBtn.textContent = originalText;
+                    updateBtn.disabled = false;
+                    
+                    // Hide success message after 3 seconds
+                    setTimeout(() => {
+                        successMessage.classList.remove('show');
+                    }, 3000);
+                })
+                .catch(error => {
+                    console.error("Error updating profile:", error);
+                    // Reset button
+                    updateBtn.textContent = originalText;
+                    updateBtn.disabled = false;
+                    alert("Error updating profile. Please try again.");
+                });
+        }
+    </script>
 </head>
 <body>
     <div class="geometric-shape shape-1"></div>

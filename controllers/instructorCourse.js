@@ -37,31 +37,8 @@ exports.getCourseDetails_moduleTree = async (req, res) => {
 
 exports.getAllCourses = async (req, res) => {
   try {
-    // Use aggregation to include instructor name and a subject fallback
-    const Course = require("../required/db").Course;
-    const courses = await Course.aggregate([
-      { $match: {} },
-      {
-        $lookup: {
-          from: "instructors",
-          localField: "instructor_id",
-          foreignField: "_id",
-          as: "instructor",
-        },
-      },
-      { $unwind: { path: "$instructor", preserveNullAndEmptyArrays: true } },
-      {
-        $project: {
-          _id: 1,
-          title: 1,
-          subject: { $ifNull: ["$subject", "Unknown"] },
-          instructor_id: {
-            _id: "$instructor._id",
-            name: { $ifNull: ["$instructor.name", "Unknown"] },
-          },
-        },
-      },
-    ]).exec();
+    // Fetch all courses
+    const courses = await model.getAllCourses();
 
     // Fetch all instructors (only _id and name fields)
     const instructors = await Instructor.find({}, "_id name").lean();
@@ -77,11 +54,7 @@ exports.getAllCourses = async (req, res) => {
     const uniqueCourses = [];
 
     for (const c of courses) {
-      const instrId =
-        c.instructor_id && c.instructor_id._id
-          ? c.instructor_id._id.toString()
-          : "";
-      const key = `${c.title}::${instrId}`;
+      const key = `${c.title}::${c.instructor_id}`;
       if (!seen.has(key)) {
         seen.add(key);
 
