@@ -120,8 +120,8 @@ function saveCourse() {
     price: Number(document.getElementById("price").value) || 0,
     overview: (document.getElementById("overview") || { value: "" }).value,
     tagline: (document.getElementById("tagline") || { value: "" }).value,
-    whatYouWillLearn,
-    sub
+    whatYouWillLearn : (document.getElementById("whatYouWillLearnInput") || { value: "" }).value,
+    subject: (document.getElementById("subject") || { value: "" }).value
   };
 
   const url = courseID

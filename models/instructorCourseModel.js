@@ -46,7 +46,9 @@ const CourseModel = {
   insertCourse: async (
     title,
     instructorId,
-    { overview = "", tagline = "", whatYouWillLearn = [] } = {}
+    overview,
+    tagline,
+    subject
   ) => {
     try {
       const course = new Course({
@@ -54,7 +56,7 @@ const CourseModel = {
         instructor_id: instructorId,
         overview,
         tagline,
-        whatYouWillLearn,
+        subject
       });
       const savedCourse = await course.save();
       return savedCourse._id;
