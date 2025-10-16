@@ -17,7 +17,14 @@ app.set("views", path.join(__dirname, "views"));
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
+// Serve root-level static files
 app.use(express.static(path.join(__dirname)));
+// Also expose the updateStudent views directory so callers can request
+// /updateStudent/restore.html directly (some pages/linking expect direct file access).
+app.use(
+  "/updateStudent",
+  express.static(path.join(__dirname, "views", "updateStudent"))
+);
 app.use(
   session({
     secret:
@@ -76,5 +83,8 @@ app.use("/api/consistency", consistencyRoutes);
 //included instructorCourseRoutes.js
 
 app.listen(port, () => {
+  const adminLoginPath = `${ADMIN_BASE_PATH}/login`;
   console.log(`Server running on http://localhost:${port}`);
+  // ✅ Added Console Output for Admin Path
+  console.log(`🔑 Admin Login Path: http://localhost:${port}${adminLoginPath}`);
 });
