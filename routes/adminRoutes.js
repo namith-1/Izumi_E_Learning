@@ -822,9 +822,6 @@ router.get('/payments/:id', isAdmin, async (req, res) => {
         res.status(500).json({ error: 'Error fetching payment details' });
     }
 });
-
-// Add these routes to your admin routes file (after the existing payment routes)
-
 // Update payment (status and method)
 router.put('/payments/:id', isAdmin, async (req, res) => {
     console.log(`🔄 Updating payment ID: ${req.params.id}`);
