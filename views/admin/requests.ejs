@@ -456,26 +456,26 @@
 
             // Function to update statistics
             function updateStatistics() {
-                const rows = document.querySelectorAll('.request-row');
-                let total = 0, pending = 0, approved = 0, rejected = 0;
+               const rows = document.querySelectorAll('.request-row');
+              let total = 0, pending = 0, approved = 0, rejected = 0;
 
-                rows.forEach(row => {
+              rows.forEach(row => {
                     if (row.style.display !== 'none') {
-                        total++;
-                        const statusBadge = row.cells[5].querySelector('.status-badge');
-                        if (statusBadge) {
-                            if (statusBadge.classList.contains('status-pending')) pending++;
+                      total++;
+                       const statusBadge = row.cells[4].querySelector('.status-badge');
+                       if (statusBadge) {
+                          if (statusBadge.classList.contains('status-pending')) pending++;
                             else if (statusBadge.classList.contains('status-approved')) approved++;
-                            else if (statusBadge.classList.contains('status-rejected')) rejected++;
-                        }
-                    }
-                });
+                         else if (statusBadge.classList.contains('status-rejected')) rejected++;
+                  }
+        }
+    });
 
-                document.getElementById('totalCount').textContent = total;
-                document.getElementById('pendingCount').textContent = pending;
-                document.getElementById('approvedCount').textContent = approved;
-                document.getElementById('rejectedCount').textContent = rejected;
-            }
+    document.getElementById('totalCount').textContent = total;
+    document.getElementById('pendingCount').textContent = pending;
+    document.getElementById('approvedCount').textContent = approved;
+    document.getElementById('rejectedCount').textContent = rejected;
+}
 
             // Function to refresh table
             async function refreshRequestsTable() {
@@ -560,10 +560,11 @@
 
                 requestRows.forEach(row => {
                  
-                    const message = row.cells[3].textContent.toLowerCase();
-                    const status = row.cells[5].textContent.toLowerCase();
-                    const priority = row.cells[4].textContent.toLowerCase();
-                    const course = row.cells[2].textContent;
+                    const instructor = row.cells[0].textContent.toLowerCase();
+                    const course = row.cells[1].textContent.toLowerCase();
+                    const message = row.cells[2].textContent.toLowerCase();
+                    const priority = row.cells[3].textContent.toLowerCase();
+                    const status = row.cells[4].textContent.toLowerCase();
 
                     const matchesSearch = !searchTerm || message.includes(searchTerm);
                     const matchesStatus = !selectedStatus || status.includes(selectedStatus);
