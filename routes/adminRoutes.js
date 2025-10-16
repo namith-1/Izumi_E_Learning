@@ -34,7 +34,7 @@ router.get('/instructors', isAdmin, async (req, res) => {
 // Admin login routes
 router.get('/login', (req, res) => {
     if (req.session && req.session.user && req.session.user.role === 'admin') {
-        return res.redirect('/admin/dashboard');
+        return res.redirect('/-nsstn123-admin/dashboard');
     }
     res.render('admin/login');
 });
@@ -48,7 +48,7 @@ router.post('/login', async (req, res) => {
                 email: email,
                 role: 'admin'
             };
-            res.redirect('/admin/dashboard');
+            res.redirect('/-nsstn123-admin/dashboard');
         } else {
             res.status(401).render('admin/login', { error: 'Invalid credentials' });
         }
@@ -474,10 +474,10 @@ router.get('/logout', (req, res) => {
         if (err) {
             console.error('Error destroying session:', err);
         }
-        res.redirect('/admin/login');
+        res.redirect('/-nsstn123-admin/login');
     });
 });
-router.get('/Payments', isAdmin, async (req, res) => {
+router.get('/payments', isAdmin, async (req, res) => {
     try {
         console.log('📄 Rendering payments page...');
         res.render('admin/payments');
@@ -822,9 +822,6 @@ router.get('/payments/:id', isAdmin, async (req, res) => {
         res.status(500).json({ error: 'Error fetching payment details' });
     }
 });
-
-// Add these routes to your admin routes file (after the existing payment routes)
-
 // Update payment (status and method)
 router.put('/payments/:id', isAdmin, async (req, res) => {
     console.log(`🔄 Updating payment ID: ${req.params.id}`);

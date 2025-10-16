@@ -11,6 +11,7 @@ require("dotenv").config();
 const app = express();
 const port = process.env.PORT || 4000;
 const adminLoginPath = process.env.ADMIN_LOGIN_PATH || "/-nsstn123-admin/login";
+const adminPath = process.env.ADMIN_PATH || "/-nsstn123-admin";
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
@@ -71,7 +72,7 @@ app.use("/coms", Comments);
 app.use("/", qna); // All question routes
 app.use("/", gamifyRoutes);
 app.use("/", instructorCourseRoutes);
-app.use("/admin", adminRoutes); // Admin routes
+app.use(`${adminPath}`, adminRoutes); // Admin routes
 app.use("/api", commonInstructor);
 app.use("/", courseInfoInstructor);
 app.use("/contact-admin", contactAdminRoutes);
