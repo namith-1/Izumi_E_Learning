@@ -128,7 +128,7 @@
       const query = searchInput.value.toLowerCase();
       const filtered = coursesData.filter(course => {
         const title = course.title.toLowerCase();
-        const instructor = (course.instructor_id?.name || "").toLowerCase();
+        const instructor = (course.name || "").toLowerCase();
         return title.includes(query) || instructor.includes(query);
       });
       displayCourses(filtered, subjectSelect.value);
@@ -139,7 +139,7 @@
       const query = searchInput.value.toLowerCase();
       const filtered = coursesData.filter(course => {
         const title = course.title.toLowerCase();
-        const instructor = (course.instructor_id?.name || "").toLowerCase();
+        const instructor = (course.name || "").toLowerCase();
         return title.includes(query) || instructor.includes(query);
       });
       displayCourses(filtered, selectedSubject);
@@ -186,11 +186,12 @@
             const courseDiv = document.createElement('div');
             courseDiv.className = 'course';
             courseDiv.innerHTML = `
-              <a href="/is_enrolled?courseId=${course._id}" target="_top" style="text-decoration:none;color:inherit;">
-                <h3>${course.title}</h3>
-                <p><strong>Instructor:</strong> ${course.instructor_id?.name || 'Unknown'}</p>
-                <p><strong>Subject:</strong> ${course.subject}</p>
-              </a>
+             <a href="/is_enrolled?courseId=${course._id}" target="_top" style="text-decoration:none;color:inherit;">
+  <h3>${course.title}</h3>
+  <p><strong>Instructor:</strong> ${course.name || 'Unknown'}</p>
+  <p><strong>Subject:</strong> ${course.subject || 'Math'}</p>
+</a>
+
             `;
             courseRow.appendChild(courseDiv);
           });
@@ -200,17 +201,23 @@
       });
     }
 
-    function populateSubjects(courses) {
-      const subjects = [...new Set(courses.map(course => course.subject))];
-      subjects.sort();
+    
+function populateSubjects(courses) {
+  const subjects = [
+    ...new Set(courses.map(course => course.subject).filter(Boolean))
+  ];
+  subjects.sort();
 
-      subjects.forEach(subject => {
-        const option = document.createElement('option');
-        option.value = subject;
-        option.textContent = subject;
-        subjectSelect.appendChild(option);
-      });
-    }
+  // Clear existing options except "All Subjects"
+  subjectSelect.innerHTML = '<option value="all">All Subjects</option>';
+
+  subjects.forEach(subject => {
+    const option = document.createElement('option');
+    option.value = subject;
+    option.textContent = subject;
+    subjectSelect.appendChild(option);
+  });
+}
 
     fetchCourses();
   </script>
