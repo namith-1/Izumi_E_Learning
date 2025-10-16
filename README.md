@@ -1,60 +1,146 @@
-# 🎮 Gamified E-Learning Platform
+# Izumi E-Learning Platform
 
-A full-featured **E-Learning Platform** designed to make online education engaging and interactive through **gamification, progress tracking, and magazine access**.  
-The system supports three roles — **Admin**, **Instructor**, and **Student** — each with dedicated privileges and dashboards.
+A comprehensive gamified e-learning platform built with Node.js, Express, and MongoDB.
 
----
+## Features
 
-## 🚀 Features
+- **Student Management**: Registration, login, profile management
+- **Instructor Portal**: Course creation and management
+- **Course System**: Hierarchical module structure with progress tracking
+- **Q&A System**: Questions and answers with voting
+- **Magazine System**: Educational content publishing
+- **Gamification**: Progress tracking and achievements
+- **Admin Panel**: Administrative oversight and management
 
-### 👑 Admin
-- Add, edit, and delete **Students** and **Instructors**
-- Manage **Courses** and monitor **users**
-- Track **revenue and enrollment statistics**
-- View and manage **payment history**
-- Access detailed **analytics dashboard**
+## Prerequisites
 
-### 👨‍🏫 Instructor
-- Create, edit, and manage **Courses**
-- Add **Modules** and **Subtopics** with text, videos, or documents
-- Monitor **student enrollments**
-- Raising complaints to admin
+- Node.js (v14 or higher)
+- MongoDB (v4.4 or higher)
+- npm or yarn package manager
 
-### 🎓 Student
-- Register, enroll in, and learn from **available courses**
-- Track **progress** through interactive dashboards
-- Play **educational games** to strengthen understanding of concepts
-- Access **digital magazines** to stay updated and engaged
+## Installation
 
+1. Clone the repository:
 
----
+   ```bash
+   git clone <repository-url>
+   cd Izumi_E_Learning
+   ```
 
-## 🧠 Gamification Features
-- Concept-based **mini-games** integrated within lessons
-- **Points and progress tracking** for each course
-- **Badges and leaderboards** to encourage engagement
-- Real-time **progress visualization**
+2. Install dependencies:
 
----
+   ```bash
+   npm install
+   ```
 
-## 📰 Magazine Section
-- Latest articles and magazines on trending educational topics
-- Curated content to **bridge learning and real-world applications**
+3. Create environment configuration:
+   ```bash
+   cp .env.example .env
+   ```
+4. Update the `.env` file with your configuration:
 
----
+   ```
+   MONGODB_URI=mongodb://localhost:27017/izumi3
+   PORT=4000
+   SESSION_SECRET=your-secure-session-secret
+   NODE_ENV=development
+   ```
 
-## 🧩 Tech Stack
+5. Start MongoDB service on your system
 
-| Layer | Technology |
-|-------|-------------|
-| **Frontend** | HTML5, CSS3, JavaScript, Bootstrap 5 |
-| **Backend** | Node.js, Express.js |
-| **Database** | MongoDB with Mongoose and atlas |
-| **Templating Engine** | EJS (Embedded JavaScript) |
-| **Authentication** | Session-based login/bcrypt/DOM-validation |
-| **Game Integration** | API Based|
-| **Version Control** | Git + GitHub |
+6. (Optional) Seed initial data:
+   ```bash
+   npm run seed
+   ```
 
----
+## Running the Application
 
-## 🗂️ Project Structure
+### Development Mode
+
+```bash
+npm run dev
+```
+
+### Production Mode
+
+```bash
+npm start
+```
+
+The application will be available at `http://localhost:4000`
+
+## Project Structure
+
+```
+├── controllers/         # Request handlers
+├── models/             # Database models and business logic
+├── routes/             # Route definitions
+├── views/              # Frontend templates and static files
+├── middlewares/        # Authentication and other middleware
+├── required/           # Database configuration
+├── extras/             # Additional utilities and test files
+├── server.js           # Main application file
+├── seedData.js         # Database seeding utility
+└── package.json        # Project dependencies and scripts
+```
+
+## API Endpoints
+
+### Authentication
+
+- `POST /signup` - Student registration
+- `POST /login` - Student login
+- `GET /load_user_info` - Get current user info
+
+### Courses
+
+- `GET /courses` - List all courses
+- `GET /course/:id` - Get course details
+- `POST /enroll` - Enroll in a course
+
+### Questions & Answers
+
+- `GET /questions` - List all questions
+- `POST /questions/new` - Create new question
+- `POST /answers/new` - Submit answer
+
+### Admin
+
+- `GET /admin/dashboard` - Admin dashboard
+- `GET /admin/users` - User management
+
+## Development
+
+### Adding New Features
+
+1. Create model in `models/` directory
+2. Add controller logic in `controllers/`
+3. Define routes in `routes/`
+4. Create views in `views/`
+
+### Database Seeding
+
+To populate the database with initial data:
+
+```bash
+npm run seed
+```
+
+## Security Features
+
+- Password hashing with bcrypt
+- Session-based authentication
+- Input validation and error handling
+- Secure session configuration
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
+
+## License
+
+This project is licensed under the ISC License.
