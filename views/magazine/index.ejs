@@ -3,55 +3,162 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Magazines</title>
+    <title>Our Magazines</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            /* Color Palette (inspired by the 'Restore Account' CSS) */
+            --primary-color: #8a2be2; /* BlueViolet */
+            --secondary-color: #e0b0ff; /* Pale-ish Lilac */
+            --accent-color: #ffd700; /* Gold */
+            --neutral-color: #f0f0f5; /* Light Grey/Blue */
+            --text-primary: #333333;
+            --text-secondary: #666666;
+            --background-color: #f9f9f9;
+            --card-background: #ffffff;
+            --success-color: #28a745; /* Darker green for liked state */
+            --border-radius: 12px;
+            --box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+            --font-main: "Poppins", sans-serif;
+            --cyan-accent: #b8e0dc;
+            --yellow-accent: #fef3c7;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--background-color);
+            color: var(--text-primary);
+            padding: 40px 20px;
+            text-align: center;
+        }
+        
+        /* --- General Layout --- */
+        
+        h1 {
+            color: var(--primary-color);
+            font-weight: 700;
+            font-size: 36px;
+            margin-bottom: 30px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .magazines-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* --- Magazine Card Styling --- */
+
         .magazine-card {
-            border: 1px solid #ccc;
-            margin: 10px;
-            padding: 15px;
+            background-color: var(--card-background);
+            border: none; /* Removing the original border */
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            margin: 0; /* Removing the original margin */
+            padding: 20px;
             width: 300px;
-            display: inline-block;
-            vertical-align: top;
+            transition: var(--transition);
+            text-align: left;
+            overflow: hidden;
+        }
+        
+        .magazine-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .magazine-card h3 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            font-weight: 600;
+            font-size: 20px;
+            min-height: 50px; /* Helps keep alignment if titles vary */
+        }
+
+        .magazine-card p {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 15px;
+            line-height: 1.5;
+            min-height: 60px; /* Helps keep alignment if descriptions vary */
         }
 
         .magazine-card img {
-            max-width: 100%;
+            width: 100%;
             height: auto;
-            margin-bottom: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            aspect-ratio: 4/3; /* Common magazine cover aspect ratio */
+            object-fit: cover;
+            transition: var(--transition);
+        }
+        
+        .magazine-card:hover img {
+             opacity: 0.9;
         }
 
+        /* --- Like Button Styling --- */
+        
         .like-button {
-            background-color: #007bff;
+            /* Using the primary color for the base button */
+            background-color: var(--primary-color);
             color: white;
             border: none;
-            padding: 8px 15px;
+            padding: 10px 20px;
             cursor: pointer;
-            border-radius: 5px;
+            border-radius: 8px;
+            font-family: var(--font-main);
+            font-size: 15px;
+            font-weight: 500;
+            width: 100%;
+            transition: var(--transition);
+            box-shadow: 0 3px 10px rgba(138, 43, 226, 0.3);
+        }
+        
+        .like-button:hover:not(.liked) {
+            background-color: #6a1b9a; /* Slightly darker primary color */
+            transform: translateY(-1px);
         }
 
         .liked {
-            background-color: #28a745;
+            /* Using the success color for the liked state */
+            background-color: var(--success-color);
+            box-shadow: 0 3px 10px rgba(40, 167, 69, 0.3);
+            cursor: default;
         }
     </style>
 </head>
 <body>
-    <h1>Our Magazines</h1>
+    <h1>Our Exclusive Magazines ✨</h1>
 
-    <% if (magazines && magazines.length > 0) { %>
-        <% magazines.forEach(magazine => { %>
-            <div class="magazine-card" data-content-url="<%= magazine.content_url %>">
-                <h3><%= magazine.title %></h3>
-                <p><%= magazine.description %></p>
-                <% if (magazine.image_url) { %>
-                    <img src="<%= magazine.image_url %>" alt="<%= magazine.title %>">
-                <% } %>
-                <button class="like-button">Like</button>
-            </div>
-        <% }); %>
-    <% } else { %>
-        <p>No magazines available.</p>
-    <% } %>
-
+    <div class="magazines-container">
+        <% if (magazines && magazines.length > 0) { %>
+            <% magazines.forEach(magazine => { %>
+                <div class="magazine-card" data-content-url="<%= magazine.content_url %>">
+                    <% if (magazine.image_url) { %>
+                        <img src="<%= magazine.image_url %>" alt="<%= magazine.title %>">
+                    <% } %>
+                    <h3><%= magazine.title %></h3>
+                    <p><%= magazine.description %></p>
+                    <button class="like-button">Like</button>
+                </div>
+            <% }); %>
+        <% } else { %>
+            <p>No magazines available.</p>
+        <% } %>
+    </div>
+    
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const magazineCards = document.querySelectorAll('.magazine-card');
@@ -61,8 +168,14 @@
                 const contentUrl = card.dataset.contentUrl;
 
                 likeButton.addEventListener('click', () => {
+                    // Prevent further clicks once liked
+                    if (likeButton.classList.contains('liked')) {
+                        return;
+                    }
+                    
                     likeButton.classList.add('liked');
-                    likeButton.textContent = 'Liked!';
+                    likeButton.textContent = 'Liked! 🎉';
+                    
                     // After a short delay, open the content URL
                     setTimeout(() => {
                         window.open(contentUrl, '_blank');
