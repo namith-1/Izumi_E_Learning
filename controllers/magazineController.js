@@ -7,16 +7,28 @@ exports.index = async (req, res) => {
   try {
     // Simple pagination by ObjectId string: return records with _id > lastId if provided
     const { lastId, limit } = req.query;
-    const pageLimit = parseInt(limit, 10) || 10;
+    // show more by default so changes are visible in the UI
+    const pageLimit = parseInt(limit, 10) || 20;
 
     let query = {};
     if (lastId) {
       // When lastId provided, fetch documents with _id greater than lastId (lexicographic)
       // This assumes ObjectId string ordering; for stable pagination consider using createdAt.
-      query = { _id: { $gt: lastId } };
+      // If lastId provided, use ObjectId comparison when possible
+      try {
+        const mongoose = require("mongoose");
+        query = { _id: { $gt: mongoose.Types.ObjectId(lastId) } };
+      } catch (e) {
+        // fallback to string compare if lastId isn't a valid ObjectId
+        query = { _id: { $gt: lastId } };
+      }
     }
 
-    const magazines = await Magazine.find(query).limit(pageLimit).lean();
+    // Sort by newest first so recently seeded/updated magazines appear at the top
+    const magazines = await Magazine.find(query)
+      .sort({ _id: -1 })
+      .limit(pageLimit)
+      .lean();
 
     // If the request expects JSON (AJAX) or had lastId, return JSON
     const acceptsJson =

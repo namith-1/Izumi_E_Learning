@@ -234,24 +234,70 @@ async function seedData() {
     ]);
     console.log("Inserted initial enrollments");
 
-    // Insert Magazines
+    // Insert Tech Magazines - Updated with ML, NLP, Bash Scripting, and CI/CD topics
     await Magazine.insertMany([
       {
-        title: "Tech Monthly",
-        description: "Latest tech trends.",
-        image_url:
-          "https://c0.wallpaperflare.com/preview/483/913/258/advanced-ai-anatomy-artificial.jpg",
-        content_url: "https://tech.example.com",
+        title: "AI Magazine - Machine Learning & Deep Learning",
+        description: "The world's leading bi-monthly AI magazine covering ML, deep learning, neural networks, and AI applications. Features insights on AI strategy, emerging trends, and real-world implementations.",
+        image_url: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&q=80",
+        content_url: "https://aimagazine.com/",
       },
       {
-        title: "Science Today",
-        description: "Discoveries in science.",
-        image_url:
-          "https://wallpapers.com/images/high/futuristic-global-network-with-glowing-connections-6my9d3o2gl8rencj.webp",
-        content_url: "https://science.example.com",
+        title: "Quanta Magazine - Machine Learning Research",
+        description: "Explore cutting-edge machine learning research, from cellular automata to world models. Covers AI experiments, emergent behaviors, and the future of artificial intelligence.",
+        image_url: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=800&q=80",
+        content_url: "https://www.quantamagazine.org/tag/machine-learning/",
+      },
+      {
+        title: "Natural Language Processing Journal",
+        description: "Open access journal advancing trustworthy, interpretable NLP and hybrid AI. Covers language understanding, large language models, sentiment analysis, and text generation.",
+        image_url: "https://images.unsplash.com/photo-1516110833967-0b5716ca1387?w=800&q=80",
+        content_url: "https://www.sciencedirect.com/journal/natural-language-processing-journal",
+      },
+      {
+        title: "Frontiers in AI - Natural Language Processing",
+        description: "Latest research in NLP including transformer models, chatbots, question answering, and language generation. Features cutting-edge applications and methodologies.",
+        image_url: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=800&q=80",
+        content_url: "https://www.frontiersin.org/journals/artificial-intelligence/sections/natural-language-processing",
+      },
+      {
+        title: "DevOps Cube - Shell Scripting for DevOps",
+        description: "Master Linux shell scripting and Bash automation for DevOps. Comprehensive guides, real-world examples, and best practices for system administration and automation.",
+        image_url: "https://images.unsplash.com/photo-1629654297299-c8506221ca97?w=800&q=80",
+        content_url: "https://devopscube.com/linux-shell-scripting-for-devops/",
+      },
+      {
+        title: "Medium - 25 Essential Bash Scripts for DevOps",
+        description: "Practical Bash scripts for automating monitoring, backups, deployments, and security checks. Perfect for beginner to intermediate DevOps engineers.",
+        image_url: "https://images.unsplash.com/photo-1667372393119-3d4c48d07fc9?w=800&q=80",
+        content_url: "https://medium.com/@akhandsinghofficial/25-essential-bash-scripts-for-beginner-devops-engineers-c37d0cc45a1a",
+      },
+      {
+        title: "Codemotion - Top 10 CI/CD Tools in 2025",
+        description: "Comprehensive guide to the best CI/CD tools including Jenkins, GitLab CI/CD, GitHub Actions, and more. Covers automation, orchestration, and DevOps best practices.",
+        image_url: "https://images.unsplash.com/photo-1618401471353-b98afee0b2eb?w=800&q=80",
+        content_url: "https://www.codemotion.com/magazine/devops/top-10-ci-cd-tools-in-2025/",
+      },
+      {
+        title: "The New Stack - CI/CD Environment & DevOps",
+        description: "Breaking news and analysis on CI/CD pipelines, Kubernetes, GitOps, and cloud-native practices. The backbone of modern DevOps and software delivery.",
+        image_url: "https://images.unsplash.com/photo-1667372393086-9d4001d51cf1?w=800&q=80",
+        content_url: "https://thenewstack.io/ci-cd/",
+      },
+      {
+        title: "DevOps Magazine - Continuous Integration & Delivery",
+        description: "Expert insights on CI/CD best practices, platform engineering, and the future of DevOps. Features from industry leaders on automation and deployment strategies.",
+        image_url: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&q=80",
+        content_url: "https://devopscon.io/whitepaper/devops-magazine-1-20/",
+      },
+      {
+        title: "Technology Magazine - AI & Machine Learning",
+        description: "Latest AI and machine learning articles covering robotics, computational intelligence, deep learning, and enterprise AI solutions from global tech leaders.",
+        image_url: "https://images.unsplash.com/photo-1655635643532-fa9ba2648cbe?w=800&q=80",
+        content_url: "https://technologymagazine.com/ai-and-machine-learning",
       },
     ]);
-    console.log("Inserted initial magazines");
+    console.log("Inserted tech magazines");
 
     // Insert Course Stats
     await CourseStat.insertMany([
