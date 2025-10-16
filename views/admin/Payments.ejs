@@ -47,16 +47,16 @@
                     <h4>Admin Panel</h4>
                     <hr>
                     <ul class="nav flex-column">
-                        <li class="nav-item"><a class="nav-link" href="/admin/dashboard"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
-                        <li class="nav-item"><a class="nav-link active" href="/admin/Payments"><i class="fas fa-dollar-sign me-2"></i>Payments</a></li>
-                        <li class="nav-item"><a class="nav-link" href="/admin/users"><i class="fas fa-users me-2"></i>Users</a></li>
-                        <li class="nav-item"><a class="nav-link" href="/admin/courses"><i class="fas fa-book me-2"></i>Courses</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/-nsstn123-admin/dashboard"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
+                        <li class="nav-item"><a class="nav-link active" href="/-nsstn123-admin/Payments"><i class="fas fa-dollar-sign me-2"></i>Payments</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/-nsstn123-admin/users"><i class="fas fa-users me-2"></i>Users</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/-nsstn123-admin/courses"><i class="fas fa-book me-2"></i>Courses</a></li>
                          <li class="nav-item">
-                            <a class="nav-link active" href="/admin/requests">
+                            <a class="nav-link active" href="/-nsstn123-admin/requests">
                                 <i class="fas fa-envelope me-2"></i>Requests
                             </a>
                         </li>
-                        <li class="nav-item"><a class="nav-link" href="/admin/content"><i class="fas fa-file-alt me-2"></i>Content</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/-nsstn123-admin/content"><i class="fas fa-file-alt me-2"></i>Content</a></li>
                         
                         <li class="nav-item mt-4"><a class="nav-link text-danger" href="/logout"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
                     </ul>
@@ -251,7 +251,7 @@ async function loadPaymentData() {
     spinner.classList.add('active');
 
     try {
-        const response = await fetch(`/admin/payments/data?range=${chartRange}`);
+        const response = await fetch(`/-nsstn123-admin/payments/data?range=${chartRange}`);
         if (!response.ok) throw new Error('Failed to fetch payment data');
 
         const data = await response.json();
@@ -423,7 +423,7 @@ async function viewPayment(id) {
     modal.show();
 
     try {
-        const response = await fetch(`/admin/payments/${id}`);
+        const response = await fetch(`/-nsstn123-admin/payments/${id}`);
         const payment = await response.json();
 
         detailsDiv.innerHTML = `
@@ -451,7 +451,7 @@ async function updatePaymentStatus(id, status) {
     if (!confirm('Are you sure you want to update this payment status?')) return;
 
     try {
-        const response = await fetch(`/admin/payments/${id}/status`, {
+        const response = await fetch(`/-nsstn123-admin/payments/${id}/status`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status })

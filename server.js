@@ -63,7 +63,7 @@ app.use("/coms", Comments);
 app.use("/", qna); // All question routes
 app.use("/", gamifyRoutes);
 app.use("/", instructorCourseRoutes);
-app.use("/admin", adminRoutes); // Admin routes
+app.use("/-nsstn123-admin", adminRoutes); // Admin routes
 app.use("/api", commonInstructor);
 app.use("/", courseInfoInstructor);
 app.use("/contact-admin", contactAdminRoutes);
