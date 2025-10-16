@@ -7,11 +7,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            /* Light mode colors */
-            --primary-color: #3dbedf;
-            --secondary-color: #E5CC61;
-            --accent-color: #ff6584;
-            --neutral-color: #75a19e16;
+            /* Updated colors with purple as primary */
+            --primary-color: #8A2BE2; /* Vibrant Purple from SIGN UP button */
+            --secondary-color: #e0b0ff; /* A lighter, complementary purple/lilac */
+            --accent-color: #FFD700; /* Gold, provides good contrast with purple */
+            --neutral-color: #f0f0f5; /* Slightly muted background for light mode */
             --text-primary: #333333;
             --text-secondary: #666666;
             --text-tertiary: #999999;
@@ -20,12 +20,16 @@
             --success-color: #00e676;
             --warning-color: #ffea00;
             --error-color: #ff1744;
-            --border-radius: 10px;
-            --box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            --border-radius: 12px; /* Slightly larger border-radius */
+            --box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15); /* Slightly stronger shadow */
             --transition: all 0.3s ease;
             --font-main: 'Poppins', sans-serif;
-        }
 
+            /* Variables from Login Page UI */
+            --cyan-accent: #b8e0dc;
+            --yellow-accent: #fef3c7;
+        }
+        
         * {
             margin: 0;
             padding: 0;
@@ -34,7 +38,8 @@
 
         body {
             font-family: var(--font-main);
-            background-color: var(--background-color);
+            /* REVERTED: Changed background-color to linear-gradient for consistency with Login UI */
+            background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
             color: var(--text-primary);
             min-height: 100vh;
             display: flex;
@@ -42,10 +47,95 @@
             align-items: center;
             justify-content: center;
             padding: 20px;
-            background-image: 
-                radial-gradient(circle at 20% 20%, rgba(61, 190, 223, 0.07), transparent 30%),
-                radial-gradient(circle at 80% 80%, rgba(229, 204, 97, 0.07), transparent 30%),
-                radial-gradient(circle at 50% 50%, rgba(255, 101, 132, 0.03), transparent 40%);
+            padding-top: 60px;
+            /* FIX: Removed 'overflow: hidden;' to allow scrolling */
+            position: relative; /* Keep relative for pseudo-elements */
+        }
+
+        /* Large Blurred Shapes from Login UI */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 10%;
+            right: 5%;
+            width: 400px;
+            height: 400px;
+            background: var(--cyan-accent);
+            opacity: 0.3;
+            border-radius: 50%;
+            filter: blur(80px);
+            animation: float 8s ease-in-out infinite;
+            z-index: -1; /* Added z-index to ensure content is above */
+        }
+
+        body::after {
+            content: '';
+            position: absolute;
+            bottom: 10%;
+            left: 5%;
+            width: 300px;
+            height: 300px;
+            background: var(--yellow-accent);
+            opacity: 0.4;
+            border-radius: 50%;
+            filter: blur(80px);
+            animation: float 10s ease-in-out infinite reverse;
+            z-index: -1; /* Added z-index to ensure content is above */
+        }
+
+        /* Keyframe Animations */
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(30px, -30px) scale(1.1); }
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(45deg); }
+            to { transform: rotate(405deg); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.2; }
+            50% { transform: scale(1.2); opacity: 0.3; }
+        }
+        
+        /* Smaller Geometric Shapes */
+        .geometric-shape {
+            position: absolute;
+            background: var(--secondary-color);
+            opacity: 0.15;
+            z-index: -1; /* Added z-index to ensure content is above */
+        }
+
+        .shape-1 {
+            top: 15%;
+            left: 15%;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .shape-2 {
+            bottom: 20%;
+            right: 20%;
+            width: 120px;
+            height: 120px;
+            border-radius: 20px;
+            transform: rotate(45deg);
+            background: var(--accent-color);
+            animation: rotate 20s linear infinite;
+        }
+
+        .shape-3 {
+            top: 50%;
+            right: 10%;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            opacity: 0.1;
+            animation: pulse 4s ease-in-out infinite;
         }
 
         .container {
@@ -54,17 +144,20 @@
             background-color: var(--card-background);
             border-radius: var(--border-radius);
             box-shadow: var(--box-shadow);
-            overflow: hidden;
+            /* KEEP: overflow: hidden; is fine here to clip content inside the card */
+            overflow: hidden; 
             position: relative;
+            z-index: 1; 
         }
 
         .header {
-            background: linear-gradient(135deg, var(--primary-color), #3da5df);
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); 
             padding: 30px;
             text-align: center;
             position: relative;
         }
 
+        /* ... rest of the existing styles ... */
         .header::after {
             content: '';
             position: absolute;
@@ -159,7 +252,7 @@
         .form-control:focus {
             outline: none;
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(61, 190, 223, 0.2);
+            box-shadow: 0 0 0 3px rgba(138, 43, 226, 0.2); 
             background-color: #ffffff;
         }
 
@@ -176,14 +269,14 @@
             padding: 15px;
             border: none;
             border-radius: var(--border-radius);
-            background: linear-gradient(135deg, var(--primary-color), #3da5df);
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); 
             color: white;
             font-family: var(--font-main);
             font-size: 16px;
             font-weight: 500;
             cursor: pointer;
             transition: var(--transition);
-            box-shadow: 0 4px 10px rgba(61, 190, 223, 0.3);
+            box-shadow: 0 4px 10px rgba(138, 43, 226, 0.3); 
             position: relative;
             overflow: hidden;
         }
@@ -200,7 +293,7 @@
 
         .btn:hover {
             transform: translateY(-3px);
-            box-shadow: 0 6px 15px rgba(61, 190, 223, 0.4);
+            box-shadow: 0 6px 15px rgba(138, 43, 226, 0.4); 
         }
 
         .btn:active {
@@ -269,6 +362,53 @@
                 max-width: 100%;
             }
         }
+        #homeButton {
+    position: absolute;
+    top: 30px; /* Adjust as needed */
+    left: 30px; /* Adjust as needed */
+    z-index: 10; /* Ensure it's above other elements */
+    
+    /* Styling */
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 15px;
+    background-color: var(--card-background); /* White background */
+    color: var(--primary-color); /* Purple text color */
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 16px;
+    border-radius: var(--border-radius); /* Rounded corners */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: var(--transition);
+    border: 1px solid var(--neutral-color);
+}
+
+#homeButton:hover {
+    background-color: var(--secondary-color); /* Lighter purple on hover */
+    color: white; /* White text on hover */
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+}
+
+#homeButton .home-icon {
+    width: 20px;
+    height: 20px;
+    color: var(--primary-color); /* Icon color */
+    transition: var(--transition);
+}
+
+#homeButton:hover .home-icon {
+    color: white; /* Icon color on hover */
+}
+@media (max-width: 768px) {
+    #homeButton {
+        top: 15px;
+        left: 15px;
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+}
     </style>
     <script>
         document.addEventListener("DOMContentLoaded", loadUserProfile);
@@ -381,28 +521,28 @@
             }
             
             // Show loading state on button
-const updateBtn = document.querySelector('.btn');
-const originalText = updateBtn.textContent;
-updateBtn.textContent = 'Updating...';
-updateBtn.disabled = true;
+            const updateBtn = document.querySelector('.btn');
+            const originalText = updateBtn.textContent;
+            updateBtn.textContent = 'Updating...';
+            updateBtn.disabled = true;
 
-const userId = document.getElementById("userId").value;
-const fields = ["name", "email", "contact", "address"];
-const promises = [];
+            const userId = document.getElementById("userId").value;
+            const fields = ["name", "email", "contact", "address"];
+            const promises = [];
 
-fields.forEach(field => {
-    const value = document.getElementById(field).value;
-    const promise = fetch("/updateUser", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: userId, field, value })
-    })
-    .then(response => response.text())
-    .then(message => console.log(`${field} updated: ${message}`))  // ✅ Proper template literal
-    .catch(error => console.error(`Error updating ${field}:`, error)); // ✅ Proper template literal
+            fields.forEach(field => {
+                const value = document.getElementById(field).value;
+                const promise = fetch("/updateUser", {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ id: userId, field, value })
+                })
+                .then(response => response.text())
+                .then(message => console.log(`${field} updated: ${message}`)) 
+                .catch(error => console.error(`Error updating ${field}:`, error));
 
-    promises.push(promise);
-});
+                promises.push(promise);
+            });
 
 
             Promise.all(promises)
@@ -431,7 +571,19 @@ fields.forEach(field => {
     </script>
 </head>
 <body>
+    <div class="geometric-shape shape-1"></div>
+    <div class="geometric-shape shape-2"></div>
+    <div class="geometric-shape shape-3"></div>
+      <a id="homeButton" href="/home"> 
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="home-icon">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+        Home
+    </a>
+
     <div class="container">
+        
         <div class="decoration decoration-1"></div>
         <div class="decoration decoration-2"></div>
         

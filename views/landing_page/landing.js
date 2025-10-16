@@ -236,3 +236,54 @@ document.addEventListener('DOMContentLoaded', function() {
   initParallaxEffect();
   initHeaderScrollEffect();
 });
+// /views/landing_page/landing.js
+document.addEventListener('DOMContentLoaded', () => {
+  const section = document.querySelector('.testimonials');
+  if (!section) return;
+
+  const slides = Array.from(section.querySelectorAll('.testimonial-card'));
+  if (slides.length === 0) return;
+
+  const prevBtn = section.querySelector('.prev-btn');
+  const nextBtn = section.querySelector('.next-btn');
+
+  // find initial active, otherwise start at 0
+  let currentIndex = slides.findIndex(s => s.classList.contains('active'));
+  if (currentIndex === -1) currentIndex = 0;
+
+  // ensure ARIA attributes and visibility initial state
+  function refreshAriaAndVisibility() {
+    slides.forEach((slide, i) => {
+      const isActive = i === currentIndex;
+      slide.classList.toggle('active', isActive);
+      slide.setAttribute('aria-hidden', isActive ? 'false' : 'true');
+      slide.setAttribute('tabindex', isActive ? '0' : '-1');
+    });
+  }
+  refreshAriaAndVisibility();
+
+  function showIndex(index) {
+    currentIndex = (index + slides.length) % slides.length;
+    refreshAriaAndVisibility();
+  }
+
+  prevBtn && prevBtn.addEventListener('click', () => showIndex(currentIndex - 1));
+  nextBtn && nextBtn.addEventListener('click', () => showIndex(currentIndex + 1));
+
+  // keyboard support when testimonials area focused
+  section.setAttribute('tabindex', '0');
+  section.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft') prevBtn && prevBtn.click();
+    if (e.key === 'ArrowRight') nextBtn && nextBtn.click();
+  });
+
+  // Optional: autoplay with pause on hover/focus
+  let autoplayMs = 6000; // change to desired interval or set to 0 to disable
+  if (autoplayMs > 0) {
+    let timer = setInterval(() => nextBtn && nextBtn.click(), autoplayMs);
+    section.addEventListener('mouseenter', () => clearInterval(timer));
+    section.addEventListener('mouseleave', () => timer = setInterval(() => nextBtn && nextBtn.click(), autoplayMs));
+    section.addEventListener('focusin', () => clearInterval(timer));
+    section.addEventListener('focusout', () => timer = setInterval(() => nextBtn && nextBtn.click(), autoplayMs));
+  }
+});

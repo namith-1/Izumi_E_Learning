@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Module Completed</title>
+    <style>
+      body {
+        font-family: Arial, Helvetica, sans-serif;
+        background: #f6f8fb;
+        color: #111;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        margin: 0;
+      }
+      .card {
+        background: #fff;
+        padding: 28px;
+        border-radius: 10px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+        max-width: 540px;
+        text-align: center;
+      }
+      .card h1 {
+        margin: 0 0 8px;
+        color: #2e7d32;
+      }
+      .card p {
+        color: #444;
+        margin: 0 0 18px;
+      }
+      .actions {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+      }
+      .btn {
+        padding: 10px 14px;
+        border-radius: 8px;
+        border: 0;
+        cursor: pointer;
+      }
+      .btn-primary {
+        background: #2e7d32;
+        color: #fff;
+      }
+      .btn-secondary {
+        background: #2196f3;
+        color: #fff;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>Congratulations!</h1>
+      <p id="module-name">You've completed the module.</p>
+      <div class="actions">
+        <button id="revisit-btn" class="btn btn-secondary">
+          Revisit Module
+        </button>
+        <button id="done-btn" class="btn btn-primary">Done</button>
+      </div>
+    </div>
+
+    <script>
+      // module_complete.html expects moduleId, courseId and studentId in sessionStorage
+      const moduleId = sessionStorage.getItem("completed_module_id");
+      const courseId = sessionStorage.getItem("completed_course_id");
+      const studentId = sessionStorage.getItem("completed_student_id");
+
+      document.getElementById("module-name").textContent =
+        sessionStorage.getItem("completed_module_title") ||
+        "You've completed the module.";
+
+      document.getElementById("revisit-btn").addEventListener("click", () => {
+        // set a flag so the course page re-opens this module
+        if (moduleId && courseId && studentId) {
+          sessionStorage.setItem("revisit_module_id", moduleId);
+          window.location.href = `/view_course?courseID=${courseId}&studentID=${studentId}`;
+        } else {
+          window.location.href = "/";
+        }
+      });
+
+      document.getElementById("done-btn").addEventListener("click", () => {
+        // Clear module-related session keys
+        sessionStorage.removeItem("completed_module_id");
+        sessionStorage.removeItem("completed_course_id");
+        sessionStorage.removeItem("completed_student_id");
+        sessionStorage.removeItem("completed_module_title");
+        // Go home or to course view
+        if (courseId && studentId) {
+          window.location.href = `/view_course?courseID=${courseId}&studentID=${studentId}`;
+        } else {
+          window.location.href = "/";
+        }
+      });
+    </script>
+  </body>
+</html>
