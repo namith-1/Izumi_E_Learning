@@ -85,7 +85,7 @@ app.use("/api/consistency", consistencyRoutes);
 //included instructorCourseRoutes.js
 
 app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
+  console.log(`Server running on: http://localhost:${port}`);
   // ✅ Added Console Output for Admin Path
   console.log(`🔑 Admin Login Path: http://localhost:${port}${adminLoginPath}`);
 });
