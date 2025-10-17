@@ -6,8 +6,7 @@ const uri = process.env.MONGO_URI || "mongodb://localhost:27017/izumi3";
 
 mongoose
   .connect(uri, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
+
   })
   .then(() => {
     // Detect if using Atlas or local
