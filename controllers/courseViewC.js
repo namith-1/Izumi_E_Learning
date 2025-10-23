@@ -106,7 +106,7 @@ exports.getCourseDetails = async (req, res) => {
 // --- Other exports remain unchanged ---
 
 exports.editCourse = (req, res) => {
-  res.sendFile(path.join(__dirname, "../views/public", "course.html"));
+  res.sendFile(path.join(__dirname, "../test/course-editor/build", "index.html"));
 };
 
 exports.listCourses = (req, res) => {
