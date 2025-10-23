@@ -1,0 +1,21 @@
+/* --- "What You'll Learn" List --- */
+#whatYouWillLearnList { list-style-type: none; margin-top: 0.75rem; }
+#whatYouWillLearnList li {
+  display: flex; justify-content: space-between; align-items: center;
+  background: var(--bg-color-alt);
+  padding: 0.6rem 0.8rem;
+  border-radius: 5px;
+  margin-bottom: 0.4rem; border: 1px solid #eee;
+  font-size: 0.9rem;
+}
+
+/* Button needs to be defined here or globally in App.css */
+.btn-remove {
+  background: none; border: none; color: var(--danger-color);
+  font-size: 1.5rem; font-weight: 600; line-height: 1;
+  cursor: pointer; padding: 0 0.5rem; transition: color 0.2s;
+}
+.btn-remove:hover { color: #c0392b; }
+
+/* Grid needs to be defined here or globally in App.css */
+.grid-col-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }

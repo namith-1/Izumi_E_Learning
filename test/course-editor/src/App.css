@@ -1,0 +1,134 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700&display=swap');
+
+/* --- Global Color Variables --- */
+:root {
+  --primary-color: #2563eb;
+  --primary-color-dark: #1d4ed8;
+  --primary-color-light: #dbeafe;
+  
+  --text-color: #333;
+  --text-color-light: #555;
+  --text-color-muted: #6c757d;
+
+  --bg-color-body: #e9ecef;
+  --bg-color-card: #ffffff;
+  --bg-color-alt: #f8f9fa;
+
+  --border-color: #dee2e6;
+  
+  --success-color: #2ecc71;
+  --success-color-dark: #27ae60;
+  
+  --danger-color: #e74c3c;
+  --danger-color-light: #fbebee;
+
+  --navbar-bg: #343a40;
+  --navbar-text: #e0e0e0;
+  --navbar-text-hover: #ffffff;
+  --navbar-hover-bg: #495057;
+}
+
+/* --- Global & Font Styles --- */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  line-height: 1.6;
+  color: var(--text-color);
+  background: var(--bg-color-body);
+  padding-top: 70px; /* Match Navbar height */
+  padding-bottom: 70px; /* Match Footer height */
+}
+
+/* Base h1/h2 can stay global */
+h1 {
+  color: #2c3e50;
+  margin-bottom: 1.25rem;
+  font-weight: 600;
+}
+h2 {
+  color: var(--primary-color);
+  border-bottom: 2px solid var(--primary-color-light);
+  padding-bottom: 0.5rem;
+  margin-bottom: 1.5rem;
+  font-weight: 600;
+}
+
+/* --- Global Layout --- */
+.editor-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 1.5rem;
+  max-width: 1400px;
+  margin: 2rem 2rem 2rem 1.5rem;
+  padding: 0;
+}
+.content-editor { max-width: 900px; } /* Max width for main content */
+
+/* --- Global Form Styles (can be used by multiple components) --- */
+.form-section {
+  background: var(--bg-color-card);
+  border-radius: 8px;
+  padding: 1.5rem 2rem; margin-bottom: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+.form-group { margin-bottom: 1.25rem; }
+.form-group label {
+  display: block; font-weight: 600;
+  margin-bottom: 0.4rem; color: var(--text-color-light);
+  font-size: 0.9rem;
+}
+.form-group input, .form-group textarea {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.form-group input:focus, .form-group textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px var(--primary-color-light);
+}
+
+/* --- Global Button Styles --- */
+/* Base button style */
+.btn {
+  padding: 0.5rem 1rem; border: none; border-radius: 5px;
+  cursor: pointer; font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+.btn-primary {
+  background-color: var(--primary-color);
+  color: white;
+}
+.btn-primary:hover {
+  background-color: var(--primary-color-dark);
+}
+.btn-secondary {
+  background-color: #e9ecef; color: #343a40;
+  border: 1px solid #ced4da;
+}
+.btn-secondary:hover { background-color: #dee2e6; }
+.btn-danger {
+  background-color: var(--danger-color-light); color: #c0392b;
+  border: 1px solid var(--danger-color);
+}
+.btn-danger:hover { background-color: var(--danger-color); color: white; }
+
+/* Styles used in ConfirmationModal and Footer need to be global */
+.btn-save {
+  padding: 0.6rem 1.5rem;
+  font-size: 0.95rem;
+  background-color: var(--success-color); color: white;
+  border: none; border-radius: 5px; cursor: pointer;
+  font-weight: 600; transition: background-color 0.3s ease;
+}
+.btn-save:hover { background-color: var(--success-color-dark); }
