@@ -1,18 +1,16 @@
 const express = require('express');
 const router = express.Router();
-
 const authController = require('../controllers/authController');
-router.post('/signup', authController.signup);
-router.post('/login', authController.loginStudent);
-router.get('/load_user_info', authController.loadUserInfo);
+const { isAuthenticated } = require('../middleware/authMiddleware'); // Import isAuthenticated
 
-const getAuthController = require('../controllers/getAuthController');
-router.get('/', getAuthController.home);
-router.get('/login', getAuthController.login);
-router.get('/signup', getAuthController.signup);
-router.get('/login_i', getAuthController.loginInstructor);
-router.get('/signup_i', getAuthController.signupInstructor);
-router.get('/home', getAuthController.studentHome);
+router.post('/register', authController.register);
+router.post('/login', authController.login);
+router.post('/logout', authController.logout);
+router.get('/me', authController.me);
 
+// NEW ROUTE: Update Profile (Protected)
+router.put('/profile', isAuthenticated, authController.updateProfile);
+
+router.get('/teachers', authController.getAllTeachers);
 
 module.exports = router;
