@@ -51,7 +51,13 @@
                         <li class="nav-item"><a class="nav-link active" href="/admin/Payments"><i class="fas fa-dollar-sign me-2"></i>Payments</a></li>
                         <li class="nav-item"><a class="nav-link" href="/admin/users"><i class="fas fa-users me-2"></i>Users</a></li>
                         <li class="nav-item"><a class="nav-link" href="/admin/courses"><i class="fas fa-book me-2"></i>Courses</a></li>
+                         <li class="nav-item">
+                            <a class="nav-link active" href="/admin/requests">
+                                <i class="fas fa-envelope me-2"></i>Requests
+                            </a>
+                        </li>
                         <li class="nav-item"><a class="nav-link" href="/admin/content"><i class="fas fa-file-alt me-2"></i>Content</a></li>
+                        
                         <li class="nav-item mt-4"><a class="nav-link text-danger" href="/logout"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
                     </ul>
                 </div>
@@ -225,15 +231,14 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
-    <script>
-let payments = [];
+<script>let payments = [];
 let revenueChart;
 let chartRange = 'daily';
 
+// Set chart range
 function setChartRange(range) {
     chartRange = range;
 
-    // Toggle active button styles
     document.querySelectorAll('.btn-group .btn').forEach(btn => btn.classList.remove('active'));
     document.getElementById(range + 'Btn').classList.add('active');
 
@@ -247,16 +252,14 @@ async function loadPaymentData() {
 
     try {
         const response = await fetch(`/admin/payments/data?range=${chartRange}`);
-
         if (!response.ok) throw new Error('Failed to fetch payment data');
-        
+
         const data = await response.json();
         payments = data.payments || [];
-        
+
         updateStats(data.stats);
         updateCharts(data.chartData);
-        renderTable(payments);
-        
+        filterPayments(); // Apply current filters automatically
         console.log('Payment data loaded successfully');
     } catch (error) {
         console.error('Error loading payment data:', error);
@@ -266,6 +269,7 @@ async function loadPaymentData() {
     }
 }
 
+// Update stats cards
 function updateStats(stats) {
     document.getElementById('totalRevenue').textContent = '$' + stats.totalRevenue.toLocaleString();
     document.getElementById('monthRevenue').textContent = '$' + stats.monthRevenue.toLocaleString();
@@ -275,11 +279,11 @@ function updateStats(stats) {
     document.getElementById('avgTransaction').textContent = '$' + stats.avgTransaction.toLocaleString();
 }
 
+// Update chart and top courses
 function updateCharts(chartData) {
-    // Revenue Chart
     const revenueCtx = document.getElementById('revenueChart').getContext('2d');
     if (revenueChart) revenueChart.destroy();
-    
+
     revenueChart = new Chart(revenueCtx, {
         type: 'line',
         data: {
@@ -299,10 +303,7 @@ function updateCharts(chartData) {
             responsive: true,
             maintainAspectRatio: true,
             plugins: {
-                legend: { 
-                    display: true,
-                    position: 'top'
-                },
+                legend: { display: true, position: 'top' },
                 tooltip: {
                     callbacks: {
                         label: function(context) {
@@ -314,42 +315,31 @@ function updateCharts(chartData) {
             scales: {
                 y: { 
                     beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return '$' + value.toLocaleString();
-                        }
-                    }
+                    ticks: { callback: value => '$' + value.toLocaleString() }
                 },
-                x: {
-                    grid: {
-                        display: false
-                    }
-                }
+                x: { grid: { display: false } }
             }
         }
     });
 
-    // Top Courses List
     updateTopCoursesList(chartData.topCourses || []);
 }
 
+// Top courses
 function updateTopCoursesList(topCourses) {
     const listDiv = document.getElementById('topCoursesList');
-    
     if (!topCourses || topCourses.length === 0) {
         listDiv.innerHTML = `
             <div class="text-center text-muted py-3">
                 <i class="fas fa-chart-bar fa-2x mb-2"></i>
                 <p class="mb-0">No data available</p>
-            </div>
-        `;
+            </div>`;
         return;
     }
-    
+
     listDiv.innerHTML = topCourses.map((course, index) => {
         const medalColors = ['#FFD700', '#C0C0C0', '#CD7F32', '#4A90E2', '#50C878'];
         const medalColor = medalColors[index] || '#6c757d';
-        
         return `
             <div class="d-flex align-items-center mb-2 pb-2 ${index < topCourses.length - 1 ? 'border-bottom' : ''} course-item px-2 py-1 rounded">
                 <div class="me-2" style="min-width: 28px;">
@@ -358,27 +348,24 @@ function updateTopCoursesList(topCourses) {
                     </span>
                 </div>
                 <div class="flex-grow-1" style="min-width: 0;">
-                    <div class="fw-bold text-truncate" style="font-size: 0.9rem;" title="${course.course}">
-                        ${course.course}
-                    </div>
+                    <div class="fw-bold text-truncate" style="font-size: 0.9rem;" title="${course.course}">${course.course}</div>
                     <small class="text-muted" style="font-size: 0.75rem;">${course.enrollments} enrollment${course.enrollments !== 1 ? 's' : ''}</small>
                 </div>
                 <div class="text-end ms-2" style="white-space: nowrap;">
                     <div class="fw-bold text-success" style="font-size: 0.9rem;">${course.revenue.toLocaleString()}</div>
                 </div>
-            </div>
-        `;
+            </div>`;
     }).join('');
 }
 
+// Render table
 function renderTable(data) {
     const tbody = document.getElementById('paymentsTable');
-    
     if (data.length === 0) {
         tbody.innerHTML = '<tr><td colspan="7" class="text-center">No payments found</td></tr>';
         return;
     }
-    
+
     tbody.innerHTML = data.map(p => {
         const date = new Date(p.date);
         const formattedDate = date.toLocaleDateString('en-GB');
@@ -400,23 +387,23 @@ function renderTable(data) {
                     <i class="fas fa-check"></i>
                 </button>` : ''}
             </td>
-        </tr>
-        `;
+        </tr>`;
     }).join('');
 }
 
+// Filters
 function filterPayments() {
     const search = document.getElementById('searchInput').value.toLowerCase();
     const status = document.getElementById('statusFilter').value;
     const date = document.getElementById('dateFilter').value;
-    
+
     const filtered = payments.filter(p => {
         const matchSearch = p.user.toLowerCase().includes(search) || p.course.toLowerCase().includes(search);
         const matchStatus = !status || p.status === status;
         const matchDate = !date || new Date(p.date).toISOString().split('T')[0] === date;
         return matchSearch && matchStatus && matchDate;
     });
-    
+
     renderTable(filtered);
 }
 
@@ -427,86 +414,51 @@ function clearFilters() {
     renderTable(payments);
 }
 
+// Payment details modal
 async function viewPayment(id) {
     const modal = new bootstrap.Modal(document.getElementById('paymentModal'));
     const detailsDiv = document.getElementById('paymentDetails');
-    
+
     detailsDiv.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div></div>';
     modal.show();
-    
+
     try {
         const response = await fetch(`/admin/payments/${id}`);
         const payment = await response.json();
-        
+
         detailsDiv.innerHTML = `
-            <div class="row mb-2">
-                <div class="col-md-6"><strong>Date:</strong></div>
-                <div class="col-md-6">${new Date(payment.date).toLocaleDateString()}</div>
-            </div>
+            <div class="row mb-2"><div class="col-md-6"><strong>Date:</strong></div><div class="col-md-6">${new Date(payment.date).toLocaleDateString()}</div></div>
             <hr>
-            <div class="row mb-2">
-                <div class="col-md-6"><strong>Student:</strong></div>
-                <div class="col-md-6">${payment.student.name}</div>
-            </div>
-            <div class="row mb-2">
-                <div class="col-md-6"><strong>Email:</strong></div>
-                <div class="col-md-6">${payment.student.email}</div>
-            </div>
-            <div class="row mb-2">
-                <div class="col-md-6"><strong>Contact:</strong></div>
-                <div class="col-md-6">${payment.student.contact || 'N/A'}</div>
-            </div>
+            <div class="row mb-2"><div class="col-md-6"><strong>Student:</strong></div><div class="col-md-6">${payment.student.name}</div></div>
+            <div class="row mb-2"><div class="col-md-6"><strong>Email:</strong></div><div class="col-md-6">${payment.student.email}</div></div>
+            <div class="row mb-2"><div class="col-md-6"><strong>Contact:</strong></div><div class="col-md-6">${payment.student.contact || 'N/A'}</div></div>
             <hr>
-            <div class="row mb-2">
-                <div class="col-md-6"><strong>Course:</strong></div>
-                <div class="col-md-6">${payment.course.title}</div>
-            </div>
-            <div class="row mb-2">
-                <div class="col-md-6"><strong>Subject:</strong></div>
-                <div class="col-md-6">${payment.course.subject}</div>
-            </div>
+            <div class="row mb-2"><div class="col-md-6"><strong>Course:</strong></div><div class="col-md-6">${payment.course.title}</div></div>
+            <div class="row mb-2"><div class="col-md-6"><strong>Subject:</strong></div><div class="col-md-6">${payment.course.subject}</div></div>
             <hr>
-            <div class="row mb-2">
-                <div class="col-md-6"><strong>Amount:</strong></div>
-                <div class="col-md-6"><h5>$${payment.amount.toLocaleString()}</h5></div>
-            </div>
-            <div class="row mb-2">
-                <div class="col-md-6"><strong>Status:</strong></div>
-                <div class="col-md-6"><span class="badge bg-${payment.status === 'completed' ? 'success' : payment.status === 'pending' ? 'warning' : 'danger'}">${payment.status}</span></div>
-            </div>
-            <div class="row mb-2">
-                <div class="col-md-6"><strong>Method:</strong></div>
-                <div class="col-md-6">${payment.method}</div>
-            </div>
-            <div class="row mb-2">
-                <div class="col-md-6"><strong>Progress:</strong></div>
-                <div class="col-md-6">${payment.progress}%</div>
-            </div>
-        `;
+            <div class="row mb-2"><div class="col-md-6"><strong>Amount:</strong></div><div class="col-md-6"><h5>$${payment.amount.toLocaleString()}</h5></div></div>
+            <div class="row mb-2"><div class="col-md-6"><strong>Status:</strong></div><div class="col-md-6"><span class="badge bg-${payment.status === 'completed' ? 'success' : payment.status === 'pending' ? 'warning' : 'danger'}">${payment.status}</span></div></div>
+            <div class="row mb-2"><div class="col-md-6"><strong>Method:</strong></div><div class="col-md-6">${payment.method}</div></div>
+            <div class="row mb-2"><div class="col-md-6"><strong>Progress:</strong></div><div class="col-md-6">${payment.progress}%</div></div>`;
     } catch (error) {
         console.error('Error fetching payment details:', error);
         detailsDiv.innerHTML = '<div class="alert alert-danger">Error loading payment details</div>';
     }
 }
 
+// Update payment status
 async function updatePaymentStatus(id, status) {
     if (!confirm('Are you sure you want to update this payment status?')) return;
-    
+
     try {
         const response = await fetch(`/admin/payments/${id}/status`, {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status })
         });
-        
-        if (response.ok) {
-            alert('Payment status updated successfully');
-            loadPaymentData();
-        } else {
-            throw new Error('Failed to update status');
-        }
+
+        if (response.ok) loadPaymentData();
+        else throw new Error('Failed to update status');
     } catch (error) {
         console.error('Error updating payment status:', error);
         alert('Error updating payment status. Please try again.');
@@ -520,6 +472,20 @@ document.getElementById('dateFilter').addEventListener('change', filterPayments)
 
 // Load data on page load
 loadPaymentData();
+
+// Auto-refresh every 15 seconds while preserving filters
+setInterval(() => {
+    const currentSearch = document.getElementById('searchInput').value;
+    const currentStatus = document.getElementById('statusFilter').value;
+    const currentDate = document.getElementById('dateFilter').value;
+
+    loadPaymentData().then(() => {
+        document.getElementById('searchInput').value = currentSearch;
+        document.getElementById('statusFilter').value = currentStatus;
+        document.getElementById('dateFilter').value = currentDate;
+        filterPayments();
+    });
+}, 15000);
 </script>
 </body>
 </html>

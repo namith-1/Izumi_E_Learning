@@ -53,13 +53,34 @@
       background-color: #4f46e5;
       font-weight: bold;
     }
+    .summary-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+    .summary-card {
+        background: #2a2a2a;
+        padding: 20px;
+        border-radius: 10px;
+    }
+    .summary-card h4 {
+        margin: 0 0 10px 0;
+        color: #aaa;
+        font-weight: 400;
+    }
+    .summary-card p {
+        margin: 0;
+        font-size: 1.8em;
+        font-weight: 600;
+    }
     .chart-container {
       background: #2a2a2a;
       padding: 20px;
       border-radius: 10px;
       margin-bottom: 30px;
+      height: 350px; 
     }
-    /* CORRECTION: Added missing CSS for the course cards and container */
     .course-container {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -75,7 +96,6 @@
     .course-card h3 {
       margin-top: 0;
     }
-    /* IMPROVEMENT: Added a simple style for status messages (loading/error/empty) */
     .status-message {
       text-align: center;
       color: #aaa;
@@ -97,8 +117,19 @@
       </div>
     </div>
 
+    <div class="summary-container">
+        <div class="summary-card">
+            <h4>Total Enrollments</h4>
+            <p id="totalEnrollments">--</p>
+        </div>
+        <div class="summary-card">
+            <h4>Total Revenue</h4>
+            <p id="totalRevenue">--</p>
+        </div>
+    </div>
+
     <div class="chart-container">
-      <canvas id="enrollChart" width="600" height="300"></canvas>
+      <canvas id="enrollChart"></canvas>
     </div>
 
     <h2>Course Overview</h2>
@@ -106,49 +137,42 @@
   </div>
 
   <script>
-    // IMPROVEMENT: Cache DOM elements to avoid repeated lookups
     const courseDropdown = document.getElementById('courseDropdown');
     const courseListContainer = document.getElementById('courseList');
     const chartCanvas = document.getElementById('enrollChart');
     const rangeSelector = document.getElementById('rangeSelector');
     const chartContainer = document.querySelector('.chart-container');
+    const totalEnrollmentsEl = document.getElementById('totalEnrollments');
+    const totalRevenueEl = document.getElementById('totalRevenue');
 
-    // IMPROVEMENT: Use a locally scoped variable instead of attaching the chart to the window object
     let enrollChartInstance = null;
 
     async function fetchInstructorCourses() {
-      // IMPROVEMENT: Added a loading message
       courseListContainer.innerHTML = '<p class="status-message">Loading courses...</p>';
-      
-      // CORRECTION: Added try...catch block for robust error handling
       try {
         const res = await fetch('http://localhost:4000/instructor/courses2');
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         const courses = await res.json();
 
-        // Clear previous content
         courseDropdown.innerHTML = '';
         courseListContainer.innerHTML = '';
 
-        // IMPROVEMENT: Handle the case where there are no courses
         if (courses.length === 0) {
           courseListContainer.innerHTML = '<p class="status-message">You have not created any courses yet.</p>';
-          chartContainer.style.display = 'none'; // Hide chart if no courses
+          chartContainer.style.display = 'none';
+          document.querySelector('.summary-container').style.display = 'none';
           return;
         }
 
-        chartContainer.style.display = 'block'; // Ensure chart is visible
+        chartContainer.style.display = 'block';
+        document.querySelector('.summary-container').style.display = 'grid';
 
         courses.forEach(course => {
-          // Populate dropdown
           const option = document.createElement('option');
           option.value = course._id;
           option.textContent = course.title;
           courseDropdown.appendChild(option);
 
-          // Populate course cards
           const card = document.createElement('div');
           card.classList.add('course-card');
           card.innerHTML = `
@@ -159,34 +183,73 @@
           courseListContainer.appendChild(card);
         });
 
-        // Fetch stats for the first course by default
         if (courses.length > 0) {
-            // Get active range from the button
-            const activeRange = document.querySelector('#rangeSelector button.active').dataset.range;
-            fetchCourseStats(courses[0]._id, activeRange);
+          const activeRange = document.querySelector('#rangeSelector button.active').dataset.range;
+          fetchCourseStats(courses[0]._id, activeRange);
         }
       } catch (error) {
         console.error("Failed to fetch instructor courses:", error);
-        // IMPROVEMENT: Display an error message to the user
         courseListContainer.innerHTML = `<p class="status-message">Could not load courses. Please try again later.</p>`;
       }
     }
 
     async function fetchCourseStats(courseId, range = '7d') {
-      // CORRECTION: Added try...catch block for robust error handling
       try {
         const res = await fetch(`http://localhost:4000/instructor/course2/${courseId}/stats?range=${range}`);
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
-        const data = await res.json();
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        const data = await res.json(); 
 
-        // IMPROVEMENT: Format date labels for better readability
-        const labels = data.map(d => new Date(d._id).toLocaleDateString());
-        const values = data.map(d => d.enrollments);
+        let labels = [];
+        let enrollmentValues = [];
+        const AVG_PRICE = 49.99; // Assume an average price
+
+        if (range === '1y') {
+          const monthlySummary = {};
+          data.forEach(item => {
+            const monthKey = item._id.substring(0, 7); // "YYYY-MM"
+            if (!monthlySummary[monthKey]) {
+              monthlySummary[monthKey] = 0;
+            }
+            monthlySummary[monthKey] += item.enrollments;
+          });
+
+          const today = new Date();
+          for (let i = 11; i >= 0; i--) {
+            const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+            const monthKey = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}`;
+            const label = d.toLocaleString('default', { month: 'short', year: 'numeric' });
+            
+            labels.push(label);
+            enrollmentValues.push(monthlySummary[monthKey] || 0);
+          }
+        } else {
+          const dailyMap = new Map(data.map(item => [item._id, item.enrollments]));
+          const days = parseInt(range);
+          const today = new Date();
+
+          for (let i = days - 1; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(today.getDate() - i);
+            
+            // --- CORRECTED PART ---
+            // Manually format the date to YYYY-MM-DD to avoid timezone issues.
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0'); // getMonth() is 0-indexed
+            const day = String(d.getDate()).padStart(2, '0');
+            const dateString = `${year}-${month}-${day}`;
+            // --- END CORRECTION ---
+            
+            labels.push(d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }));
+            enrollmentValues.push(dailyMap.get(dateString) || 0);
+          }
+        }
+
+        const totalEnrollments = enrollmentValues.reduce((sum, current) => sum + current, 0);
+        const totalRevenue = totalEnrollments * AVG_PRICE;
+        totalEnrollmentsEl.textContent = totalEnrollments.toLocaleString();
+        totalRevenueEl.textContent = totalRevenue.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 
         const ctx = chartCanvas.getContext('2d');
-        // Destroy the previous chart instance if it exists
         if (enrollChartInstance) {
           enrollChartInstance.destroy();
         }
@@ -194,66 +257,65 @@
         enrollChartInstance = new Chart(ctx, {
           type: 'line',
           data: {
-            labels,
-            datasets: [{
-              label: 'Enrollments',
-              data: values,
-              borderColor: '#4f46e5',
-              fill: true,
-              backgroundColor: 'rgba(79, 70, 229, 0.2)',
-              tension: 0.1 // Makes the line chart smoother
-            }]
+            labels: labels,
+            datasets: [
+              {
+                label: 'Enrollments',
+                data: enrollmentValues,
+                borderColor: '#4f46e5',
+                backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                fill: true,
+                tension: 0.1,
+              }
+            ]
           },
           options: {
             responsive: true,
             maintainAspectRatio: false,
             scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: { color: '#f0f0f0' }, // Chart text color
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' } // Grid line color
-                },
-                x: {
-                    ticks: { color: '#f0f0f0' },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                }
+              y: { 
+                beginAtZero: true, 
+                ticks: { 
+                  color: '#f0f0f0',
+                  // Ensure y-axis only shows whole numbers
+                  callback: function(value) {if (value % 1 === 0) {return value;}}
+                }, 
+                grid: { color: 'rgba(255, 255, 255, 0.1)' } 
+              },
+              x: { 
+                ticks: { color: '#f0f0f0' }, 
+                grid: { color: 'rgba(255, 255, 255, 0.1)' } 
+              }
             },
-            plugins: {
-                legend: {
-                    labels: { color: '#f0f0f0' } // Legend text color
-                }
+            plugins: { 
+              legend: { labels: { color: '#f0f0f0' } }
             }
           }
         });
       } catch (error) {
         console.error(`Failed to fetch stats for course ${courseId}:`, error);
-        // You could also display an error message on the chart canvas
       }
     }
 
     // --- Event Listeners ---
-
     courseDropdown.addEventListener('change', (e) => {
       const selectedCourseId = e.target.value;
       const activeRange = document.querySelector('#rangeSelector button.active').dataset.range;
       fetchCourseStats(selectedCourseId, activeRange);
     });
 
-    // IMPROVEMENT: Event listener for the new range selector buttons
     rangeSelector.addEventListener('click', (e) => {
-        if(e.target.tagName === 'BUTTON') {
-            // Remove 'active' class from all buttons
-            document.querySelectorAll('#rangeSelector button').forEach(btn => btn.classList.remove('active'));
-            // Add 'active' class to the clicked button
-            e.target.classList.add('active');
-            
-            const selectedRange = e.target.dataset.range;
-            const selectedCourseId = courseDropdown.value;
+      if (e.target.tagName === 'BUTTON') {
+        document.querySelectorAll('#rangeSelector button').forEach(btn => btn.classList.remove('active'));
+        e.target.classList.add('active');
+        
+        const selectedRange = e.target.dataset.range;
+        const selectedCourseId = courseDropdown.value;
 
-            if (selectedCourseId) {
-                fetchCourseStats(selectedCourseId, selectedRange);
-            }
+        if (selectedCourseId) {
+          fetchCourseStats(selectedCourseId, selectedRange);
         }
+      }
     });
 
     // --- Initial Load ---

@@ -1,7 +1,7 @@
 const path = require("path");
 const model = require("../models/instructorCourseModel"); // Import the Mongoose-based model
 const mongoose = require("mongoose");
-const { CourseStat,Course } = require("../required/db");
+const { Instructor ,CourseStat, Course } = require("../required/db");
 exports.getCourseDetails_moduleTree = async (req, res) => {
   const courseId = req.params.courseId;
 
@@ -34,26 +34,53 @@ exports.getCourseDetails_moduleTree = async (req, res) => {
   }
 };
 
+
 exports.getAllCourses = async (req, res) => {
   try {
+    // Fetch all courses
     const courses = await model.getAllCourses();
 
-    // Deduplicate courses by title + instructor_id to avoid showing duplicate cards
+    // Fetch all instructors (only _id and name fields)
+    const instructors = await Instructor.find({}, "_id name").lean();
+
+    // Create a map of instructor_id -> name
+    const instructorMap = {};
+    for (const inst of instructors) {
+      instructorMap[inst._id.toString()] = inst.name;
+    }
+
+    // Deduplicate and attach instructor name
     const seen = new Set();
     const uniqueCourses = [];
+
     for (const c of courses) {
       const key = `${c.title}::${c.instructor_id}`;
       if (!seen.has(key)) {
         seen.add(key);
-        uniqueCourses.push(c);
+
+        // Normalize instructor_id to string for consistent lookup
+        const instructorIdStr =
+          c.instructor_id?.toString?.() || String(c.instructor_id);
+
+        uniqueCourses.push({
+          _id: c._id,
+          title: c.title,
+          subject: c.subject,
+          instructor_id: c.instructor_id,
+          name: instructorMap[instructorIdStr] || "Unknown", // Attach instructor name
+        });
       }
     }
 
+    // Send the response
     res.json(uniqueCourses);
   } catch (error) {
+    console.error("Error fetching all courses:", error);
     res.status(500).json({ error: error.message });
   }
 };
+
+
 
 exports.getInstructorCourses = async (req, res) => {
   if (!req.session.instructor)
@@ -71,20 +98,29 @@ exports.saveCourse = async (req, res) => {
   if (!req.session.instructor)
     return res.status(403).json({ error: "Unauthorized." });
 
-  const { title, modules, price } = req.body;
+  const { title, modules, price, overview, tagline, whatYouWillLearn, subject } = req.body;
   const instructorId = req.session.instructor;
 
   try {
-    const courseId = await model.insertCourse(title, instructorId);
-    const stat = await CourseStat.create({
+    // Pass separate strings, not an object
+    const courseId = await model.insertCourse(
+      title,
+      instructorId,
+      overview,
+      tagline,
+      subject
+    );
+
+    await CourseStat.create({
       course_id: courseId,
       enrolled_count: 0,
       avg_rating: 4.5,
       avg_completion_time: 120,
-      price: price,
+      price,
       review_count: 2,
     });
 
+    // Recursively insert modules
     const insertModuleRecursive = async (mod, parentId = null) => {
       const moduleId = await model.insertModule(
         courseId,
@@ -105,6 +141,7 @@ exports.saveCourse = async (req, res) => {
         await insertModuleRecursive(mod);
       }
     }
+
     res.json({ message: "Course saved successfully!", courseId });
   } catch (error) {
     console.error("Error saving course:", error);
@@ -112,12 +149,13 @@ exports.saveCourse = async (req, res) => {
   }
 };
 
+
 exports.saveCourseChanges = async (req, res) => {
   if (!req.session.instructor)
     return res.status(403).json({ error: "Unauthorized." });
 
   const { courseId } = req.query;
-  const { title, modules } = req.body;
+  const { title, modules, overview, tagline, whatYouWillLearn } = req.body;
   const instructorId = req.session.instructor;
 
   try {
@@ -135,7 +173,19 @@ exports.saveCourseChanges = async (req, res) => {
         .status(404)
         .json({ error: "Course not found or unauthorized." });
 
+    // Update title and optional metadata on the Course document
     await model.updateCourseTitle(courseId, title);
+    try {
+      await Course.findByIdAndUpdate(courseId, {
+        overview: overview || "",
+        tagline: tagline || "",
+        whatYouWillLearn: Array.isArray(whatYouWillLearn)
+          ? whatYouWillLearn
+          : [],
+      }).exec();
+    } catch (e) {
+      console.warn("Could not update course metadata:", e.message || e);
+    }
 
     await model.deleteModulesByCourse(courseId);
 

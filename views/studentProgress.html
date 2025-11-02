@@ -100,8 +100,10 @@
 
                 const titleCell = document.createElement('td');
                 const courseLink = document.createElement('a');
-                courseLink.href = `/view_course?courseID=${course.id}&studentID=${studentId}`;
+                courseLink.href = `/enroll?courseId=${course.course_id}`;
                 courseLink.textContent = course.title;
+                courseLink.target = "_top"; // ✅ Opens in the top-level window
+
                 titleCell.appendChild(courseLink);
 
                 const progressCell = document.createElement('td');

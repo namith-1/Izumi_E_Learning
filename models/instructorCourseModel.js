@@ -43,9 +43,21 @@ const CourseModel = {
     }
   },
 
-  insertCourse: async (title, instructorId) => {
+  insertCourse: async (
+    title,
+    instructorId,
+    overview,
+    tagline,
+    subject
+  ) => {
     try {
-      const course = new Course({ title, instructor_id: instructorId });
+      const course = new Course({
+        title,
+        instructor_id: instructorId,
+        overview,
+        tagline,
+        subject
+      });
       const savedCourse = await course.save();
       return savedCourse._id;
     } catch (error) {
