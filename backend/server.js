@@ -7,6 +7,8 @@ const connectDB = require('./config/db');
 
 const app = express();
 
+const courseRoutes = require('./routes/courseRoutes');
+const enrollmentRoutes = require('./routes/enrollmentRoutes');
 // 1. Connect Database
 connectDB();
 
@@ -31,6 +33,10 @@ app.use(session({
         secure: false // Set to true if using HTTPS
     }
 }));
+
+// 4. Routes
+app.use('/api/courses', courseRoutes);
+app.use('/api/enrollment', enrollmentRoutes);
 
 app.use((err, req, res, next) => {
     console.error(err.stack);
