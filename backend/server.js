@@ -38,6 +38,8 @@ app.use(session({
 app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/enrollment', enrollmentRoutes);
+app.use('/api/admin', adminRoutes); // NEW ROUTE
+
 
 app.use((err, req, res, next) => {
     console.error(err.stack);
