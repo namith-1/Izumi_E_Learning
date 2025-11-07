@@ -35,6 +35,7 @@ app.use(session({
 }));
 
 // 4. Routes
+app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/enrollment', enrollmentRoutes);
 
