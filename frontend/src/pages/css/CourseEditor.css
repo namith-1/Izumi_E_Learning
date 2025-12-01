@@ -1,3 +1,5 @@
+/* v1/frontend/src/pages/css/CourseEditor.css */
+
 .course-editor-app {
   display: flex;
   height: 100vh;
@@ -82,7 +84,7 @@
 .tree-container {
   flex: 1;
   overflow-y: auto;
-  padding: 0.5rem 0; /* Remove horizontal padding so lines align */
+  padding: 0.5rem 0;
 }
 
 /* --- TREE STRUCTURE --- */
@@ -342,7 +344,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-left: auto; /* Push to right if needed, or keep expanding */
+  margin-left: auto;
   transition: background-color 0.2s;
 }
 
@@ -357,4 +359,84 @@
   gap: 0.5rem;
   color: #6b7280;
   font-size: 0.875rem;
+}
+
+/* ==========================================
+   VALIDATION & ERROR STATES
+   ========================================== */
+
+/* Wrapper for sidebar inputs to handle error tooltip positioning */
+.input-group {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Red border for invalid inputs */
+.input-error {
+  border-color: #ef4444 !important; /* Red-500 */
+  background-color: #fef2f2;        /* Red-50 */
+}
+
+.input-error:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2) !important;
+  border-color: #ef4444 !important;
+}
+
+/* Error message for sidebar inputs (small, floating below) */
+.error-tooltip {
+  font-size: 0.75rem;
+  color: #dc2626; /* Red-600 */
+  margin-top: 4px;
+  margin-left: 2px;
+  font-weight: 500;
+}
+
+/* Error message for main form fields */
+.error-text {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #dc2626;
+  font-size: 0.85rem;
+  margin-top: 6px;
+  font-weight: 500;
+}
+
+/* Error banner for complex components (like Quiz) */
+.error-banner {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Red asterisk for required labels */
+.required-star {
+  color: #dc2626;
+  margin-left: 4px;
+}
+
+/* ==========================================
+   LOADING STATE
+   ========================================== */
+
+.loading-state-full {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  width: 100%;
+  background-color: #f3f4f6;
+  color: #4b5563;
+  gap: 1rem;
+  font-weight: 500;
 }
