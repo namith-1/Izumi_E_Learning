@@ -1,0 +1,360 @@
+.course-editor-app {
+  display: flex;
+  height: 100vh;
+  background-color: #f3f4f6;
+  font-family: 'Inter', sans-serif;
+  overflow: hidden;
+}
+
+/* --- SIDEBAR --- */
+.module-tree-sidebar {
+  width: 350px;
+  background-color: white;
+  border-right: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.editor-header {
+  padding: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.editor-header h2 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.icon-btn {
+  color: #6b7280;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.icon-btn:hover {
+  color: #111827;
+}
+
+.save-course-bar {
+  padding: 1rem;
+  background-color: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.sidebar-input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  box-sizing: border-box;
+}
+
+.btn-publish-course {
+  background-color: #2563eb;
+  color: white;
+  padding: 0.6rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: background-color 0.2s;
+}
+
+.btn-publish-course:hover {
+  background-color: #1d4ed8;
+}
+
+.tree-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.5rem 0; /* Remove horizontal padding so lines align */
+}
+
+/* --- TREE STRUCTURE --- */
+.module-tree-list, .module-children-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* Tree Nodes */
+.tree-node {
+  position: relative;
+}
+
+/* Connector Lines logic */
+.module-children-list {
+  position: relative;
+}
+
+.module-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  padding-right: 0.75rem;
+  /* padding-left is handled dynamically in JS for depth */
+  margin-bottom: 1px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-left: 3px solid transparent;
+}
+
+.module-item:hover {
+  background-color: #f3f4f6;
+}
+
+.module-item.active {
+  background-color: #eff6ff;
+  border-left-color: #2563eb;
+  color: #1e40af;
+}
+
+.module-title-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* Expand Icon (Chevron) */
+.expand-icon {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  border-radius: 3px;
+  transition: background 0.2s;
+}
+
+.expand-icon:hover {
+  background-color: #e5e7eb;
+  color: #374151;
+}
+
+.expand-icon.hidden {
+  visibility: hidden;
+}
+
+.module-title-text {
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.module-icon-type {
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+.module-item.active .module-icon-type {
+  color: #2563eb;
+}
+
+/* --- ACTIONS MENU --- */
+.module-actions-wrapper {
+  position: relative;
+}
+
+.module-actions-btn {
+  background: none;
+  border: none;
+  padding: 4px;
+  border-radius: 4px;
+  color: #9ca3af;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.module-actions-btn:hover {
+  background-color: #e5e7eb;
+  color: #374151;
+}
+
+.module-actions-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background: white;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  z-index: 50;
+  width: 160px;
+  padding: 4px;
+}
+
+.module-actions-menu button {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.module-actions-menu button:hover {
+  background-color: #f3f4f6;
+}
+
+/* --- EDITOR CONTENT --- */
+.module-editor-content {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+  background-color: #f3f4f6;
+}
+
+.module-editor-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.card-header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.module-id-badge {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  background-color: #f3f4f6;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.form-field {
+  margin-bottom: 1.5rem;
+}
+
+.form-field label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.form-field input:focus,
+.form-field textarea:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.editor-footer {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.btn-add-child {
+  background-color: #10b981;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background-color 0.2s;
+}
+
+.btn-add-child:hover {
+  background-color: #059669;
+}
+
+.btn-delete-module {
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto; /* Push to right if needed, or keep expanding */
+  transition: background-color 0.2s;
+}
+
+.btn-delete-module:hover {
+  background-color: #dc2626;
+}
+
+.autosave-status {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #6b7280;
+  font-size: 0.875rem;
+}
