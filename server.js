@@ -70,11 +70,7 @@ app.use("/coms", Comments);
 app.use("/", qna); // All question routes
 app.use("/", gamifyRoutes);
 app.use("/", instructorCourseRoutes);
-
-// Fix: Define ADMIN_BASE_PATH before using it
-const ADMIN_BASE_PATH = "/admin"; 
-app.use(ADMIN_BASE_PATH, adminRoutes);
-
+app.use("/-nsstn123-admin", adminRoutes); // Admin routes
 app.use("/api", commonInstructor);
 app.use("/", courseInfoInstructor);
 app.use("/contact-admin", contactAdminRoutes);
