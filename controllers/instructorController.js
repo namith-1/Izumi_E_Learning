@@ -55,7 +55,7 @@ exports.loginInstructor = async (req, res) => {
     const match = await bcrypt.compare(password, user.hashed_password);
     if (match) {
       req.session.instructor = user._id; // Store the Mongoose _id
-      res.redirect("/instructor-dashboard");
+      res.redirect("/dashboard");
     } else {
       res.status(400).send("Invalid email or password.");
     }
@@ -68,7 +68,7 @@ exports.loginInstructor = async (req, res) => {
 exports.instructorDashboard = (req, res) => {
   if (!req.session.instructor) return res.status(403).send("Unauthorized.");
   // Serve the instructor's dashboard view
-  res.sendFile(path.join(__dirname, "../views/instructor_courses.html"));
+  res.sendFile(path.join(__dirname, "../views/instructor/dashboard.html"));
 };
 
 // controllers/instructorAuthController.js

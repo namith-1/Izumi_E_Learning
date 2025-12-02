@@ -93,6 +93,23 @@ const UpdateStudentController = {
                 return res.status(500).send('Error restoring account: ' + error.message);
             }
         },
+
+        getStudentInfo: async (req, res) => {
+            if (!req.session.student) {
+                return res.status(401).json({ error: 'Not authenticated' });
+            }
+            
+            try {
+                const student = await StudentModel.getStudentById(req.session.student);
+                if (!student) {
+                    return res.status(404).json({ error: 'Student not found' });
+                }
+                res.json(student);
+            } catch (error) {
+                console.error("Get student info error:", error);
+                res.status(500).json({ error: "Error fetching student info" });
+            }
+        },
     
         getDeletePage: (req, res) => {
             if (!req.session.student) return res.status(403).send("Unauthorized.");

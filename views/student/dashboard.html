@@ -63,15 +63,15 @@
 
     <script>
         function fetchProgress() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const studentId = urlParams.get("studentId");
+    // const urlParams = new URLSearchParams(window.location.search);
+    // const studentId = urlParams.get("studentId");
 
-    if (!studentId) {
-        alert("No student ID found. Please log in.");
-        return;
-    }
+    // if (!studentId) {
+    //    alert("No student ID found. Please log in.");
+    //    return;
+    // }
 
-    console.log("Fetching progress for student:", studentId);
+    // console.log("Fetching progress for student:", studentId);
 
     const tbodyOngoing = document.querySelector('#progressTable tbody'); 
     const tbodyCompleted = document.querySelector('#completedTable tbody'); 
@@ -82,7 +82,7 @@
     let hasOngoing = false;
     let hasCompleted = false;
 
-    fetch(`http://localhost:4000/student-progress`)
+    fetch(`/student-progress`)
         .then(response => response.json())
         .then(data => {
             console.log("API Response:", data);

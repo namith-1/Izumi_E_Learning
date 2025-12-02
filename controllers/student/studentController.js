@@ -1,9 +1,8 @@
-const StudentCourse = require("../models/studentModel"); // Import the Mongoose model
-const Course = require("../models/courseModel"); // Use the Mongoose model
-
+const StudentCourse = require("../../models/studentModel"); // Import the Mongoose model
+const Course = require("../../models/courseModel"); // Use the Mongoose model
 const mongoose = require("mongoose");
-
-const { CourseStat } = require("../required/db");
+const path = require("path");
+const { CourseStat } = require("../../required/db");
 
 exports.checkEnrollment = async (req, res) => {
   if (!req.session.student) return res.redirect("/");
@@ -38,15 +37,22 @@ exports.checkEnrollment = async (req, res) => {
 };
 
 exports.enrollStudent = async (req, res) => {
-  if (!req.session.student) return res.redirect("/login");
-
-  const studentId = req.session.student;
+  // Allow studentId from session OR query (for API calls)
+  const studentId = req.session.student || req.query.studentId;
   const courseId = req.query.courseId;
 
-  if (!studentId || !courseId) {
+  if (!studentId) {
+      // If it's an API call (xhr or expects json), return 401
+      if (req.xhr || req.headers.accept?.indexOf('json') > -1) {
+          return res.status(401).json({ message: "Please login to enroll." });
+      }
+      return res.redirect("/login");
+  }
+
+  if (!courseId) {
     return res
       .status(400)
-      .json({ message: "Student ID and Course ID are required" });
+      .json({ message: "Course ID is required" });
   }
 
   // Validate courseId before attempting to enroll
@@ -55,11 +61,16 @@ exports.enrollStudent = async (req, res) => {
   }
 
   try {
-    // If already enrolled, redirect to course view instead of enrolling again
+    // If already enrolled, return success with redirect URL
     const alreadyEnrolled = await StudentCourse.isEnrolled(studentId, courseId);
     if (alreadyEnrolled) {
-      const redirectUrl = `/view_course?courseID=${courseId}&studentID=${studentId}`;
-      // Replace current history entry (enroll URL) with course view so Back won't return to enroll URL
+      const redirectUrl = `/course/${courseId}`;
+      
+      // Check if client expects JSON
+      if (req.xhr || req.headers.accept?.indexOf('json') > -1 || req.query.studentId) {
+          return res.json({ success: true, message: "Already enrolled", redirectUrl });
+      }
+
       return res.send(
         `<!doctype html><html><head><meta charset="utf-8"><title>Redirecting...</title></head><body><script>window.location.replace(${JSON.stringify(
           redirectUrl
@@ -70,10 +81,13 @@ exports.enrollStudent = async (req, res) => {
     // Create enrollment and increment course stats inside the Student model
     await StudentCourse.enroll(studentId, courseId);
 
-    // NOTE: avoid calling Course.updateCourseEnrollment here to prevent duplicate creation
-    // and double-incrementing enrolled_count. StudentCourse.enroll handles increment.
+    const redirectUrl = `/course/${courseId}`;
 
-    const redirectUrl = `/view_course?courseID=${courseId}&studentID=${studentId}`;
+    // Check if client expects JSON
+    if (req.xhr || req.headers.accept?.indexOf('json') > -1 || req.query.studentId) {
+        return res.json({ success: true, message: "Enrolled successfully", redirectUrl });
+    }
+
     return res.send(
       `<!doctype html><html><head><meta charset="utf-8"><title>Redirecting...</title></head><body><script>window.location.replace(${JSON.stringify(
         redirectUrl
@@ -133,13 +147,12 @@ exports.getCompletedModules = async (req, res) => {
   }
 };
 
-exports.redirectToProgressView = (req, res) => {
+exports.getDashboard = (req, res) => {
   if (!req.session.student) {
     return res.redirect("/login");
   }
-
-  const studentId = req.session.student;
-  res.redirect(`/views/studentProgress.html?studentId=${studentId}`);
+  // Serve the dashboard HTML file
+  res.sendFile(path.join(__dirname, "../../views/student/dashboard.html"));
 };
 
 exports.markModuleComplete = async (req, res) => {
@@ -191,3 +204,21 @@ exports.markModuleComplete = async (req, res) => {
       .json({ error: "Error updating module completion: " + error.message });
   }
 };
+
+exports.updateProgress = async (req, res) => {
+    try {
+        const { courseId } = req.params;
+        const { moduleId, timeSpent, completed, quizScore } = req.body;
+        const studentId = req.session.student || req.body.studentId; // Allow body for API
+
+        if (!studentId) return res.status(401).json({ message: "Unauthorized" });
+
+        const updatedEnrollment = await StudentCourse.updateProgress(studentId, courseId, moduleId, timeSpent, completed, quizScore);
+        
+        res.json(updatedEnrollment);
+    } catch (error) {
+        console.error("Progress update error:", error);
+        res.status(500).json({ message: "Error updating progress: " + error.message });
+    }
+};
+

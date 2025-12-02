@@ -1,0 +1,123 @@
+.update-profile-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+    font-family: 'Poppins', sans-serif;
+    padding: 40px 20px;
+}
+
+.profile-card {
+    background: white;
+    padding: 40px;
+    border-radius: 16px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+    width: 100%;
+    max-width: 500px;
+}
+
+.profile-card h2 {
+    color: #333;
+    margin-bottom: 25px;
+    text-align: center;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #666;
+    font-weight: 500;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    font-family: inherit;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    border-color: #8b5cf6;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.update-btn {
+    width: 100%;
+    padding: 12px;
+    background: #8b5cf6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    margin-top: 10px;
+}
+
+.update-btn:hover {
+    background: #7c3aed;
+}
+
+.message {
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    text-align: center;
+    font-size: 0.9rem;
+}
+
+.message.success {
+    background: #e6fffa;
+    color: #00e676;
+    border: 1px solid #00e676;
+}
+
+.message.error {
+    background: #ffebee;
+    color: #ff1744;
+    border: 1px solid #ff1744;
+}
+
+.profile-actions {
+    margin-top: 30px;
+    display: flex;
+    justify-content: space-between;
+    border-top: 1px solid #eee;
+    padding-top: 20px;
+}
+
+.action-link {
+    color: #666;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: color 0.3s;
+}
+
+.action-link:hover {
+    color: #8A2BE2;
+}
+
+.action-link.delete {
+    color: #ff1744;
+}
+
+.action-link.delete:hover {
+    color: #d50000;
+    text-decoration: underline;
+}
+
+.loading {
+    text-align: center;
+    padding: 50px;
+    color: #666;
+}

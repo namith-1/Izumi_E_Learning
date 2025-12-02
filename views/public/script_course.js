@@ -1,7 +1,9 @@
 let modules = [];
 let whatYouWillLearn = [];
 
-const courseID = getQueryParam("courseId");
+const courseIDRaw = getQueryParam("courseId");
+const courseID = (courseIDRaw || "").trim();
+const isValidObjectId = (id) => /^[a-fA-F0-9]{24}$/.test(id);
 
 document.addEventListener("DOMContentLoaded", () => {
   const addBtn = document.getElementById("addModule");
@@ -120,12 +122,13 @@ function saveCourse() {
     price: Number(document.getElementById("price").value) || 0,
     overview: (document.getElementById("overview") || { value: "" }).value,
     tagline: (document.getElementById("tagline") || { value: "" }).value,
-    whatYouWillLearn : (document.getElementById("whatYouWillLearnInput") || { value: "" }).value,
+    // Send the accumulated list rather than a single input value
+    whatYouWillLearn: Array.isArray(whatYouWillLearn) ? whatYouWillLearn : [],
     subject: (document.getElementById("subject") || { value: "" }).value
   };
 
   const url = courseID
-    ? `/save-course-changes?courseId=${courseID}`
+    ? `/save-course-changes?courseId=${encodeURIComponent(courseID)}`
     : "/save-course";
   fetch(url, {
     method: "POST",
@@ -135,7 +138,7 @@ function saveCourse() {
     .then((res) => res.json())
     .then((data) => {
       alert(data.message || "Course saved successfully!");
-      window.location.href = "/instructor-dashboard";
+      window.location.href = "/dashboard";
     })
     .catch((err) => console.error(err));
 }
@@ -147,11 +150,42 @@ function getQueryParam(param) {
 
 function loadCourse() {
   if (courseID && courseID !== "404") {
-    fetch(`/course/${courseID}`)
-      .then((res) => res.json())
+    // Validate id format before attempting fetches
+    if (!isValidObjectId(courseID)) {
+      console.warn("Invalid courseId format; skipping module fetch.", courseID);
+      const banner = document.getElementById("fallbackBanner");
+      if (banner) {
+        banner.textContent = "Invalid course ID. Please return to dashboard.";
+        banner.style.display = "block";
+      }
+      return;
+    }
+    // Try primary endpoint; if it fails, fallback to minimal course API
+    fetch(`/course/${encodeURIComponent(courseID)}`)
+      .then(async (res) => {
+        if (!res.ok) throw new Error(`Primary fetch failed: ${res.status}`);
+        return res.json();
+      })
+      .catch(async () => {
+        // Fallback to minimal course details to keep editor usable
+        const res = await fetch(`/api/courses/${encodeURIComponent(courseID)}`);
+        if (!res.ok) throw new Error(`Fallback fetch failed: ${res.status}`);
+        const meta = await res.json();
+        // Normalize minimal structure
+        return {
+          title: meta.title || "",
+          overview: meta.overview || "",
+          tagline: meta.tagline || "",
+          whatYouWillLearn: Array.isArray(meta.whatYouWillLearn)
+            ? meta.whatYouWillLearn
+            : [],
+          modules: [],
+          _fallback: true,
+        };
+      })
       .then((data) => {
-        document.getElementById("courseTitle").value = data.title;
-        modules = data.modules || [];
+        document.getElementById("courseTitle").value = data.title || "";
+        modules = Array.isArray(data.modules) ? data.modules : [];
         document.getElementById("overview").value = data.overview || "";
         document.getElementById("tagline").value = data.tagline || "";
         whatYouWillLearn = Array.isArray(data.whatYouWillLearn)
@@ -159,6 +193,15 @@ function loadCourse() {
           : [];
         renderWhatYouWillLearn();
         renderModules();
+        // If fallback was used, surface a subtle banner to the user
+        if (data._fallback) {
+          const banner = document.getElementById("fallbackBanner");
+          if (banner) {
+            banner.textContent =
+              "Modules temporarily unavailable. You can edit basic details now.";
+            banner.style.display = "block";
+          }
+        }
       })
       .catch((error) => console.error("Error loading course:", error));
   }

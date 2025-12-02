@@ -1,0 +1,345 @@
+/* Base Styles and Variables */
+:root {
+  --primary-purple: #8b5cf6;
+  --primary-light: #a78bfa;
+  --cyan-accent: #b8e0dc;
+  --yellow-accent: #fef3c7;
+  --background: #f5f5f5;
+  --white: #ffffff;
+  --text-dark: #2d3748;
+  --text-medium: #4a5568;
+  --text-light: #718096;
+  --success-color: #10b981;
+  --warning-color: #f59e0b;
+  --border-radius: 16px;
+  --transition: all 0.3s ease;
+  --font-main: "Poppins", sans-serif;
+}
+
+.course-detail-page {
+  font-family: var(--font-main);
+  color: var(--text-dark);
+  font-size: 16px;
+  background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+  position: relative;
+  overflow-x: hidden;
+  padding-top: 130px;
+  min-height: 100vh;
+}
+
+.course-detail-page::before {
+  content: "";
+  position: fixed;
+  top: 10%;
+  right: 5%;
+  width: 400px;
+  height: 400px;
+  background: var(--cyan-accent);
+  opacity: 0.2;
+  border-radius: 50%;
+  filter: blur(80px);
+  animation: float 8s ease-in-out infinite;
+  z-index: 0;
+}
+
+.course-detail-page::after {
+  content: "";
+  position: fixed;
+  bottom: 10%;
+  left: 5%;
+  width: 300px;
+  height: 300px;
+  background: var(--yellow-accent);
+  opacity: 0.25;
+  border-radius: 50%;
+  filter: blur(80px);
+  animation: float 10s ease-in-out infinite reverse;
+  z-index: 0;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(30px, -30px) scale(1.1);
+  }
+}
+
+.geometric-shape {
+  position: fixed;
+  background: var(--cyan-accent);
+  opacity: 0.12;
+  z-index: 0;
+}
+
+.shape-1 {
+  top: 20%;
+  left: 10%;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  animation: float 7s ease-in-out infinite;
+}
+
+.shape-2 {
+  bottom: 25%;
+  right: 15%;
+  width: 140px;
+  height: 140px;
+  border-radius: 25px;
+  transform: rotate(45deg);
+  animation: rotate 20s linear infinite;
+}
+
+.shape-3 {
+  top: 45%;
+  right: 8%;
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: var(--yellow-accent);
+  opacity: 0.18;
+  animation: pulse 5s ease-in-out infinite;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(45deg);
+  }
+  to {
+    transform: rotate(405deg);
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.15;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.25;
+  }
+}
+
+.container {
+  width: 90%;
+  max-width: 1200px;
+  margin: auto;
+  position: relative;
+  z-index: 1;
+}
+
+.course-info {
+  background: var(--white);
+  padding: 60px 40px;
+  margin: 20px auto 40px auto;
+  border-radius: var(--border-radius);
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+  position: relative;
+  overflow: hidden;
+  transition: var(--transition);
+}
+
+.course-info:hover {
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.12);
+  transform: translateY(-5px);
+}
+
+.course-info::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: linear-gradient(
+    135deg,
+    var(--primary-purple) 0%,
+    var(--primary-light) 100%
+  );
+}
+
+.course-info h1 {
+  font-size: 2.8em;
+  margin-bottom: 20px;
+  color: var(--text-dark);
+  font-weight: 700;
+  background: linear-gradient(
+    135deg,
+    var(--primary-purple) 0%,
+    var(--primary-light) 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.course-info > p {
+  font-size: 1.15em;
+  margin-bottom: 30px;
+  line-height: 1.7;
+  color: var(--text-medium);
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.course-info button {
+  background: linear-gradient(
+    135deg,
+    var(--primary-purple) 0%,
+    var(--primary-light) 100%
+  );
+  color: white;
+  padding: 16px 40px;
+  border: none;
+  border-radius: 12px;
+  font-size: 1.1em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  box-shadow: 0 8px 20px rgba(139, 92, 246, 0.25);
+  font-family: var(--font-main);
+  position: relative;
+  overflow: hidden;
+}
+
+.course-info button::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  transition: left 0.6s ease;
+}
+
+.course-info button:hover::before {
+  left: 100%;
+}
+
+.course-info button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px rgba(139, 92, 246, 0.35);
+}
+
+.course-info a {
+  color: var(--primary-purple);
+  text-decoration: none;
+  transition: var(--transition);
+  font-weight: 600;
+  position: relative;
+}
+
+.course-info a::after {
+  content: "";
+  position: absolute;
+  width: 0;
+  height: 2px;
+  bottom: -2px;
+  left: 0;
+  background: var(--primary-purple);
+  transition: width 0.3s ease;
+}
+
+.course-info a:hover::after {
+  width: 100%;
+}
+
+.course-info a:hover {
+  color: var(--primary-light);
+}
+
+.enrollment-info {
+  margin: 25px 0;
+  font-size: 1.05em;
+  color: var(--text-medium);
+}
+
+.course-info .details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-top: 40px;
+}
+
+.course-info .details div {
+  padding: 20px;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  transition: var(--transition);
+}
+
+.course-info .details div:hover {
+  border-color: var(--primary-purple);
+  background: #f8fafc;
+}
+
+.course-info .details strong {
+  display: block;
+  font-size: 1.5em;
+  color: var(--primary-purple);
+  margin-bottom: 5px;
+}
+
+.course-info .details span {
+  color: var(--text-light);
+  font-size: 0.9em;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.modules-section {
+  margin-top: 40px;
+  text-align: left;
+}
+
+.modules-section h2 {
+  font-size: 2em;
+  margin-bottom: 20px;
+  color: var(--text-dark);
+}
+
+.module-item {
+  background: var(--white);
+  padding: 20px;
+  margin-bottom: 15px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  transition: var(--transition);
+  border-left: 4px solid var(--primary-purple);
+}
+
+.module-item:hover {
+  transform: translateX(5px);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+}
+
+.module-item h3 {
+  font-size: 1.2em;
+  margin-bottom: 10px;
+  color: var(--text-dark);
+}
+
+.module-item p {
+  color: var(--text-medium);
+  font-size: 0.95em;
+}
+
+.loading, .not-found {
+  text-align: center;
+  padding: 50px;
+  font-size: 1.5em;
+  color: var(--text-medium);
+}

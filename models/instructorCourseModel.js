@@ -48,7 +48,9 @@ const CourseModel = {
     instructorId,
     overview,
     tagline,
-    subject
+    subject,
+    whatYouWillLearn,
+    thumbnail
   ) => {
     try {
       const course = new Course({
@@ -56,7 +58,9 @@ const CourseModel = {
         instructor_id: instructorId,
         overview,
         tagline,
-        subject
+        subject,
+        whatYouWillLearn: whatYouWillLearn || [],
+        thumbnail: thumbnail || ""
       });
       const savedCourse = await course.save();
       return savedCourse._id;
@@ -73,6 +77,14 @@ const CourseModel = {
     }
   },
 
+  updateCourseDetails: async (courseId, updateData) => {
+    try {
+      await Course.findByIdAndUpdate(courseId, updateData).exec();
+    } catch (error) {
+      throw error;
+    }
+  },
+
   deleteModulesByCourse: async (courseId) => {
     try {
       await Module.deleteMany({ course_id: courseId }).exec();
@@ -81,7 +93,7 @@ const CourseModel = {
     }
   },
 
-  insertModule: async (courseId, parentId, title, text, url) => {
+  insertModule: async (courseId, parentId, title, text, url, type, quizData) => {
     try {
       const module = new Module({
         course_id: courseId,
@@ -89,9 +101,24 @@ const CourseModel = {
         title,
         text: text || "",
         url: url || "",
+        type: type || "lesson",
+        quizData: quizData || null
       });
       const savedModule = await module.save();
+      // console.log(`[DB] Inserted module ${savedModule._id} (Parent: ${parentId})`);
       return savedModule._id;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  updateCoursePrice: async (courseId, price) => {
+    try {
+      await CourseStat.findOneAndUpdate(
+        { course_id: courseId },
+        { price: price },
+        { upsert: true, new: true }
+      ).exec();
     } catch (error) {
       throw error;
     }

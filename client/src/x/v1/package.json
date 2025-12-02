@@ -1,0 +1,22 @@
+{
+  "name": "lms-backend",
+  "version": "1.0.0",
+  "description": "LMS Backend with Express and MongoDB",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "connect-mongo": "^5.1.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.1",
+    "express-session": "^1.18.2",
+    "mongoose": "^8.20.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
+  }
+}

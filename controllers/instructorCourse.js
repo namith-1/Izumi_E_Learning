@@ -6,31 +6,66 @@ exports.getCourseDetails_moduleTree = async (req, res) => {
   const courseId = req.params.courseId;
 
   try {
+    // Validate ObjectId format early
+    if (!mongoose.Types.ObjectId.isValid(courseId)) {
+      return res.status(400).json({ error: 'Invalid Course ID format' });
+    }
+
     // Fetch the course
     const course = await model.getCourseById(courseId);
-    // Fetch the modules for the course
-    const modules = await model.getModulesByCourseId(courseId);
+    if (!course) {
+      return res.status(404).json({ error: 'Course not found' });
+    }
+
+    // Fetch the modules for the course (robust to failures)
+    let modules = [];
+    try {
+      modules = await model.getModulesByCourseId(courseId);
+    } catch (modErr) {
+      console.warn(`getModulesByCourseId failed for ${courseId}:`, modErr);
+      modules = [];
+    }
+    console.log(`getCourseDetails_moduleTree: Fetched ${modules.length} modules for course ${courseId}`);
+    
     // Helper function to build module hierarchy
-    const buildHierarchy = (parentId = null) =>
-      modules
+    const buildHierarchy = (parentId = null) => {
+      // console.log(`Building hierarchy for parent: ${parentId}`);
+      return modules
         .filter((m) => {
-          return parentId === null
-            ? m.parent_id === null
-            : m.parent_id?.toString() === parentId;
+          if (parentId === null) {
+            return !m.parent_id;
+          }
+          return m.parent_id && m.parent_id.toString() === parentId.toString();
         })
         .map((m) => ({
-          id: m._id,
+          id: m._id?.toString(),
           title: m.title || "",
           text: m.text || "",
           url: m.url || "",
-          subModules: buildHierarchy(m._id),
+          type: m.type || "lesson",
+          quizData: m.quizData || null,
+          subModules: buildHierarchy(m._id.toString()),
         }));
+    };
+
+    const tree = buildHierarchy(null);
+    console.log(`getCourseDetails_moduleTree: Built tree with ${tree.length} root nodes`);
+    if (tree.length > 0) {
+       console.log(`Root 0 submodules: ${tree[0].subModules ? tree[0].subModules.length : 0}`);
+    }
 
     // Respond with course details and module hierarchy
-    res.json({ title: course.title, modules: buildHierarchy() });
+    res.json({ 
+      ...course.toObject(), // Return all course fields
+      modules: tree 
+    });
   } catch (err) {
-    // Handle errors, either course not found or DB errors
-    res.status(500).json({ error: err.message });
+    // Handle errors, either DB errors or unexpected
+    if (err instanceof mongoose.Error.CastError) {
+      return res.status(400).json({ error: 'Invalid Course ID format' });
+    }
+    console.error('getCourseDetails_moduleTree error:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 };
 
@@ -98,17 +133,27 @@ exports.saveCourse = async (req, res) => {
   if (!req.session.instructor)
     return res.status(403).json({ error: "Unauthorized." });
 
-  const { title, modules, price, overview, tagline, whatYouWillLearn, subject } = req.body;
+  const { title, modules, price, overview, tagline, whatYouWillLearn, subject, thumbnail } = req.body;
   const instructorId = req.session.instructor;
 
   try {
+    // Validate and normalize modules payload
+    const normalizedModules = Array.isArray(modules) ? modules : [];
+    console.log("[create] Root modules count:", normalizedModules.length);
+    normalizedModules.forEach((m, i) => {
+      const childCount = Array.isArray(m.subModules) ? m.subModules.length : 0;
+      console.log(`[create] Root ${i} title: ${m.title} children: ${childCount}`);
+    });
+
     // Pass separate strings, not an object
     const courseId = await model.insertCourse(
       title,
       instructorId,
       overview,
       tagline,
-      subject
+      subject,
+      whatYouWillLearn,
+      thumbnail
     );
 
     await CourseStat.create({
@@ -122,27 +167,50 @@ exports.saveCourse = async (req, res) => {
 
     // Recursively insert modules
     const insertModuleRecursive = async (mod, parentId = null) => {
+      const children = Array.isArray(mod.subModules) ? mod.subModules : [];
       const moduleId = await model.insertModule(
         courseId,
         parentId,
         mod.title,
         mod.text,
-        mod.url
+        mod.url,
+        mod.type,
+        mod.quizData
       );
-      if (mod.subModules?.length) {
-        for (const sub of mod.subModules) {
+      if (children.length > 0) {
+        for (const sub of children) {
           await insertModuleRecursive(sub, moduleId);
         }
       }
     };
 
-    if (modules?.length) {
-      for (const mod of modules) {
+    if (normalizedModules.length) {
+      for (const mod of normalizedModules) {
         await insertModuleRecursive(mod);
       }
     }
 
-    res.json({ message: "Course saved successfully!", courseId });
+    // Verify and return the rebuilt tree so UI can sync
+    const savedModules = await model.getModulesByCourseId(courseId);
+    const buildHierarchy = (parentId = null) => {
+      return savedModules
+        .filter((m) => {
+          if (parentId === null) return !m.parent_id;
+          return m.parent_id && m.parent_id.toString() === parentId.toString();
+        })
+        .map((m) => ({
+          id: m._id?.toString(),
+          title: m.title || "",
+          text: m.text || "",
+          url: m.url || "",
+          type: m.type || "lesson",
+          quizData: m.quizData || null,
+          subModules: buildHierarchy(m._id.toString()),
+        }));
+    };
+
+    const tree = buildHierarchy(null);
+    res.json({ message: "Course saved successfully!", courseId, modules: tree });
   } catch (error) {
     console.error("Error saving course:", error);
     res.status(500).json({ error: error.message });
@@ -154,9 +222,25 @@ exports.saveCourseChanges = async (req, res) => {
   if (!req.session.instructor)
     return res.status(403).json({ error: "Unauthorized." });
 
-  const { courseId } = req.query;
-  const { title, modules, overview, tagline, whatYouWillLearn } = req.body;
+  const { title, modules, overview, tagline, whatYouWillLearn, subject, thumbnail } = req.body;
+  // Check both query and body for courseId
+  const courseId = req.query.courseId || req.body.courseId;
   const instructorId = req.session.instructor;
+
+  console.log("saveCourseChanges called for courseId:", courseId);
+  if (modules && modules.length > 0) {
+     console.log("Root modules count:", modules.length);
+     modules.forEach((m, i) => {
+         console.log(`Module ${i} title: ${m.title}, subModules count:`, m.subModules ? m.subModules.length : 0);
+         if (m.subModules && m.subModules.length > 0) {
+             m.subModules.forEach((sub, j) => {
+                 console.log(`  SubModule ${j} title: ${sub.title}, subModules count:`, sub.subModules ? sub.subModules.length : 0);
+             });
+         }
+     });
+  } else {
+      console.log("No modules provided in request body");
+  }
 
   try {
     // Check for valid courseId
@@ -174,7 +258,20 @@ exports.saveCourseChanges = async (req, res) => {
         .json({ error: "Course not found or unauthorized." });
 
     // Update title and optional metadata on the Course document
-    await model.updateCourseTitle(courseId, title);
+    const updateData = { title };
+    if (overview !== undefined) updateData.overview = overview;
+    if (tagline !== undefined) updateData.tagline = tagline;
+    if (subject !== undefined) updateData.subject = subject;
+    if (whatYouWillLearn !== undefined) updateData.whatYouWillLearn = whatYouWillLearn;
+    if (thumbnail !== undefined) updateData.thumbnail = thumbnail;
+
+    await model.updateCourseDetails(courseId, updateData);
+    
+    // Update price in CourseStat
+    if (req.body.price !== undefined) {
+      await model.updateCoursePrice(courseId, req.body.price);
+    }
+
     try {
       await Course.findByIdAndUpdate(courseId, {
         overview: overview || "",
@@ -182,34 +279,68 @@ exports.saveCourseChanges = async (req, res) => {
         whatYouWillLearn: Array.isArray(whatYouWillLearn)
           ? whatYouWillLearn
           : [],
+        subject: req.body.subject || "" // Also update subject
       }).exec();
     } catch (e) {
       console.warn("Could not update course metadata:", e.message || e);
     }
 
+    console.log("Deleting existing modules for course:", courseId);
     await model.deleteModulesByCourse(courseId);
 
     const insertModuleRecursive = async (mod, parentId = null) => {
+      // console.log(`Inserting module: ${mod.title}, parentId: ${parentId}`);
       const moduleId = await model.insertModule(
         courseId,
         parentId,
         mod.title,
         mod.text,
-        mod.url
+        mod.url,
+        mod.type,
+        mod.quizData
       );
-      if (mod.subModules?.length) {
+      // console.log(`Inserted module ${mod.title}, new ID: ${moduleId}`);
+      
+      if (mod.subModules && Array.isArray(mod.subModules) && mod.subModules.length > 0) {
+        // console.log(`Recursing for ${mod.subModules.length} submodules of ${mod.title}`);
+        // Wait for all submodules to be inserted before continuing
         for (const sub of mod.subModules) {
           await insertModuleRecursive(sub, moduleId);
         }
       }
     };
 
-    if (modules?.length) {
+    if (modules && modules.length > 0) {
+      // Use a loop with await to ensure sequential insertion
       for (const mod of modules) {
         await insertModuleRecursive(mod);
       }
     }
-    res.json({ message: "Course updated successfully!", courseId });
+    
+    // Fetch the newly saved hierarchy to verify and return authoritative tree
+    const savedModules = await model.getModulesByCourseId(courseId);
+    console.log(`Verification: Saved ${savedModules.length} modules for course ${courseId}`);
+
+    const buildHierarchy = (parentId = null) => {
+      return savedModules
+        .filter((m) => {
+          if (parentId === null) return !m.parent_id;
+          return m.parent_id && m.parent_id.toString() === parentId.toString();
+        })
+        .map((m) => ({
+          id: m._id?.toString(),
+          title: m.title || "",
+          text: m.text || "",
+          url: m.url || "",
+          type: m.type || "lesson",
+          quizData: m.quizData || null,
+          subModules: buildHierarchy(m._id.toString()),
+        }));
+    };
+
+    const tree = buildHierarchy(null);
+
+    res.json({ message: "Course updated successfully!", courseId, modules: tree });
   } catch (error) {
     console.error("Error saving course changes:", error);
     res.status(500).json({ error: error.message });

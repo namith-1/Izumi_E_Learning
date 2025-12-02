@@ -1,0 +1,98 @@
+.student-course-list-page {
+    font-family: 'Poppins', sans-serif;
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    background-color: #f8f9fa;
+    min-height: 100vh;
+}
+
+.student-course-list-page h2 {
+    color: #333;
+    margin-bottom: 2rem;
+    text-align: center;
+    font-size: 2rem;
+}
+
+.course-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 2rem;
+}
+
+.course-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    transition: transform 0.2s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.course-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+}
+
+.course-card h3 {
+    color: #8b5cf6;
+    margin-bottom: 1rem;
+    font-size: 1.25rem;
+}
+
+.course-card p {
+    color: #666;
+    margin-bottom: 1.5rem;
+    flex-grow: 1;
+}
+
+.course-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: auto;
+}
+
+.btn-enroll, .btn-view {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s;
+    text-decoration: none;
+    text-align: center;
+    flex: 1;
+}
+
+.btn-enroll {
+    background-color: #8b5cf6;
+    color: white;
+}
+
+.btn-enroll:hover {
+    background-color: #7c3aed;
+}
+
+.btn-view {
+    background-color: #e5e7eb;
+    color: #374151;
+}
+
+.btn-view:hover {
+    background-color: #d1d5db;
+}
+
+.enrollment-status {
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.status-success {
+    color: #10b981;
+}
+
+.status-error {
+    color: #ef4444;
+}

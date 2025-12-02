@@ -12,4 +12,8 @@ router.post('/save-course-changes', controller.saveCourseChanges);
 router.get('/courses_by', controller.getCoursesWithStats);
 router.get('/my_course_info', controller.getStudentInfoView);
 
+// Friendly API aliases used by React client
+router.get('/api/instructor/courses', controller.getInstructorCourses);
+router.post('/api/instructor/courses', controller.saveCourse);
+
 module.exports = router;

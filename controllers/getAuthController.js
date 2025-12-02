@@ -24,14 +24,14 @@ const getAuthController = {
 
     loginInstructor: (req, res) => {
         if (req.session.instructor) {
-            res.redirect('/instructor-dashboard');
+            res.redirect('/dashboard');
         } else {
             res.sendFile(path.join(__dirname, '../views/instructor_auth', 'login_i.html'));
         }
     },
 
     signupInstructor: (req, res) => {
-        if (req.session.instructor) return res.redirect('/instructor-dashboard');
+        if (req.session.instructor) return res.redirect('/dashboard');
         res.sendFile(path.join(__dirname, '../views/instructor_auth', 'signup_i.html'));
     },
 

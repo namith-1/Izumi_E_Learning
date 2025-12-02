@@ -1,0 +1,111 @@
+/* --- Module Editor Styles --- */
+.module-editor {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.module-editor-content .module-inputs { display: grid; grid-template-columns: 1fr; gap: 1rem; margin-bottom: 1rem; }
+.module-editor-placeholder {
+  border: 2px dashed #ddd; text-align: center;
+  padding: 2.5rem; background: #f8f9fa;
+}
+.module-editor-placeholder p { font-size: 1rem; color: #6c757d; }
+.module-editor-actions {
+  margin-top: 1rem; padding-top: 1rem;
+  border-top: 1px solid #eee;
+  display: flex; justify-content: flex-end;
+}
+
+/* --- Rich Editor Styles --- */
+.rich-editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.5rem;
+  border: 1px solid #ced4da;
+  border-bottom: none;
+  border-radius: 5px 5px 0 0;
+  background: #f8f9fa;
+}
+.btn-editor {
+  padding: 0.4rem 0.6rem;
+  background: #e9ecef;
+  color: #343a40;
+  border: none;
+  border-radius: 5px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-editor:hover {
+  background: #0d6efd;
+  color: white;
+}
+
+.rich-editor-area {
+  width: 100%;
+  min-height: 400px;
+  border: 1px solid #ced4da;
+  border-radius: 0 0 5px 5px;
+  padding: 1.25rem;
+  font-size: 1rem;
+  line-height: 1.6; /* Adjusted line height */
+  background: #fff;
+  overflow-y: auto;
+}
+.rich-editor-area:focus {
+  outline: none;
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25);
+}
+
+/* --- Magazine Content Styles --- */
+.rich-editor-area h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.25rem;
+  line-height: 1.2;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  margin-top: 1.5rem;
+}
+.rich-editor-area h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.75rem;
+  line-height: 1.2;
+  font-weight: 700;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+}
+.rich-editor-area p {
+  font-size: 0.95rem;
+  line-height: 1.6; /* Adjusted line height */
+  margin-bottom: 1rem;
+}
+
+/* --- Magazine Content Image Styles --- */
+.rich-editor-area img {
+  border-radius: 8px;
+  cursor: pointer;
+  height: auto;
+  max-width: 100%;
+}
+.rich-editor-area .img-float-left {
+  float: left;
+  width: 40%;
+  margin-right: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+.rich-editor-area .img-float-right {
+  float: right;
+  width: 40%;
+  margin-left: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+.rich-editor-area .img-full {
+  width: 100%;
+  margin-top: 1rem;
+  display: block;
+}

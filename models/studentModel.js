@@ -68,6 +68,21 @@ const StudentModel = {
     await Student.updateOne({ email }, { is_deleted: 0 });
   },
 
+  reactivate: async (name, email, contact, address, password) => {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    return await Student.findOneAndUpdate(
+      { email },
+      {
+        name,
+        contact,
+        address,
+        hashed_password: hashedPassword,
+        is_deleted: 0
+      },
+      { new: true }
+    );
+  },
+
   // ────────────────────────────────
   // 🎓 Enrollment Logic
   // ────────────────────────────────
@@ -79,6 +94,42 @@ const StudentModel = {
       course_id: courseId,
     });
     return !!enrollment;
+  },
+
+  // ────────────────────────────────
+  // 📈 Progress & Quiz Logic (From v1)
+  // ────────────────────────────────
+
+  updateProgress: async (studentId, courseId, moduleId, timeSpent, completed, quizScore) => {
+    try {
+        const enrollment = await Enrollment.findOne({
+            course_id: courseId, 
+            student_id: studentId
+        });
+
+        if (!enrollment) throw new Error('Enrollment not found');
+
+        // Check if module exists in progress array
+        const moduleIndex = enrollment.modules_status.findIndex(m => m.moduleId === moduleId.toString());
+
+        if (moduleIndex > -1) {
+            // Update existing
+            if (timeSpent !== undefined) enrollment.modules_status[moduleIndex].timeSpent = timeSpent;
+            if (completed !== undefined) enrollment.modules_status[moduleIndex].completed = completed;
+            
+            // Update quizScore ONLY if explicitly provided
+            if (quizScore !== undefined && quizScore !== null) {
+                 enrollment.modules_status[moduleIndex].quizScore = quizScore;
+            }
+        } else {
+            // Add new
+            enrollment.modules_status.push({ moduleId, timeSpent, completed, quizScore });
+        }
+        
+        return await enrollment.save();
+    } catch (error) {
+        throw error;
+    }
   },
 
   enroll: async (studentId, courseId) => {

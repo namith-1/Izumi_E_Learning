@@ -1,0 +1,258 @@
+/* Gamification Styles */
+.gamification-page {
+    font-family: "Poppins", sans-serif;
+    text-align: center;
+    padding: 20px;
+    background-color: #f3f4f6;
+    min-height: 100vh;
+    padding-top: 40px;
+}
+
+.gamification-page h1 {
+    color: #8b5cf6;
+    margin-bottom: 30px;
+    font-weight: 600;
+}
+
+.main-container {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    align-items: flex-start;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 20px;
+    flex-wrap: wrap;
+}
+
+.goals-section,
+.calendar-section {
+    flex: 1;
+    min-width: 350px;
+    max-width: 500px;
+    text-align: left;
+}
+
+.add-goal-container {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    margin-bottom: 20px;
+}
+
+.add-goal-container h2 {
+    color: #1f2937;
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.add-goal-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.add-goal-form input {
+    padding: 10px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    font-family: inherit;
+}
+
+.add-goal-form input:focus {
+    outline: none;
+    border-color: #8b5cf6;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.add-goal-form button {
+    background-color: #8b5cf6;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.add-goal-form button:hover {
+    background-color: #7c3aed;
+}
+
+.add-goal-form button:disabled {
+    background-color: #c4b5fd;
+    cursor: not-allowed;
+}
+
+.goal-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-delete {
+    background-color: #ef4444;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: background-color 0.2s;
+}
+
+.btn-delete:hover {
+    background-color: #dc2626;
+}
+
+.no-goals-msg {
+    color: #6b7280;
+    font-style: italic;
+    text-align: center;
+    margin-top: 10px;
+}
+
+.pending-goals-container,
+.completed-goals-container {
+    margin-top: 20px;
+    padding: 25px;
+    border: none;
+    border-radius: 12px;
+    background-color: white;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.pending-goals-container h2,
+.completed-goals-container h2 {
+    color: #1f2937;
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 1.25rem;
+    font-weight: 600;
+    border-bottom: 2px solid #f3f4f6;
+    padding-bottom: 10px;
+}
+
+.goal-item {
+    background: #f9fafb;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #8b5cf6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: transform 0.2s;
+}
+
+.goal-item:hover {
+    transform: translateX(5px);
+}
+
+.goal-item.completed {
+    border-left-color: #10b981;
+    opacity: 0.8;
+    background: #ecfdf5;
+}
+
+.goal-item h4 {
+    margin: 0 0 5px 0;
+    color: #1f2937;
+    font-weight: 600;
+}
+
+.goal-item p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #4b5563;
+}
+
+.goal-item small {
+    display: block;
+    margin-top: 5px;
+    color: #6b7280;
+    font-size: 0.8rem;
+}
+
+.btn-complete {
+    background-color: #10b981;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.btn-complete:hover {
+    background-color: #059669;
+}
+
+.calendar-container {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.calendar-header h2 {
+    color: #1f2937;
+    font-size: 1.25rem;
+    margin: 0;
+}
+
+.calendar-header span {
+    color: #8b5cf6;
+    font-weight: 600;
+
+    margin-bottom: 20px;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+    text-align: center;
+}
+
+.calendar-day {
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: transparent;
+    font-size: 0.9rem;
+    color: #4b5563;
+    transition: all 0.2s;
+}
+
+.calendar-day:hover:not(.empty) {
+    background-color: #f3f4f6;
+}
+
+.calendar-day.active {
+    background-color: #8b5cf6;
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(139, 92, 246, 0.3);
+}
+
+.calendar-day-name {
+    font-weight: 600;
+    color: #9ca3af;
+    font-size: 0.85rem;
+    padding-bottom: 10px;
+}

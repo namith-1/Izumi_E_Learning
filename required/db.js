@@ -42,12 +42,22 @@ const instructorSchema = new mongoose.Schema({
   avatarUrl: { type: String, default: "/images/default-avatar.png" },
 });
 
+const adminSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  hashed_password: { type: String, required: true },
+  role: { type: String, default: 'admin' },
+  is_deleted: { type: Number, default: 0 },
+  created_at: { type: Date, default: Date.now },
+});
+
 const courseSchema = new mongoose.Schema({
   title: { type: String, required: true },
   instructor_id: { type: mongoose.Schema.Types.ObjectId, ref: "Instructor" }, // Reference to Instructor
   subject: { type: String },
   overview: { type: String, default: "" },
   tagline: { type: String, default: "" },
+  thumbnail: { type: String, default: "" },
   whatYouWillLearn: { type: [String], default: [] },
 });
 
@@ -58,6 +68,17 @@ const enrollmentSchema = new mongoose.Schema(
     student_id: { type: mongoose.Schema.Types.ObjectId, ref: "Student" },
     course_id: { type: mongoose.Schema.Types.ObjectId, ref: "Course" },
     date_enrolled: { type: Date, default: Date.now },
+    completionStatus: { 
+        type: String, 
+        enum: ['in-progress', 'completed'], 
+        default: 'in-progress' 
+    },
+    modules_status: [{
+        moduleId: { type: String, required: true }, 
+        completed: { type: Boolean, default: false },
+        timeSpent: { type: Number, default: 0 }, 
+        quizScore: { type: Number, default: null } 
+    }]
   },
   { timestamps: true }
 ); // added timestamps for createdAt and updatedAt
@@ -99,6 +120,8 @@ const moduleSchema = new mongoose.Schema({
   title: { type: String, required: true },
   text: { type: String, default: "" },
   url: { type: String, default: "" },
+  type: { type: String, default: "lesson" }, // lesson, quiz, video
+  quizData: { type: Object, default: null } // Store quiz questions here
 });
 
 const studentModuleSchema = new mongoose.Schema({
@@ -127,9 +150,24 @@ const commentVoteSchema = new mongoose.Schema({
   //  No direct composite unique key
 });
 
+const questionSchema = new mongoose.Schema({
+  student_id: { type: mongoose.Schema.Types.ObjectId, ref: "Student" },
+  title: { type: String, required: true },
+  description: { type: String, required: true },
+  tags: { type: [String], default: [] },
+  answers: [{
+    user_id: { type: mongoose.Schema.Types.ObjectId }, // Can be Student or Instructor
+    user_type: { type: String, enum: ['Student', 'Instructor'] },
+    content: { type: String, required: true },
+    created_at: { type: Date, default: Date.now }
+  }],
+  created_at: { type: Date, default: Date.now }
+});
+
 // Create Models
 const Student = mongoose.model("Student", studentSchema);
 const Instructor = mongoose.model("Instructor", instructorSchema);
+const Admin = mongoose.model("Admin", adminSchema);
 const Course = mongoose.model("Course", courseSchema);
 const Enrollment = mongoose.model("Enrollment", enrollmentSchema);
 const Magazine = mongoose.model("Magazine", magazineSchema);
@@ -138,6 +176,7 @@ const Module = mongoose.model("Module", moduleSchema);
 const StudentModule = mongoose.model("StudentModule", studentModuleSchema);
 const Comment = mongoose.model("Comment", commentSchema);
 const CommentVote = mongoose.model("CommentVote", commentVoteSchema);
+const Question = mongoose.model("Question", questionSchema);
 
 //  Insert Initial Data (using Mongoose methods)
 async function seedData() {
@@ -310,6 +349,7 @@ async function seedData() {
 module.exports = {
   Student,
   Instructor,
+  Admin,
   Course,
   Enrollment,
   Magazine,
@@ -318,4 +358,5 @@ module.exports = {
   StudentModule,
   Comment,
   CommentVote,
+  Question
 };

@@ -1,0 +1,102 @@
+.instructor-course-edit-page {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background-color: #f4f6f8;
+  }
+  
+  .editor-header {
+    background: #fff;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 70px;
+    flex-shrink: 0;
+  }
+  
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .header-left h1 {
+    font-size: 1.25rem;
+    margin: 0;
+    color: #333;
+  }
+  
+  .btn-back {
+    background: none;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 0.5rem;
+    border-radius: 4px;
+  }
+  
+  .btn-back:hover {
+    background: #f0f0f0;
+    color: #333;
+  }
+  
+  .btn-save-primary {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .btn-save-primary:hover {
+    background-color: #218838;
+  }
+  
+  .editor-layout {
+    display: flex;
+    flex: 1;
+    overflow: hidden; /* Prevent full page scroll */
+  }
+  
+  .editor-sidebar {
+    width: 300px;
+    background: #fff;
+    border-right: 1px solid #e0e0e0;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+  
+  .editor-main {
+    flex: 1;
+    padding: 2rem;
+    overflow-y: auto;
+  }
+  
+  .empty-state {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    color: #888;
+    font-size: 1.1rem;
+  }
+  
+  .alert-success {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    z-index: 1000;
+    padding: 1rem;
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+    border-radius: 4px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    cursor: pointer;
+  }

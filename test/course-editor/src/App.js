@@ -63,7 +63,7 @@ function App() {
     .then((res) => res.json())
     .then((data) => {
       alert(data.message || 'Course saved successfully!');
-      window.location.href = '/instructor-dashboard';
+      window.location.href = '/dashboard';
     })
     .catch((err) => console.error('Error saving course:', err));
   };
