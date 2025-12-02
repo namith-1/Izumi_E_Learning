@@ -85,13 +85,8 @@ exports.getCourseDetails = async (req, res) => {
       sampleReviews: [], 
     };
     
-    // 5. Render the page with the correctly structured data
-    // console.lo
-    
-    res.render("course.ejs", {
-      courseData, // The EJS template is designed to use this object
-      courseId: String(courseData.id),
-    });
+    // Return JSON response for React frontend instead of EJS rendering
+    res.json(courseData);
 
   } catch (error) {
     console.error("Error fetching course details:", error);
@@ -115,4 +110,81 @@ exports.listCourses = (req, res) => {
 
 exports.moduleCompletePage = (req, res) => {
   res.sendFile(path.join(__dirname, "../views/public", "module_complete.html"));
+};
+
+// API endpoint to get all available courses (for browsing)
+exports.getAllCourses = async (req, res) => {
+  try {
+    const courses = await Course.find({})
+      .populate("instructor_id")
+      .lean()
+      .exec();
+
+    const formattedCourses = await Promise.all(
+      courses.map(async (course) => {
+        const stats = await CourseStat.findOne({ course_id: course._id }).lean().exec();
+        return {
+          _id: course._id,
+          title: course.title || "Untitled Course",
+          description: course.overview || "",
+          tagline: course.tagline || "",
+          instructor: course.instructor_id?.name || "TBA",
+          rating: stats?.avg_rating || 0,
+          enrollmentCount: stats?.enrolled_count || 0,
+          image_url: course.image_url || "/images/default-course.jpg"
+        };
+      })
+    );
+
+    res.json(formattedCourses);
+  } catch (error) {
+    console.error("Error fetching all courses:", error);
+    res.status(500).json({ message: "Error fetching courses: " + error.message });
+  }
+};
+
+// API endpoint to get all courses for a student
+exports.getStudentCourses = async (req, res) => {
+  if (!req.session.student) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  try {
+    const Student = require("../models/studentModel");
+    const student = await Student.findById(req.session.student);
+    
+    if (!student) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+
+    // Get enrolled courses for this student
+    const enrolledCourseIds = student.enrolled_courses || [];
+    
+    const courses = await Course.find({ _id: { $in: enrolledCourseIds } })
+      .populate("instructor_id")
+      .lean()
+      .exec();
+
+    // Format the response
+    const formattedCourses = await Promise.all(
+      courses.map(async (course) => {
+        const stats = await CourseStat.findOne({ course_id: course._id }).lean().exec();
+        return {
+          _id: course._id,
+          title: course.title || "Untitled Course",
+          description: course.overview || "",
+          tagline: course.tagline || "",
+          instructor: course.instructor_id?.name || "TBA",
+          progress: 0, // Can be calculated from module completion
+          rating: stats?.avg_rating || 0,
+          enrollmentCount: stats?.enrolled_count || 0,
+        };
+      })
+    );
+
+    res.json(formattedCourses);
+  } catch (error) {
+    console.error("Error fetching student courses:", error);
+    res.status(500).json({ message: "Error fetching courses: " + error.message });
+  }
 };

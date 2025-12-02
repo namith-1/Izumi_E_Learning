@@ -1,0 +1,74 @@
+/* Restore Account Styles */
+.restore-account-page {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.restore-card {
+    background: white;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+    max-width: 400px;
+    width: 100%;
+    text-align: center;
+}
+
+.restore-card h1 {
+    color: #8b5cf6;
+    margin-bottom: 20px;
+    font-size: 1.8rem;
+}
+
+.restore-card p {
+    color: #666;
+    margin-bottom: 25px;
+}
+
+.restore-card input {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+}
+
+.restore-card input:focus {
+    outline: none;
+    border-color: #8b5cf6;
+    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+}
+
+.btn-restore {
+    background-color: #8b5cf6;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+    margin-bottom: 15px;
+}
+
+.btn-restore:hover {
+    background-color: #7c3aed;
+}
+
+.restore-card a {
+    color: #8b5cf6;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.restore-card a:hover {
+    text-decoration: underline;
+}

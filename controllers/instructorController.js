@@ -28,7 +28,7 @@ exports.signup = async (req, res) => {
 
     // ✅ Check if that domain exists in InstructorInfo
     const instituteEmail = await InstituteMail.findOne({
-      email_id: { $regex: new RegExp(domain + "$", "i") }, // matches any email ending with that domain
+      email_id: { $regex: new RegExp(domain + "$", "i") },
     });
 
     if (!instituteEmail) {
@@ -37,8 +37,12 @@ exports.signup = async (req, res) => {
         .send("This email domain is not registered under any institute.");
     }
 
-    await Instructor.create(username, email, contact, address, password);
-    res.redirect("/login_i");
+    const newInstructor = await Instructor.create(username, email, contact, address, password);
+    // Set session for immediate login
+    req.session.instructor = newInstructor._id;
+    req.session.role = 'instructor';
+    console.log('Instructor signup success, redirecting to dashboard');
+    res.redirect("/instructor/dashboard");
   } catch (error) {
     console.error("Instructor signup error:", error);
     return res.status(500).send("Error signing up: " + error.message);
@@ -55,7 +59,9 @@ exports.loginInstructor = async (req, res) => {
     const match = await bcrypt.compare(password, user.hashed_password);
     if (match) {
       req.session.instructor = user._id; // Store the Mongoose _id
-      res.redirect("/instructor-dashboard");
+      req.session.role = 'instructor';
+      console.log('Instructor login success, redirecting to dashboard');
+      res.redirect("/instructor/dashboard");
     } else {
       res.status(400).send("Invalid email or password.");
     }
@@ -68,7 +74,7 @@ exports.loginInstructor = async (req, res) => {
 exports.instructorDashboard = (req, res) => {
   if (!req.session.instructor) return res.status(403).send("Unauthorized.");
   // Serve the instructor's dashboard view
-  res.sendFile(path.join(__dirname, "../views/instructor_courses.html"));
+  res.sendFile(path.join(__dirname, "../views/instructor/dashboard.html"));
 };
 
 // controllers/instructorAuthController.js

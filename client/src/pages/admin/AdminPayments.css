@@ -1,0 +1,99 @@
+.stat-card {
+  border: none;
+  border-radius: 1rem;
+  background: #fff;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card .card-title {
+  color: #7f8c8d;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+
+.stat-card h2 {
+  color: #2c3e50;
+  font-weight: 700;
+}
+
+.card {
+  border: none;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  border-radius: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.card-header {
+  background-color: #fff;
+  border-bottom: 1px solid #f0f0f0;
+  padding: 1.25rem 1.5rem;
+  border-radius: 1rem 1rem 0 0 !important;
+}
+
+.card-body {
+  padding: 1.5rem;
+}
+
+.table-responsive {
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+.table {
+  margin-bottom: 0;
+  vertical-align: middle;
+}
+
+.table thead th {
+  background-color: #f8f9fa;
+  color: #7f8c8d;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+  border-bottom: none;
+  padding: 1rem;
+}
+
+.table tbody td {
+  padding: 1rem;
+  color: #2c3e50;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.table tbody tr {
+  transition: all 0.2s ease;
+}
+
+.table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.badge {
+  padding: 0.5em 0.8em;
+  font-weight: 600;
+  border-radius: 2rem;
+  font-size: 0.75rem;
+}
+
+.badge {
+  padding: 0.35em 0.65em;
+  font-weight: 600;
+}
+
+.btn-group-sm .btn {
+  transition: all 0.2s ease;
+}
+
+.btn-group-sm .btn:hover {
+  transform: translateY(-2px);
+}

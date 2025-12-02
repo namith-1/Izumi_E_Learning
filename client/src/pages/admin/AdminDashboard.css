@@ -1,0 +1,63 @@
+.stat-card {
+  transition: all 0.3s ease;
+  border: none;
+  border-radius: 1rem;
+  background: #fff;
+  overflow: hidden;
+  position: relative;
+}
+
+.stat-card .card-body {
+  padding: 1.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card .card-title {
+  color: #7f8c8d;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.stat-card h2 {
+  color: #2c3e50;
+  font-weight: 700;
+  margin-bottom: 0;
+}
+
+/* Add subtle colored borders or accents */
+.col-md-3:nth-child(1) .stat-card { border-bottom: 4px solid #3498db; }
+.col-md-3:nth-child(2) .stat-card { border-bottom: 4px solid #2ecc71; }
+.col-md-3:nth-child(3) .stat-card { border-bottom: 4px solid #f1c40f; }
+.col-md-3:nth-child(4) .stat-card { border-bottom: 4px solid #e74c3c; }
+
+.card {
+  border: none;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  border-radius: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.card-header {
+  background-color: #fff;
+  border-bottom: 1px solid #f0f0f0;
+  padding: 1.25rem 1.5rem;
+  border-radius: 1rem 1rem 0 0 !important;
+}
+
+.card-header h5 {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.card-body {
+  padding: 1.5rem;
+}

@@ -1,0 +1,107 @@
+/* Student Home Styles */
+:root {
+    --primary-purple: #8b5cf6;
+    --primary-light: #a78bfa;
+    --cyan-accent: #b8e0dc;
+    --yellow-accent: #fef3c7;
+    --pale-cyan: #d4f1ee;
+    --izumi-primary: #8b5cf6;
+    --izumi-secondary: #a78bfa;
+    --navbar-bg: #5b36a1;
+    --nav-active-bg: #8c67c9;
+    --nav-text: #ffffff;
+    --background: #f5f5f5;
+    --white: #ffffff;
+    --text-dark: #2d3748;
+    --text-medium: #4a5568;
+    --text-light: #718096;
+    --danger-color: #ef4444;
+    --success-color: #10b981;
+    --border-color: #e5e7eb;
+    --transition: all 0.3s ease;
+    --font-main: 'Poppins', sans-serif;
+}
+
+.student-home-page {
+    font-family: var(--font-main);
+    background: linear-gradient(180deg, #f0f0f0 0%, #e8e8e8 100%);
+    color: var(--text-dark);
+    line-height: 1.6;
+    min-height: 100vh;
+    padding-top: 80px; /* For fixed navbar */
+}
+
+/* Hero Section */
+.hero-section {
+    background: linear-gradient(135deg, #ffffff 0%, #f3f4f6 100%);
+    padding: 4rem 2rem;
+    text-align: center;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 2rem;
+}
+
+.hero-content h1 {
+    font-size: 2.5rem;
+    color: var(--primary-purple);
+    margin-bottom: 1rem;
+}
+
+.hero-content p {
+    font-size: 1.2rem;
+    color: var(--text-medium);
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* Dashboard Grid */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.dashboard-card {
+    background: var(--white);
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    transition: var(--transition);
+    text-align: center;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+}
+
+.card-icon {
+    font-size: 3rem;
+    color: var(--primary-purple);
+    margin-bottom: 1.5rem;
+    background: var(--pale-cyan);
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dashboard-card h3 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: var(--text-dark);
+}
+
+.dashboard-card p {
+    color: var(--text-medium);
+    font-size: 0.95rem;
+}

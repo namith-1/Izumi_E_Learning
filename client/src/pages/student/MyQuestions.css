@@ -1,0 +1,109 @@
+.my-questions-page {
+    background-color: #f8f9fa;
+    color: #333;
+    line-height: 1.6;
+    padding: 2rem;
+    max-width: 800px;
+    margin: 0 auto;
+    font-family: 'Poppins', sans-serif;
+    min-height: 100vh;
+}
+
+.my-questions-page h2 {
+    color: #212529;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.my-questions-page h3 {
+    color: #343a40;
+    margin: 2rem 0 1rem;
+}
+
+.my-questions-page ul {
+    list-style-type: none;
+    margin-bottom: 2rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    padding: 0;
+    overflow: hidden;
+}
+
+.my-questions-page li {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.my-questions-page li:last-child {
+    border-bottom: none;
+}
+
+.my-questions-page a {
+    color: #4b5563;
+    text-decoration: none;
+    transition: color 0.2s;
+    font-weight: 500;
+}
+
+.my-questions-page a:hover {
+    color: #8b5cf6;
+}
+
+.my-questions-page form {
+    background-color: #fff;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.my-questions-page input[type="text"],
+.my-questions-page textarea {
+    width: 100%;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-family: inherit;
+    transition: border-color 0.2s;
+}
+
+.my-questions-page input[type="text"]:focus,
+.my-questions-page textarea:focus {
+    outline: none;
+    border-color: #8b5cf6;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.my-questions-page textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+.my-questions-page button {
+    background-color: #8b5cf6;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.my-questions-page button:hover {
+    background-color: #7c3aed;
+}
+
+.my-questions-page .back-link {
+    display: inline-block;
+    margin-top: 2rem;
+    color: #6b7280;
+}
+
+.my-questions-page .back-link:hover {
+    color: #374151;
+}

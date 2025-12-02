@@ -1,0 +1,128 @@
+.my-purchases-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    font-family: 'Poppins', sans-serif;
+    min-height: 100vh;
+    background: #f9f9f9;
+}
+
+.purchases-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.purchases-header h2 {
+    color: #2d3748;
+    margin: 0;
+}
+
+.back-link {
+    color: #8b5cf6;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+}
+
+.purchases-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.purchase-card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: transform 0.2s;
+}
+
+.purchase-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+}
+
+.purchase-info h3 {
+    margin: 0 0 5px 0;
+    color: #2d3748;
+    font-size: 1.1rem;
+}
+
+.purchase-date, .purchase-price {
+    margin: 0;
+    color: #718096;
+    font-size: 0.9rem;
+}
+
+.purchase-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+}
+
+.view-btn {
+    background: #8b5cf6;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+
+.view-btn:hover {
+    background: #7c3aed;
+}
+
+.invoice-link {
+    color: #718096;
+    font-size: 0.85rem;
+    text-decoration: none;
+}
+
+.invoice-link:hover {
+    color: #4a5568;
+    text-decoration: underline;
+}
+
+.no-purchases {
+    text-align: center;
+    padding: 40px;
+    background: white;
+    border-radius: 12px;
+    color: #718096;
+}
+
+.browse-btn {
+    display: inline-block;
+    margin-top: 15px;
+    background: #8b5cf6;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.loading, .error-message {
+    text-align: center;
+    padding: 20px;
+}
+
+.error-message {
+    color: #ef4444;
+    background: #fee2e2;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}

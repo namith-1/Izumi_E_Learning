@@ -12,4 +12,15 @@ router.post('/save-course-changes', controller.saveCourseChanges);
 router.get('/courses_by', controller.getCoursesWithStats);
 router.get('/my_course_info', controller.getStudentInfoView);
 
+// Friendly API aliases used by React client
+router.get('/api/instructor/courses', controller.getInstructorCourses);
+router.post('/api/instructor/courses', controller.saveCourse);
+router.get('/api/instructor/me', (req, res) => {
+  if (req.session.instructor) {
+    res.json({ instructor: req.session.instructor, authenticated: true });
+  } else {
+    res.status(401).json({ error: 'Not authenticated' });
+  }
+});
+
 module.exports = router;

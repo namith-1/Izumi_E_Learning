@@ -10,4 +10,5 @@ router.get('/delete', UpdateStudentController.softDeleteUser);
 router.post('/restore', UpdateStudentController.restoreUser);
 router.get("/delete-page", UpdateStudentController.getDeletePage);
 router.get('/my_purchases', UpdateStudentController.getMyPurchases);
+router.get('/updateStudent/api/info', UpdateStudentController.getStudentInfo);
 module.exports = router;

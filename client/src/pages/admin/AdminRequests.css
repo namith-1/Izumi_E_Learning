@@ -1,0 +1,182 @@
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.35em 0.65em;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  border-radius: 0.375rem;
+  text-transform: uppercase;
+}
+
+.priority-badge {
+  display: inline-block;
+  padding: 0.35em 0.65em;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  border-radius: 0.375rem;
+  text-transform: uppercase;
+}
+
+.message-cell {
+  max-width: 300px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.message-full {
+  white-space: normal;
+}
+
+.stat-card {
+  border: none;
+  border-radius: 1rem;
+  background: #fff;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.card {
+  border: none;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  border-radius: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.card-header {
+  background-color: #fff;
+  border-bottom: 1px solid #f0f0f0;
+  padding: 1.25rem 1.5rem;
+  border-radius: 1rem 1rem 0 0 !important;
+}
+
+.card-body {
+  padding: 1.5rem;
+}
+
+.table-responsive {
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+.table {
+  margin-bottom: 0;
+  vertical-align: middle;
+}
+
+.table thead th {
+  background-color: #f8f9fa;
+  color: #7f8c8d;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+  border-bottom: none;
+  padding: 1rem;
+}
+
+.table tbody td {
+  padding: 1rem;
+  color: #2c3e50;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.table tbody tr {
+  transition: all 0.2s ease;
+}
+
+.table tbody tr:hover {
+  background-color: #f8f9fa;
+
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.card {
+  border: none;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  border-radius: 0.5rem;
+}
+
+.card-header {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+  padding: 1rem 1.25rem;
+}
+
+.card-body {
+  padding: 1.5rem;
+}
+
+.table-responsive {
+  border-radius: 0.5rem;
+}
+
+.table {
+  margin-bottom: 0;
+}
+
+.table thead th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.table tbody tr {
+  transition: all 0.2s ease;
+}
+
+.table tbody tr:hover {
+  background-color: #f8f9fa;
+  transform: scale(1.01);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.badge {
+  padding: 0.35em 0.65em;
+  font-weight: 600;
+}
+
+.modal.d-block {
+  display: block !important;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1050;
+}
+
+.btn-group-sm .btn {
+  transition: all 0.2s ease;
+}
+
+.btn-group-sm .btn:hover {
+  transform: translateY(-2px);
+}

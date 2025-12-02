@@ -1,0 +1,70 @@
+/* Base styling and reset */
+.questions-list-page {
+    font-family: 'Poppins', sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f8f9fa;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem;
+    min-height: 100vh;
+}
+
+/* Header styling */
+.questions-list-page h2 {
+    font-size: 2rem;
+    color: #1a1a1a;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.8rem;
+    border-bottom: 2px solid #eaeaea;
+    font-weight: 600;
+}
+
+/* Question list styling */
+.questions-list-page ul {
+    list-style: none;
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    margin-bottom: 2rem;
+    padding: 0;
+    overflow: hidden;
+}
+
+.questions-list-page li {
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.questions-list-page li:last-child {
+    border-bottom: none;
+}
+
+.questions-list-page li a {
+    display: block;
+    padding: 1rem 1.5rem;
+    color: #444;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.questions-list-page li a:hover {
+    background-color: #f3f0ff;
+    color: #8b5cf6;
+    padding-left: 1.8rem;
+}
+
+/* Link button styling */
+.questions-list-page .action-link {
+    display: inline-block;
+    background-color: #8b5cf6;
+    color: white;
+    padding: 0.8rem 1.5rem;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+}
+
+.questions-list-page .action-link:hover {
+    background-color: #7c3aed;
+}
