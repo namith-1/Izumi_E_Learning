@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { isAdmin } = require('../middlewares/authMiddleware');
 const { Student, Instructor, Course, CourseStat, Module, Enrollment } = require('../required/db');
+const contactAdmin = require('../models/instructor/contactModel');
 const bcrypt = require('bcrypt');
 
 // Get courses for content forms
@@ -78,6 +79,19 @@ router.get('/dashboard', isAdmin, async (req, res) => {
         res.status(500).render('error', { message: 'Error loading dashboard' });
     }
 });
+router.get('/dashboard/stats', isAdmin, async (req, res) => {
+    try {
+        const totalStudents = await Student.countDocuments({ is_deleted: 0 });
+        const totalInstructors = await Instructor.countDocuments({ is_deleted: 0 });
+        const totalCourses = await Course.countDocuments();
+        const totalEnrollments = await Enrollment.countDocuments();
+
+        res.json({ totalStudents, totalInstructors, totalCourses, totalEnrollments });
+    } catch (error) {
+        console.error('Dashboard stats error:', error);
+        res.status(500).json({ error: 'Error loading dashboard stats' });
+    }
+});
 
 // User management
 router.get('/users', isAdmin, async (req, res) => {
@@ -92,6 +106,16 @@ router.get('/users', isAdmin, async (req, res) => {
     } catch (error) {
         console.error('Users error:', error);
         res.status(500).render('error', { message: 'Error loading users' });
+    }
+});
+router.get('/users/data', isAdmin, async (req, res) => {
+    try {
+        const students = await Student.find({ is_deleted: 0 }).select('name email contact address');
+        const instructors = await Instructor.find({ is_deleted: 0 }).select('name email contact address');
+        res.json({ students, instructors });
+    } catch (error) {
+        console.error('Users data error:', error);
+        res.status(500).json({ success: false, message: 'Error fetching users' });
     }
 });
 
@@ -146,6 +170,58 @@ router.get('/courses', isAdmin, async (req, res) => {
         res.status(500).render('error', { message: 'Error loading courses' });
     }
 });
+router.get('/courses/data', isAdmin, async (req, res) => {
+    try {
+        const courses = await Course.aggregate([
+            {
+                $lookup: {
+                    from: 'instructors',
+                    localField: 'instructor_id',
+                    foreignField: '_id',
+                    as: 'instructor'
+                }
+            },
+            {
+                $lookup: {
+                    from: 'coursestats',
+                    localField: '_id',
+                    foreignField: 'course_id',
+                    as: 'stats'
+                }
+            },
+            {
+                $unwind: {
+                    path: '$instructor',
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            {
+                $unwind: {
+                    path: '$stats',
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            {
+                $project: {
+                    _id: 1,
+                    title: 1,
+                    subject: 1,
+                    instructor_name: '$instructor.name',
+                    enrolled_count: { $ifNull: ['$stats.enrolled_count', 0] },
+                    price: { $ifNull: ['$stats.price', 0] },
+                    avg_rating: { $ifNull: ['$stats.avg_rating', 0] }
+                }
+            }
+        ]);
+
+        res.json(courses); // 👈 Return JSON instead of rendering a view
+    } catch (error) {
+        console.error('Courses data error:', error);
+        res.status(500).json({ message: 'Error loading courses data' });
+    }
+});
+
+
 
 // Content management
 router.get('/content', isAdmin, async (req, res) => {
@@ -177,6 +253,37 @@ router.get('/content', isAdmin, async (req, res) => {
     } catch (error) {
         console.error('Content error:', error);
         res.status(500).render('error', { message: 'Error loading content' });
+    }
+});
+router.get('/content/data', isAdmin, async (req, res) => {
+    try {
+        const modules = await Module.aggregate([
+            {
+                $lookup: {
+                    from: 'courses',
+                    localField: 'course_id',
+                    foreignField: '_id',
+                    as: 'course'
+                }
+            },
+            {
+                $unwind: '$course'
+            },
+            {
+                $project: {
+                    _id: 1,
+                    title: 1,
+                    text: 1,
+                    url: 1,
+                    course_title: '$course.title'
+                }
+            }
+        ]);
+
+        res.json(modules);
+    } catch (error) {
+        console.error('Content data error:', error);
+        res.status(500).json({ error: 'Error fetching content' });
     }
 });
 
@@ -384,11 +491,10 @@ router.get('/Payments', isAdmin, async (req, res) => {
 
 // -------------------- PAYMENT DATA ROUTE --------------------
 router.get('/payments/data', isAdmin, async (req, res) => {
-    console.log('🔍 Starting payment data fetch...');
-    
     try {
-        // STEP 1: Fetch enrollments with related data
-        console.log('Step 1: Fetching enrollments...');
+        const range = req.query.range || 'daily';
+        console.log('📊 Received range parameter:', range);
+
         const enrollments = await Enrollment.aggregate([
             {
                 $lookup: {
@@ -410,140 +516,224 @@ router.get('/payments/data', isAdmin, async (req, res) => {
             { $unwind: { path: '$course', preserveNullAndEmptyArrays: true } },
             { $sort: { date_enrolled: -1 } }
         ]);
-        console.log(`✅ Found ${enrollments.length} enrollments`);
 
-        // STEP 2: Fetch course stats
-        console.log('Step 2: Fetching course stats...');
         const courseStats = await CourseStat.find().lean();
-        console.log(`✅ Found ${courseStats.length} course stats`);
-
         const statsMap = {};
-        courseStats.forEach(stat => {
-            statsMap[stat.course_id.toString()] = stat;
-        });
+        courseStats.forEach(stat => statsMap[stat.course_id.toString()] = stat);
 
-        // STEP 3: Build payment records
-        console.log('Step 3: Building payment records...');
         const payments = enrollments.map(enrollment => {
             const courseId = enrollment.course_id?._id?.toString();
             const courseStat = courseId ? statsMap[courseId] : null;
             const amount = courseStat?.price || 0;
-
             return {
                 _id: enrollment._id,
                 date: enrollment.date_enrolled,
                 user: enrollment.student?.name || 'Unknown Student',
                 course: enrollment.course?.title || 'Unknown Course',
-                amount: amount,
+                courseId: courseId,
+                amount,
                 status: enrollment.payment_status || 'completed',
                 method: enrollment.payment_method || 'Card'
             };
         });
-        console.log(`✅ Built ${payments.length} payment records`);
 
-        // STEP 4: Compute statistics
-        console.log('Step 4: Calculating statistics...');
-        const totalRevenue = payments.reduce((sum, p) =>
-            sum + (p.status === 'completed' ? p.amount : 0), 0);
-
+        // Statistics
+        const totalRevenue = payments.reduce((sum, p) => sum + (p.status === 'completed' ? p.amount : 0), 0);
         const currentMonth = new Date().getMonth();
         const currentYear = new Date().getFullYear();
-
         const monthlyPayments = payments.filter(p => {
             if (!p.date) return false;
-            const paymentDate = new Date(p.date);
-            return paymentDate.getMonth() === currentMonth &&
-                   paymentDate.getFullYear() === currentYear;
+            const pd = new Date(p.date);
+            return pd.getMonth() === currentMonth && pd.getFullYear() === currentYear;
         });
-
-        const monthRevenue = monthlyPayments.reduce((sum, p) =>
-            sum + (p.status === 'completed' ? p.amount : 0), 0);
-
+        const monthRevenue = monthlyPayments.reduce((sum, p) => sum + (p.status === 'completed' ? p.amount : 0), 0);
         const pendingPayments = payments.filter(p => p.status === 'pending');
         const pendingAmount = pendingPayments.reduce((sum, p) => sum + p.amount, 0);
-
         const completedPayments = payments.filter(p => p.status === 'completed');
-        const completedCount = completedPayments.length;
-        const avgTransaction = completedCount > 0
-            ? Math.round(totalRevenue / completedCount)
-            : 0;
+        const avgTransaction = completedPayments.length > 0 ? Math.round(totalRevenue / completedPayments.length) : 0;
 
-        // STEP 5: Chart data (Last 7 days revenue)
-console.log('Step 5: Generating chart data...');
-const last7Days = [];
-const revenueByDay = [];
+        // Filter payments based on time range for top courses calculation
+        const now = new Date();
+        let filteredPayments = payments;
 
-for (let i = 6; i >= 0; i--) {
-    const date = new Date();
-    date.setDate(date.getDate() - i);
+        console.log('🔍 Filtering payments for range:', range);
 
-    const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD for comparison
-    last7Days.push(date.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric'
-    }));
+        if (range === 'daily') {
+            const sevenDaysAgo = new Date(now);
+            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+            sevenDaysAgo.setHours(0, 0, 0, 0);
+            
+            filteredPayments = payments.filter(p => {
+                if (!p.date || p.status !== 'completed') return false;
+                const pd = new Date(p.date);
+                return pd >= sevenDaysAgo;
+            });
+            console.log(`📊 Filtered to ${filteredPayments.length} payments from last 7 days`);
+        } else if (range === 'monthly') {
+            const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+            sixMonthsAgo.setHours(0, 0, 0, 0);
+            
+            filteredPayments = payments.filter(p => {
+                if (!p.date || p.status !== 'completed') return false;
+                const pd = new Date(p.date);
+                return pd >= sixMonthsAgo;
+            });
+            console.log(`📊 Filtered to ${filteredPayments.length} payments from last 6 months`);
+        } else if (range === 'yearly') {
+            const fiveYearsAgo = new Date(now.getFullYear() - 4, 0, 1);
+            fiveYearsAgo.setHours(0, 0, 0, 0);
+            
+            filteredPayments = payments.filter(p => {
+                if (!p.date || p.status !== 'completed') return false;
+                const pd = new Date(p.date);
+                return pd >= fiveYearsAgo;
+            });
+            console.log(`📊 Filtered to ${filteredPayments.length} payments from last 5 years`);
+        }
 
-    const dayRevenue = payments
-        .filter(p => {
-            if (!p.date) return false;
-            const paymentDate = new Date(p.date);
-            const paymentDateStr = paymentDate.toISOString().split('T')[0];
-            return paymentDateStr === dateStr && p.status === 'completed';
-        })
-        .reduce((sum, p) => sum + p.amount, 0);
+        // Calculate top 5 courses by revenue
+        const courseRevenue = {};
+        filteredPayments.forEach(p => {
+            if (p.status === 'completed' && p.courseId) {
+                if (!courseRevenue[p.courseId]) {
+                    courseRevenue[p.courseId] = {
+                        course: p.course,
+                        revenue: 0,
+                        enrollments: 0
+                    };
+                }
+                courseRevenue[p.courseId].revenue += p.amount;
+                courseRevenue[p.courseId].enrollments += 1;
+            }
+        });
 
-    revenueByDay.push(Math.round(dayRevenue));
-}
+        console.log('💰 Course revenue map:', courseRevenue);
 
+        const topCourses = Object.values(courseRevenue)
+            .sort((a, b) => b.revenue - a.revenue)
+            .slice(0, 5)
+            .map(c => ({
+                course: c.course,
+                revenue: Math.round(c.revenue),
+                enrollments: c.enrollments
+            }));
 
-        // STEP 6: Status counts
-        const completed = completedPayments.length;
-        const pending = pendingPayments.length;
-        const failed = payments.filter(p => p.status === 'failed').length;
+        console.log('🏆 Top 5 courses for range', range, ':', topCourses);
 
-        // STEP 7: Send response
-        const response = {
+        // Chart data based on range
+        let labels = [];
+        let revenueByPeriod = [];
+
+        console.log('🔍 Processing range:', range);
+        console.log('📅 Current date:', now);
+        console.log('💾 Total payments to process:', payments.length);
+
+        if (range === 'daily') {
+            console.log('📆 Generating DAILY data (last 7 days)');
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date(now);
+                date.setDate(date.getDate() - i);
+                date.setHours(0, 0, 0, 0);
+                
+                const nextDate = new Date(date);
+                nextDate.setDate(nextDate.getDate() + 1);
+                
+                const label = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                labels.push(label);
+
+                const dayRevenue = payments
+                    .filter(p => {
+                        if (!p.date || p.status !== 'completed') return false;
+                        const paymentDate = new Date(p.date);
+                        return paymentDate >= date && paymentDate < nextDate;
+                    })
+                    .reduce((sum, p) => sum + p.amount, 0);
+
+                revenueByPeriod.push(Math.round(dayRevenue));
+                console.log(`  ${label}: $${Math.round(dayRevenue)}`);
+            }
+        } else if (range === 'monthly') {
+            console.log('📆 Generating MONTHLY data (last 6 months)');
+            for (let i = 5; i >= 0; i--) {
+                const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                monthDate.setHours(0, 0, 0, 0);
+                
+                const nextMonth = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 1);
+                nextMonth.setHours(0, 0, 0, 0);
+                
+                const label = monthDate.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+                labels.push(label);
+
+                const monthRevenueValue = payments
+                    .filter(p => {
+                        if (!p.date || p.status !== 'completed') return false;
+                        const pd = new Date(p.date);
+                        return pd >= monthDate && pd < nextMonth;
+                    })
+                    .reduce((sum, p) => sum + p.amount, 0);
+
+                revenueByPeriod.push(Math.round(monthRevenueValue));
+                console.log(`  ${label}: $${Math.round(monthRevenueValue)}`);
+            }
+        } else if (range === 'yearly') {
+            console.log('📆 Generating YEARLY data (last 5 years)');
+            for (let i = 4; i >= 0; i--) {
+                const year = now.getFullYear() - i;
+                const yearStart = new Date(year, 0, 1);
+                yearStart.setHours(0, 0, 0, 0);
+                
+                const yearEnd = new Date(year + 1, 0, 1);
+                yearEnd.setHours(0, 0, 0, 0);
+                
+                labels.push(year.toString());
+
+                const yearRevenueValue = payments
+                    .filter(p => {
+                        if (!p.date || p.status !== 'completed') return false;
+                        const pd = new Date(p.date);
+                        return pd >= yearStart && pd < yearEnd;
+                    })
+                    .reduce((sum, p) => sum + p.amount, 0);
+
+                revenueByPeriod.push(Math.round(yearRevenueValue));
+                console.log(`  ${year}: $${Math.round(yearRevenueValue)}`);
+            }
+        }
+
+        console.log('✅ Final labels:', labels);
+        console.log('✅ Final revenue:', revenueByPeriod);
+
+        const responseData = {
             payments,
             stats: {
                 totalRevenue: Math.round(totalRevenue),
                 monthRevenue: Math.round(monthRevenue),
                 monthCount: monthlyPayments.filter(p => p.status === 'completed').length,
                 pendingAmount: Math.round(pendingAmount),
-                pendingCount: pending,
+                pendingCount: pendingPayments.length,
                 avgTransaction
             },
             chartData: {
-                labels: last7Days,
-                revenue: revenueByDay,
-                completed,
-                pending,
-                failed
+                labels,
+                revenue: revenueByPeriod,
+                topCourses,
+                completed: completedPayments.length,
+                pending: pendingPayments.length,
+                failed: payments.filter(p => p.status === 'failed').length
             }
         };
 
-        console.log('✅ Sending response with', payments.length, 'records');
-        res.json(response);
+        console.log('📤 Sending response with chartData:', responseData.chartData);
+        console.log('🏆 Top Courses being sent:', topCourses);
+        res.json(responseData);
 
     } catch (error) {
         console.error('❌ Payment data error:', error);
         res.status(500).json({
             error: 'Error fetching payment data: ' + error.message,
             payments: [],
-            stats: {
-                totalRevenue: 0,
-                monthRevenue: 0,
-                monthCount: 0,
-                pendingAmount: 0,
-                pendingCount: 0,
-                avgTransaction: 0
-            },
-            chartData: {
-                labels: [],
-                revenue: [],
-                completed: 0,
-                pending: 0,
-                failed: 0
-            }
+            stats: { totalRevenue: 0, monthRevenue: 0, monthCount: 0, pendingAmount: 0, pendingCount: 0, avgTransaction: 0 },
+            chartData: { labels: [], revenue: [], topCourses: [], completed: 0, pending: 0, failed: 0 }
         });
     }
 });
@@ -767,4 +957,76 @@ router.delete('/payments/:id', isAdmin, async (req, res) => {
     }
 });
 
+router.get('/requests', async (req, res) => {
+    try {
+        const requests = await contactAdmin.find()
+            .populate('instructor_id', 'name')
+            .populate('course_id', 'title')
+            .sort({ created_at: -1 })
+            .lean();
+
+        res.render('admin/requests', { requests });
+    } catch (error) {
+        console.error('Error fetching requests:', error);
+        res.status(500).send('Error loading requests');
+    }
+});
+
+// GET - Fetch requests data (for AJAX refresh)
+router.get('/requests/data', async (req, res) => {
+    try {
+        const requests = await contactAdmin.find()
+            .populate('instructor_id', 'name')
+            .populate('course_id', 'title')
+            .sort({ created_at: -1 })
+            .lean();
+
+        res.json(requests);
+    } catch (error) {
+        console.error('Error fetching requests:', error);
+        res.status(500).json({ success: false, message: 'Error fetching requests' });
+    }
+});
+
+// PUT - Update request status
+router.put('/requests/:id', async (req, res) => {
+    try {
+        const { status, priority } = req.body;
+        const updateData = {};
+
+        if (status) updateData.status = status;
+        if (priority) updateData.priority = priority;
+
+        const request = await contactAdmin.findByIdAndUpdate(
+            req.params.id,
+            updateData,
+            { new: true }
+        ).populate('instructor_id', 'name').populate('course_id', 'title');
+
+        if (!request) {
+            return res.status(404).json({ success: false, message: 'Request not found' });
+        }
+
+        res.json({ success: true, request });
+    } catch (error) {
+        console.error('Error updating request:', error);
+        res.status(500).json({ success: false, message: 'Error updating request' });
+    }
+});
+
+// DELETE - Delete request
+router.delete('/requests/:id', async (req, res) => {
+    try {
+        const request = await contactAdmin.findByIdAndDelete(req.params.id);
+
+        if (!request) {
+            return res.status(404).json({ success: false, message: 'Request not found' });
+        }
+
+        res.json({ success: true, message: 'Request deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting request:', error);
+        res.status(500).json({ success: false, message: 'Error deleting request' });
+    }
+});
 module.exports = router; 
