@@ -83,6 +83,7 @@ app.use("/api/consistency", consistencyRoutes);
 //included instructorCourseRoutes.js
 
 app.listen(port, () => {
+  const ADMIN_BASE_PATH = "/-nsstn123-admin";
   const adminLoginPath = `${ADMIN_BASE_PATH}/login`;
   console.log(`Server running on http://localhost:${port}`);
   // ✅ Added Console Output for Admin Path
