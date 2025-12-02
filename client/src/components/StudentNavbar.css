@@ -1,51 +1,78 @@
+/* --- 1. Global Variables --- */
+:root {
+    --primary-color: #8b5cf6;       /* Violet from your screenshot */
+    --primary-light: #f3f0ff;       /* Light Violet background */
+    --text-dark: #1e293b;           /* Dark text */
+    --text-medium: #64748b;         /* Grey text */
+    --danger-color: #ef4444;        /* Red for Logout */
+    --bg-glass: rgba(255, 255, 255, 0.95);
+    --shadow-soft: 0 4px 20px -2px rgba(0, 0, 0, 0.1);
+}
+
+/* --- 2. Main Navbar --- */
 .student-navbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: #ffffff;
-    padding: 0.8rem 2rem;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    background-color: var(--bg-glass);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 0.8rem 2.5rem; /* Increased side padding */
+    border-bottom: 1px solid rgba(0,0,0,0.05);
     position: sticky;
     top: 0;
     z-index: 1000;
 }
 
+/* Logo Text "Izumi Learning" */
 .navbar-brand a {
     font-size: 1.5rem;
-    font-weight: bold;
-    color: #2c3e50;
+    font-weight: 800;
+    color: var(--primary-color);
     text-decoration: none;
+    letter-spacing: -0.5px;
 }
 
+/* --- 3. Center Navigation Pills --- */
 .navbar-links {
     display: flex;
-    gap: 1.5rem;
+    gap: 0.5rem;
+    background: #fff;
+    padding: 0.3rem;
+    border-radius: 50px;
+    border: 1px solid rgba(0,0,0,0.05);
 }
 
 .navbar-links a {
     text-decoration: none;
-    color: #555;
-    font-weight: 500;
-    padding: 0.5rem 0.8rem;
-    border-radius: 4px;
-    transition: all 0.2s;
+    color: var(--text-medium);
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 0.5rem 1.2rem;
+    border-radius: 25px;
+    transition: all 0.2s ease;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 6px; /* Space between icon and text */
 }
 
 .navbar-links a:hover {
-    background-color: #f3f0ff;
-    color: #8b5cf6;
+    color: var(--primary-color);
+    background-color: rgba(139, 92, 246, 0.05);
 }
 
+/* The Active "Courses" Tab style */
 .navbar-links a.active {
-    color: #8b5cf6;
-    background-color: #f3f0ff;
+    color: #fff; /* White text looks better on dark purple */
+    background-color: var(--primary-color);
+    box-shadow: 0 2px 4px rgba(139, 92, 246, 0.3);
 }
 
+/* --- 4. User Profile Section --- */
 .navbar-user {
     position: relative;
+    /* Ensure z-index is high so dropdown floats over page content */
+    z-index: 1002; 
 }
 
 .user-dropdown {
@@ -53,74 +80,93 @@
     display: inline-block;
 }
 
+
 .dropbtn {
-    background-color: transparent;
-    color: #333;
-    padding: 0.5rem 1rem;
-    font-size: 1rem;
-    border: 1px solid #ddd;
-    border-radius: 20px;
+    background-color: #fff;
+    color: var(--text-dark);
+    padding: 0.5rem 1.2rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    border: 1px solid #e2e8f0;
+    border-radius: 30px;
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    transition: background-color 0.2s;
+    gap: 0.8rem;
+    transition: all 0.2s;
 }
 
 .dropbtn:hover {
-    background-color: #f9f9f9;
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
+/* --- 5. The Dropdown Menu (Fixed) --- */
 .dropdown-content {
-    display: none;
     position: absolute;
-    right: 0;
+    right: 0; /* Aligns to right edge of button */
+    top: 120%; /* Pushes it down slightly */
     background-color: #fff;
-    min-width: 160px;
-    box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-    border-radius: 8px;
-    z-index: 1;
-    overflow: hidden;
-    margin-top: 5px;
+    min-width: 220px;
+    box-shadow: var(--shadow-soft);
+    border: 1px solid rgba(0,0,0,0.05);
+    border-radius: 16px;
+    padding: 8px;
+    
+    /* Animation States */
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: all 0.2s ease;
 }
 
-.dropdown-content a, 
+/* The Invisible Bridge (Keeps menu open) */
+.dropdown-content::before {
+    content: "";
+    position: absolute;
+    top: -20px;
+    left: 0;
+    width: 100%;
+    height: 20px;
+}
+
+/* Hover Trigger */
+.user-dropdown:hover .dropdown-content {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+/* --- 6. Dropdown Items (Removing the Black Box) --- */
+.dropdown-content a,
 .dropdown-content button {
-    color: #333;
-    padding: 12px 16px;
-    text-decoration: none;
     display: block;
     width: 100%;
+    padding: 10px 16px;
     text-align: left;
-    border: none;
-    background: none;
+    background: transparent; /* Removes grey background */
+    border: none;            /* REMOVES THE BLACK BORDER */
+    outline: none;           /* REMOVES FOCUS OUTLINE */
     cursor: pointer;
-    font-size: 0.95rem;
-}
-
-.dropdown-content a:hover, 
-.dropdown-content button:hover {
-    background-color: #f1f1f1;
-}
-
-.user-dropdown:hover .dropdown-content {
-    display: block;
-}
-
-@media (max-width: 768px) {
-    .student-navbar {
-        flex-direction: column;
-        padding: 1rem;
-        gap: 1rem;
-    }
-
-    .navbar-links {
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 0.5rem;
-    }
     
-    .navbar-links a {
-        font-size: 0.9rem;
-    }
+    color: var(--text-dark);
+    font-size: 0.9rem;
+    font-weight: 500;
+    border-radius: 8px;
+    text-decoration: none;
+    font-family: inherit;    /* Fixes font mismatch */
+    transition: background 0.2s;
+}
+
+.dropdown-content a:hover,
+.dropdown-content button:hover {
+    background-color: var(--primary-light);
+    color: var(--primary-color);
+}
+
+/* Specific Style for Logout if you want it red on hover */
+.dropdown-content button:hover {
+    background-color: #fef2f2;
+    color: var(--danger-color);
 }

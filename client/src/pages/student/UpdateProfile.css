@@ -1,123 +1,221 @@
+/* --- Variables (Consistent with your Navbar) --- */
+:root {
+    --primary-color: #8b5cf6;
+    --primary-hover: #7c3aed;
+    --primary-light: #f5f3ff;
+    --text-dark: #1e293b;
+    --text-medium: #64748b;
+    --border-color: #e2e8f0;
+    --input-bg: #f8fafc;
+    --danger: #ef4444;
+    --success-bg: #dcfce7;
+    --success-text: #166534;
+    --error-bg: #fee2e2;
+    --error-text: #991b1b;
+}
+
+/* --- Page Container --- */
 .update-profile-container {
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+    /* Soft violet gradient background */
+    background: linear-gradient(135deg, #f3f0ff 0%, #e0e7ff 100%);
     font-family: 'Poppins', sans-serif;
-    padding: 40px 20px;
+    padding: 20px;
 }
 
+/* --- The Main Card --- */
 .profile-card {
     background: white;
-    padding: 40px;
-    border-radius: 16px;
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+    padding: 40px 48px;
+    border-radius: 24px;
+    /* Deep, soft shadow for "floating" effect */
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1), 0 10px 15px -3px rgba(0, 0, 0, 0.04);
     width: 100%;
-    max-width: 500px;
+    max-width: 550px;
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+/* --- Header Section --- */
+.profile-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .profile-card h2 {
-    color: #333;
-    margin-bottom: 25px;
-    text-align: center;
+    color: var(--text-dark);
+    margin: 0;
+    font-weight: 700;
+    font-size: 1.5rem;
 }
 
+.back-link {
+    font-size: 0.85rem;
+    color: var(--text-medium);
+    text-decoration: none;
+    font-weight: 500;
+    padding: 6px 12px;
+    border-radius: 20px;
+    background-color: var(--input-bg);
+    transition: all 0.2s;
+}
+
+.back-link:hover {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+/* --- Form Inputs --- */
 .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 24px;
 }
 
 .form-group label {
     display: block;
     margin-bottom: 8px;
-    color: #666;
-    font-weight: 500;
+    color: var(--text-dark);
+    font-weight: 600;
+    font-size: 0.9rem;
 }
 
 .form-group input,
 .form-group textarea {
     width: 100%;
-    padding: 12px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    transition: all 0.3s ease;
+    padding: 12px 16px;
+    background-color: var(--input-bg); /* Light grey background */
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
     font-family: inherit;
+    font-size: 0.95rem;
+    color: var(--text-dark);
+    transition: all 0.2s ease;
 }
 
+/* The "Glow" Effect */
 .form-group input:focus,
 .form-group textarea:focus {
-    border-color: #8b5cf6;
+    background-color: #fff;
+    border-color: var(--primary-color);
     outline: none;
-    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+    box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.1); /* Violet glow ring */
 }
 
+.form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+/* --- Submit Button --- */
 .update-btn {
     width: 100%;
-    padding: 12px;
-    background: #8b5cf6;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
     color: white;
     border: none;
-    border-radius: 8px;
+    border-radius: 12px;
     font-weight: 600;
+    font-size: 1rem;
     cursor: pointer;
-    transition: background 0.3s ease;
+    transition: all 0.3s ease;
     margin-top: 10px;
+    box-shadow: 0 4px 6px -1px rgba(139, 92, 246, 0.2);
 }
 
 .update-btn:hover {
-    background: #7c3aed;
+    transform: translateY(-2px); /* Slight lift */
+    box-shadow: 0 10px 15px -3px rgba(139, 92, 246, 0.3);
 }
 
+/* --- Alerts / Messages --- */
 .message {
-    padding: 10px;
-    border-radius: 8px;
-    margin-bottom: 20px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    margin-bottom: 24px;
     text-align: center;
     font-size: 0.9rem;
+    font-weight: 500;
 }
 
 .message.success {
-    background: #e6fffa;
-    color: #00e676;
-    border: 1px solid #00e676;
+    background-color: var(--success-bg);
+    color: var(--success-text);
+    border: 1px solid #bbf7d0;
 }
 
 .message.error {
-    background: #ffebee;
-    color: #ff1744;
-    border: 1px solid #ff1744;
+    background-color: var(--error-bg);
+    color: var(--error-text);
+    border: 1px solid #fecaca;
 }
 
+/* --- Footer Actions --- */
 .profile-actions {
-    margin-top: 30px;
+    margin-top: 32px;
     display: flex;
     justify-content: space-between;
-    border-top: 1px solid #eee;
+    align-items: center;
     padding-top: 20px;
+    border-top: 1px solid var(--border-color);
 }
 
 .action-link {
-    color: #666;
+    color: var(--text-medium);
     text-decoration: none;
     font-size: 0.9rem;
-    transition: color 0.3s;
+    font-weight: 500;
+    transition: color 0.2s;
+    padding: 8px 12px;
+    border-radius: 8px;
 }
 
 .action-link:hover {
-    color: #8A2BE2;
+    color: var(--primary-color);
+    background-color: var(--primary-light);
 }
 
 .action-link.delete {
-    color: #ff1744;
+    color: var(--danger);
 }
 
 .action-link.delete:hover {
-    color: #d50000;
-    text-decoration: underline;
+    background-color: #fef2f2;
+    color: #dc2626;
+    text-decoration: none;
 }
 
+/* --- Loading State --- */
 .loading {
-    text-align: center;
-    padding: 50px;
-    color: #666;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    font-family: 'Poppins', sans-serif;
+    color: var(--primary-color);
+    font-weight: 600;
+    background: #f8fafc;
+}
+
+/* --- Mobile Responsiveness --- */
+@media (max-width: 600px) {
+    .profile-card {
+        padding: 30px 20px;
+    }
+    
+    .profile-header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+    
+    .profile-actions {
+        flex-direction: column;
+        gap: 15px;
+    }
 }

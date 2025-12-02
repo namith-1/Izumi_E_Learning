@@ -55,7 +55,7 @@ const UpdateProfile = () => {
             <div className="profile-card">
                 <div className="profile-header">
                     <h2>Update Profile</h2>
-                    <Link to="/student/dashboard" className="back-link">Back to Dashboard</Link>
+                    <Link to="/student/dashboard" className="back-link">← Dashboard</Link>
                 </div>
                 
                 {message.text && (
