@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaderboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #8A2BE2;
+            --secondary: #e0b0ff;
+            --accent: #FFD700;
+            --bg-dark: #1a1a2e;
+            --bg-card: #16213e;
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
+            --gold: #FFD700;
+            --silver: #C0C0C0;
+            --bronze: #CD7F32;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, var(--bg-dark) 0%, #0f3460 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 48px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent), var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 18px;
+        }
+
+        .back-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        /* Top 3 Podium */
+        .podium {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 40px;
+            align-items: end;
+        }
+
+        .podium-place {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .podium-place:hover {
+            transform: translateY(-8px);
+        }
+
+        .podium-place.first {
+            order: 2;
+            border: 3px solid var(--gold);
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), var(--bg-card));
+        }
+
+        .podium-place.second {
+            order: 1;
+            border: 3px solid var(--silver);
+        }
+
+        .podium-place.third {
+            order: 3;
+            border: 3px solid var(--bronze);
+        }
+
+        .rank-badge {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            margin: 0 auto 16px;
+            font-weight: 800;
+        }
+
+        .first .rank-badge {
+            background: var(--gold);
+            color: var(--bg-dark);
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+        }
+
+        .second .rank-badge {
+            background: var(--silver);
+            color: var(--bg-dark);
+        }
+
+        .third .rank-badge {
+            background: var(--bronze);
+            color: var(--bg-dark);
+        }
+
+        .podium-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            font-weight: 700;
+            margin: 0 auto 16px;
+        }
+
+        .first .podium-avatar {
+            width: 120px;
+            height: 120px;
+            border: 4px solid var(--gold);
+        }
+
+        .podium-name {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .podium-stats {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* Leaderboard Table */
+        .leaderboard-table {
+            background: var(--bg-card);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .table-header {
+            background: var(--primary);
+            padding: 16px 24px;
+            display: grid;
+            grid-template-columns: 80px 1fr 150px 150px 120px;
+            font-weight: 700;
+        }
+
+        .leaderboard-row {
+            padding: 16px 24px;
+            display: grid;
+            grid-template-columns: 80px 1fr 150px 150px 120px;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s;
+        }
+
+        .leaderboard-row:hover {
+            background: rgba(138, 43, 226, 0.1);
+        }
+
+        .leaderboard-row.current-user {
+            background: rgba(255, 215, 0, 0.15);
+            border: 2px solid var(--accent);
+        }
+
+        .rank {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-secondary);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+
+        .user-name {
+            font-weight: 600;
+        }
+
+        .level-badge {
+            background: var(--accent);
+            color: var(--bg-dark);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .credits-amount {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px;
+            color: var(--text-secondary);
+        }
+
+        /* My Rank Card */
+        .my-rank-card {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .my-rank-card h3 {
+            margin-bottom: 12px;
+        }
+
+        .my-rank-value {
+            font-size: 48px;
+            font-weight: 800;
+            margin: 8px 0;
+        }
+
+        @media (max-width: 768px) {
+            .podium {
+                grid-template-columns: 1fr;
+            }
+
+            .podium-place {
+                order: initial !important;
+            }
+
+            .table-header,
+            .leaderboard-row {
+                grid-template-columns: 60px 1fr 100px;
+                font-size: 14px;
+            }
+
+            .table-header > *:nth-child(4),
+            .table-header > *:nth-child(5),
+            .leaderboard-row > *:nth-child(4),
+            .leaderboard-row > *:nth-child(5) {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="/home" class="back-btn">← Back to Home</a>
+            <h1>🏆 Leaderboard</h1>
+            <p>Top learners competing for glory</p>
+        </div>
+
+        <div id="myRankCard" style="display: none;" class="my-rank-card">
+            <h3>Your Rank</h3>
+            <div class="my-rank-value">#<span id="myRankValue">-</span></div>
+            <p>Keep learning to climb higher!</p>
+        </div>
+
+        <div id="podiumContainer" style="display: none;" class="podium"></div>
+
+        <div class="leaderboard-table">
+            <div class="table-header">
+                <div>Rank</div>
+                <div>Student</div>
+                <div>Level</div>
+                <div>Total Credits</div>
+                <div>Lifetime</div>
+            </div>
+            <div id="leaderboardBody" class="loading">Loading leaderboard...</div>
+        </div>
+    </div>
+
+    <script>
+        let currentUserId = null;
+
+        async function init() {
+            await loadUserInfo();
+            await loadLeaderboard();
+        }
+
+        async function loadUserInfo() {
+            try {
+                const response = await fetch('/load_user_info');
+                const user = await response.json();
+                currentUserId = user._id;
+            } catch (error) {
+                console.error('Error loading user info:', error);
+            }
+        }
+
+        async function loadLeaderboard() {
+            try {
+                const response = await fetch('/api/leaderboard?limit=100');
+                const data = await response.json();
+                
+                if (data.myRank) {
+                    document.getElementById('myRankCard').style.display = 'block';
+                    document.getElementById('myRankValue').textContent = data.myRank;
+                }
+
+                renderPodium(data.leaderboard.slice(0, 3));
+                renderLeaderboard(data.leaderboard);
+            } catch (error) {
+                console.error('Error loading leaderboard:', error);
+                document.getElementById('leaderboardBody').innerHTML = 
+                    '<div class="loading">Error loading leaderboard</div>';
+            }
+        }
+
+        function renderPodium(topThree) {
+            const podium = document.getElementById('podiumContainer');
+            
+            if (topThree.length === 0) {
+                podium.style.display = 'none';
+                return;
+            }
+
+            podium.style.display = 'grid';
+            podium.innerHTML = topThree.map((student, index) => {
+                const place = ['first', 'second', 'third'][index];
+                const medal = ['🥇', '🥈', '🥉'][index];
+                const rank = index + 1;
+                
+                return `
+                    <div class="podium-place ${place}">
+                        <div class="rank-badge">${medal}</div>
+                        <div class="podium-avatar">
+                            ${student.student_id?.name?.charAt(0).toUpperCase() || '?'}
+                        </div>
+                        <div class="podium-name">${student.student_id?.name || 'Unknown'}</div>
+                        <div class="podium-stats">
+                            <div class="stat">
+                                <div class="stat-value">${student.level}</div>
+                                <div class="stat-label">Level</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">${student.lifetime_credits.toLocaleString()}</div>
+                                <div class="stat-label">Credits</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderLeaderboard(leaderboard) {
+            const container = document.getElementById('leaderboardBody');
+            
+            if (leaderboard.length === 0) {
+                container.innerHTML = '<div class="loading">No students yet</div>';
+                return;
+            }
+
+            container.innerHTML = leaderboard.map((student, index) => {
+                const rank = index + 1;
+                const isCurrentUser = student.student_id?._id === currentUserId;
+                
+                return `
+                    <div class="leaderboard-row ${isCurrentUser ? 'current-user' : ''}">
+                        <div class="rank">#${rank}</div>
+                        <div class="user-info">
+                            <div class="user-avatar">
+                                ${student.student_id?.name?.charAt(0).toUpperCase() || '?'}
+                            </div>
+                            <div class="user-name">
+                                ${student.student_id?.name || 'Unknown Student'}
+                                ${isCurrentUser ? ' (You)' : ''}
+                            </div>
+                        </div>
+                        <div>
+                            <span class="level-badge">Level ${student.level}</span>
+                        </div>
+                        <div class="credits-amount">
+                            💎 ${student.total_credits.toLocaleString()}
+                        </div>
+                        <div style="color: var(--text-secondary);">
+                            ${student.lifetime_credits.toLocaleString()}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        init();
+    </script>
+</body>
+</html>
