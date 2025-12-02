@@ -27,6 +27,8 @@ router.put('/payments/:id/status', adminController.updatePaymentStatus);
 
 // Requests
 router.get('/requests/data', adminController.getRequests);
+router.put('/requests/:id', adminController.updateRequest);
+router.delete('/requests/:id', adminController.deleteRequest);
 
 // Content
 router.get('/content/data', adminController.getContent);

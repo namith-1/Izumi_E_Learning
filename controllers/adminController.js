@@ -329,12 +329,93 @@ exports.updatePaymentStatus = async (req, res) => {
   }
 };
 
-// Requests (Mock implementation)
+// Requests
 exports.getRequests = async (req, res) => {
   try {
-    res.json([]);
+    console.log('[AdminController] getRequests called by', req.ip, 'path:', req.path, 'session.admin:', req.session && req.session.admin);
+    const ContactAdmin = require('../models/instructor/contactModel');
+
+    const docs = await ContactAdmin.find()
+      .populate('instructor_id', 'name email')
+      .populate('course_id', 'title')
+      .sort({ created_at: -1 })
+      .lean();
+
+    console.log('[AdminController] found', docs.length, 'contact requests');
+
+    const requests = docs.map(d => ({
+      _id: d._id,
+      user: d.instructor_id ? d.instructor_id.name : 'Unknown',
+      message: d.message,
+      priority: d.priority || 'low',
+      status: (d.status || '').toLowerCase(),
+      date: d.created_at,
+      course: d.course_id ? d.course_id.title : null,
+      notes: d.notes || ''
+    }));
+
+    res.json(requests);
   } catch (error) {
+    console.error('Error fetching requests:', error);
     res.status(500).json({ message: 'Error fetching requests' });
+  }
+};
+
+// Update a request (status/notes)
+exports.updateRequest = async (req, res) => {
+  try {
+    const ContactAdmin = require('../models/instructor/contactModel');
+    const { id } = req.params;
+    const { status, notes } = req.body;
+
+    if (!id) return res.status(400).json({ message: 'Missing request id' });
+
+    // Map incoming lowercase status to stored enum capitalization
+    const statusMap = {
+      pending: 'Pending',
+      approved: 'Approved',
+      rejected: 'Rejected'
+    };
+
+    const newStatus = statusMap[(status || '').toLowerCase()] || undefined;
+
+    const update = { updated_at: new Date() };
+    if (newStatus) update.status = newStatus;
+    if (typeof notes === 'string') update.notes = notes;
+
+    const updated = await ContactAdmin.findByIdAndUpdate(id, update, { new: true }).lean();
+    if (!updated) return res.status(404).json({ message: 'Request not found' });
+
+    res.json({ message: 'Request updated', request: {
+      _id: updated._id,
+      user: updated.instructor_id,
+      message: updated.message,
+      priority: updated.priority,
+      status: (updated.status || '').toLowerCase(),
+      date: updated.created_at,
+      course: updated.course_id,
+      notes: updated.notes || ''
+    }});
+  } catch (error) {
+    console.error('Error updating request:', error);
+    res.status(500).json({ message: 'Error updating request' });
+  }
+};
+
+// Delete a request
+exports.deleteRequest = async (req, res) => {
+  try {
+    const ContactAdmin = require('../models/instructor/contactModel');
+    const { id } = req.params;
+    if (!id) return res.status(400).json({ message: 'Missing request id' });
+
+    const deleted = await ContactAdmin.findByIdAndDelete(id);
+    if (!deleted) return res.status(404).json({ message: 'Request not found' });
+
+    res.json({ message: 'Request deleted' });
+  } catch (error) {
+    console.error('Error deleting request:', error);
+    res.status(500).json({ message: 'Error deleting request' });
   }
 };
 

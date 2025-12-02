@@ -8,15 +8,34 @@ exports.sendMessage = async (req, res) => {
         const instructorId = req.session.instructor; // from session
         if (!instructorId) return res.status(401).json({ error: "Not logged in" });
 
-        if (!message || !priority) return res.status(400).json({ error: "Message and priority are required" });
+        if (!message) return res.status(400).json({ error: "Message is required" });
+
+        // Normalize priority values from the frontend to the stored enum.
+        // Frontend uses: Low, Normal, High, Urgent
+        // DB enum expects: low, medium, high, critical
+        const priorityMap = {
+            low: 'low',
+            Low: 'low',
+            normal: 'medium',
+            Normal: 'medium',
+            medium: 'medium',
+            high: 'high',
+            High: 'high',
+            urgent: 'critical',
+            Urgent: 'critical',
+            critical: 'critical',
+            Critical: 'critical'
+        };
+
+        const mappedPriority = priorityMap[priority] || 'low';
 
         const token = nanoid(8); // 8-character token
 
         const newMessage = await ContactAdmin.create({
             instructor_id: instructorId,
             course_id: courseId || null, // null = general
-            message,
-            priority,
+            message: message.trim(),
+            priority: mappedPriority,
             token_number: token,
             status: "Pending"
         });

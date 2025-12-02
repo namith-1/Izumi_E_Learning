@@ -150,7 +150,6 @@ const AdminPayments = () => {
             </div>
           </div>
 
-          {/* Top Courses */}
           {topCourses.length > 0 && (
             <div className="card mb-4">
               <div className="card-header">

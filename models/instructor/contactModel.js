@@ -7,7 +7,9 @@ const contactAdminSchema = new mongoose.Schema({
     priority: { type: String, enum: ["low", "medium", "high", "critical"], default: "low" },
     token_number: { type: String, required: true }, // unique token identifier
     status: { type: String, enum: ["Pending", "Approved", "Rejected"], default: "Pending" },
-    created_at: { type: Date, default: Date.now }
+    notes: { type: String, default: '' },
+    created_at: { type: Date, default: Date.now },
+    updated_at: { type: Date }
 });
 
 module.exports = mongoose.model("ContactAdmin", contactAdminSchema);

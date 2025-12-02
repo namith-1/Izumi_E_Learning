@@ -34,7 +34,10 @@ const AdminRequests = () => {
   const refreshRequestsTable = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/admin/requests/data');
+      const response = await fetch('/admin/requests/data', { credentials: 'include' });
+      if (!response.ok) {
+        throw new Error(`Server responded ${response.status}`);
+      }
       const data = await response.json();
       setRequests(data);
       updateStatistics(data);
@@ -94,6 +97,7 @@ const AdminRequests = () => {
     try {
       const response = await fetch(`/admin/requests/${selectedRequest._id}`, {
         method: 'PUT',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           status: updateStatus,
@@ -119,6 +123,7 @@ const AdminRequests = () => {
       const newStatus = action === 'approve' ? 'approved' : 'rejected';
       const response = await fetch(`/admin/requests/${requestId}`, {
         method: 'PUT',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })
       });
@@ -140,7 +145,8 @@ const AdminRequests = () => {
 
     try {
       const response = await fetch(`/admin/requests/${requestId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        credentials: 'include'
       });
 
       if (response.ok) {

@@ -1,5 +1,5 @@
-const path = require('path');
-const fs = require('fs');
+var path = require('path');
+var fs = require('fs');
 
 // Helper function to send client build or serve a view
 const sendClientOrRedirect = (res, fallbackRoute) => {
