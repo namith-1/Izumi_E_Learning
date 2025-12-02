@@ -1,51 +1,8 @@
-const express = require("express");
-const bodyParser = require("body-parser");
-const session = require("express-session");
-const sqlite3 = require("sqlite3").verbose();
-const bcrypt = require("bcrypt");
-const path = require("path");
-const cors = require("cors");
-
-require("dotenv").config();
-
-const app = express();
-const port = process.env.PORT || 4000;
-
-app.set("view engine", "ejs");
-app.set("views", path.join(__dirname, "views"));
-
-app.use(cors());
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
-// Serve root-level static files
-app.use(express.static(path.join(__dirname)));
-// Also expose the updateStudent views directory so callers can request
-// /updateStudent/restore.html directly (some pages/linking expect direct file access).
-app.use(
-  "/updateStudent",
-  express.static(path.join(__dirname, "views", "updateStudent"))
-);
-app.use(
-  session({
-    secret:
-      process.env.SESSION_SECRET ||
-      "change-this-in-production-secure-key-123456789",
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: false, // Set to true in production with HTTPS
-      httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    },
-  })
-);
-
-const db = require(__dirname + "/required/db");
 // Add these routes to your main routes file (e.g., app.js or routes/index.js)
 
-// const express = require('express');
+const express = require('express');
 const router = express.Router();
-const CreditsController = require("./controllers/creditsController");
+const CreditsController = require('./controllers/creditsController');
 
 // ════════════════════════════════════════════════════════════════
 // 💰 CREDITS & STORE ROUTES
@@ -54,46 +11,43 @@ const CreditsController = require("./controllers/creditsController");
 // ──────────────────────────────────
 // 📄 Page Routes
 // ──────────────────────────────────
-router.get("/store", CreditsController.getStorePage);
-router.get("/customize-profile", CreditsController.getProfileCustomizationPage);
-router.get("/leaderboard", CreditsController.getLeaderboardPage);
+router.get('/store', CreditsController.getStorePage);
+router.get('/customize-profile', CreditsController.getProfileCustomizationPage);
+router.get('/leaderboard', CreditsController.getLeaderboardPage);
 
 // ──────────────────────────────────
 // 💰 Credits API Routes
 // ──────────────────────────────────
-router.get("/api/credits", CreditsController.getCredits);
-router.get("/api/credits/history", CreditsController.getTransactionHistory);
+router.get('/api/credits', CreditsController.getCredits);
+router.get('/api/credits/history', CreditsController.getTransactionHistory);
 
 // ──────────────────────────────────
 // 🏪 Store API Routes
 // ──────────────────────────────────
-router.get("/api/store/items", CreditsController.getStoreItems);
-router.post("/api/store/purchase", CreditsController.purchaseItem);
-router.get("/api/store/inventory", CreditsController.getInventory);
+router.get('/api/store/items', CreditsController.getStoreItems);
+router.post('/api/store/purchase', CreditsController.purchaseItem);
+router.get('/api/store/inventory', CreditsController.getInventory);
 
 // ──────────────────────────────────
 // 👤 Profile Customization API Routes
 // ──────────────────────────────────
-router.get(
-  "/api/profile/customization",
-  CreditsController.getProfileCustomization
-);
-router.post("/api/profile/equip", CreditsController.equipItem);
-router.post("/api/profile/unequip", CreditsController.unequipItem);
-router.put("/api/profile/update", CreditsController.updateProfile);
+router.get('/api/profile/customization', CreditsController.getProfileCustomization);
+router.post('/api/profile/equip', CreditsController.equipItem);
+router.post('/api/profile/unequip', CreditsController.unequipItem);
+router.put('/api/profile/update', CreditsController.updateProfile);
 
 // ──────────────────────────────────
 // 🏆 Leaderboard API Routes
 // ──────────────────────────────────
-router.get("/api/leaderboard", CreditsController.getLeaderboard);
+router.get('/api/leaderboard', CreditsController.getLeaderboard);
 
 // ──────────────────────────────────
 // 🎓 Admin/Instructor Routes
 // ──────────────────────────────────
-router.post("/api/admin/award-credits", CreditsController.awardCreditsManually);
+router.post('/api/admin/award-credits', CreditsController.awardCreditsManually);
 
-// Mount credits/store routes on the app so `/store` and `/api/credits` are reachable
-app.use("/", router);
+module.exports = router;
+
 
 // ════════════════════════════════════════════════════════════════
 // 📝 INTEGRATION NOTES
@@ -233,50 +187,3 @@ g) Visit /leaderboard → See your rank
 - Daily quests
 - Streak bonuses
 */
-const authRoutes = require("./routes/authRoutes");
-const instructorRoutes = require("./routes/instructorRoutes");
-const updateStudentRoutes = require("./routes/updateStudentRoutes");
-const studentCourseRoutes = require("./routes/studentCourseRoutes");
-const CourseView = require("./routes/courseRoutes");
-const Comments = require("./routes/comments");
-const qna = require("./routes/questions.js");
-const gamifyRoutes = require("./routes/gamifyRoutes");
-const instructorCourseRoutes = require("./routes/instructorCourseRoutes");
-const adminRoutes = require("./routes/adminRoutes");
-const commonInstructor = require("./routes/instructor/commonRoutes.js");
-const magazineController = require("./controllers/magazineController");
-const courseInfoInstructor = require("./routes/instructor/courseInfoRoutes");
-const contactAdminRoutes = require("./routes/instructor/contactRoutes.js");
-const goalRoutes = require("./routes/goalRoutes");
-const consistencyRoutes = require("./routes/consistencyRoutes");
-
-app.get("/magazines", magazineController.index);
-
-app.use("/", authRoutes); // post(login,signup) , get(/,home,login,signup)
-app.use("/", instructorRoutes); // All instructor routes
-app.use("/", updateStudentRoutes); // No change in URLs, handled as-is
-app.use("/", studentCourseRoutes);
-app.use("/", CourseView);
-app.use("/coms", Comments);
-app.use("/", qna); // All question routes
-app.use("/", gamifyRoutes);
-app.use("/", instructorCourseRoutes);
-app.use("/-nsstn123-admin", adminRoutes); // Admin routes
-app.use("/api", commonInstructor);
-app.use("/", courseInfoInstructor);
-app.use("/contact-admin", contactAdminRoutes);
-// Goals API
-app.use("/api/goals", goalRoutes);
-// Consistency API (student consistency calendar dates)
-app.use("/api/consistency", consistencyRoutes);
-// Load course and modules
-//course/id gets the course and modules as json to build the tree for both view_course and coure_edit
-//included instructorCourseRoutes.js
-
-app.listen(port, () => {
-  const ADMIN_BASE_PATH = "/-nsstn123-admin";
-  const adminLoginPath = `${ADMIN_BASE_PATH}/login`;
-  console.log(`Server running on http://localhost:${port}`);
-  // ✅ Added Console Output for Admin Path
-  console.log(`🔑 Admin Login Path: http://localhost:${port}${adminLoginPath}`);
-});

@@ -1018,12 +1018,44 @@
                     body: JSON.stringify(payload),
                   });
 
+                  let json = {};
+                  try {
+                    json = await res.json();
+                  } catch (e) {
+                    /* ignore parse error */
+                  }
+
+                  // Show client-side toast/progress for awarded credits
+                  const awarded =
+                    json && (json.creditsAwarded || json.creditsAwarded === 0)
+                      ? json.creditsAwarded
+                      : null;
+                  if (awarded !== null) {
+                    showToast(`+${awarded} credits awarded!`, false);
+                    // update global credits widget if present
+                    try {
+                      updateGlobalCredits();
+                    } catch (e) {
+                      /* ignore */
+                    }
+                  } else {
+                    showToast("Module completed!", false);
+                  }
+
                   markModuleComplete(module.id, module.title);
-                  window.location.replace("/module_complete_page");
+                  // small delay to allow toast to show before redirecting
+                  setTimeout(
+                    () => window.location.replace("/module_complete_page"),
+                    900
+                  );
                 } catch (e) {
                   console.warn("module completion request error", e);
                   markModuleComplete(module.id, module.title);
-                  window.location.replace("/module_complete_page");
+                  showToast("Module completed (offline).", false);
+                  setTimeout(
+                    () => window.location.replace("/module_complete_page"),
+                    900
+                  );
                 }
               };
             };
@@ -1096,6 +1128,73 @@
             displayComments([]);
           }
         }
+
+        // -------------------------
+        // Global credits widget + toast helper
+        // -------------------------
+        function ensureGlobalCreditsWidget() {
+          if (document.getElementById("globalCreditsWidget")) return;
+          const w = document.createElement("div");
+          w.id = "globalCreditsWidget";
+          w.style.position = "fixed";
+          w.style.top = "16px";
+          w.style.right = "16px";
+          w.style.background = "linear-gradient(135deg,#8A2BE2,#e0b0ff)";
+          w.style.color = "#fff";
+          w.style.padding = "8px 12px";
+          w.style.borderRadius = "10px";
+          w.style.boxShadow = "0 6px 18px rgba(0,0,0,0.2)";
+          w.style.zIndex = 2000;
+          w.style.fontWeight = "700";
+          w.innerHTML = `<div style="font-size:12px;opacity:0.9">Credits</div><div id="globalCreditAmount" style="font-size:16px">0</div>`;
+          document.body.appendChild(w);
+        }
+
+        async function updateGlobalCredits() {
+          try {
+            const r = await fetch("/api/credits");
+            if (!r.ok) return;
+            const d = await r.json();
+            ensureGlobalCreditsWidget();
+            const el = document.getElementById("globalCreditAmount");
+            if (el) el.textContent = (d.total_credits || 0).toString();
+          } catch (e) {
+            // ignore
+          }
+        }
+
+        function showToast(message, isError = false) {
+          const id = "courseToast";
+          let t = document.getElementById(id);
+          if (!t) {
+            t = document.createElement("div");
+            t.id = id;
+            t.style.position = "fixed";
+            t.style.bottom = "24px";
+            t.style.right = "24px";
+            t.style.padding = "12px 18px";
+            t.style.borderRadius = "10px";
+            t.style.boxShadow = "0 8px 24px rgba(0,0,0,0.2)";
+            t.style.color = "#fff";
+            t.style.zIndex = 3000;
+            document.body.appendChild(t);
+          }
+          t.style.background = isError
+            ? "#ff4d4f"
+            : "linear-gradient(90deg,#00c853,#00e676)";
+          t.textContent = message;
+          t.style.transform = "translateY(0)";
+          t.style.transition = "transform 0.3s ease, opacity 0.3s ease";
+          t.style.opacity = "1";
+          setTimeout(() => {
+            t.style.opacity = "0";
+            t.style.transform = "translateY(20px)";
+          }, 2200);
+        }
+
+        // Initialize global widget on page load
+        ensureGlobalCreditsWidget();
+        updateGlobalCredits();
 
         function displayComments(comments) {
           commentsContainer.innerHTML = "";

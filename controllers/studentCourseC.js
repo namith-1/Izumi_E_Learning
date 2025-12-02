@@ -1,27 +1,22 @@
-const StudentCourse = require("../models/studentModel"); // Import the Mongoose model
-const Course = require("../models/courseModel"); // Use the Mongoose model
-
+const StudentCourse = require("../models/studentModel");
+const Course = require("../models/courseModel");
+const CreditsModel = require("../models/creditsModel");
 const mongoose = require("mongoose");
-
 const { CourseStat } = require("../required/db");
 
 exports.checkEnrollment = async (req, res) => {
   if (!req.session.student) return res.redirect("/");
 
-  // Accept params from either query (/?courseId=...) or path (/is_enrolled/:studentId/:courseId)
   const courseId = req.query.courseId || req.params.courseId;
-  // Prefer session student when available, else allow path param for API calls from the client
   const studentId = req.session.student || req.params.studentId;
 
   if (!courseId) return res.status(400).send("Missing course ID.");
-  // Validate courseId early to avoid passing invalid IDs to Mongoose
   if (!mongoose.Types.ObjectId.isValid(courseId)) {
     return res.status(400).send("Invalid Course ID.");
   }
 
   try {
     const enrolled = await StudentCourse.isEnrolled(studentId, courseId);
-    // If request came from an AJAX fetch (path-style with explicit studentId), return JSON
     if (req.params.studentId || req.xhr) {
       return res.json({ enrolled, courseId });
     }
@@ -49,17 +44,14 @@ exports.enrollStudent = async (req, res) => {
       .json({ message: "Student ID and Course ID are required" });
   }
 
-  // Validate courseId before attempting to enroll
   if (!mongoose.Types.ObjectId.isValid(courseId)) {
     return res.status(400).json({ message: "Invalid Course ID." });
   }
 
   try {
-    // If already enrolled, redirect to course view instead of enrolling again
     const alreadyEnrolled = await StudentCourse.isEnrolled(studentId, courseId);
     if (alreadyEnrolled) {
       const redirectUrl = `/view_course?courseID=${courseId}&studentID=${studentId}`;
-      // Replace current history entry (enroll URL) with course view so Back won't return to enroll URL
       return res.send(
         `<!doctype html><html><head><meta charset="utf-8"><title>Redirecting...</title></head><body><script>window.location.replace(${JSON.stringify(
           redirectUrl
@@ -67,11 +59,22 @@ exports.enrollStudent = async (req, res) => {
       );
     }
 
-    // Create enrollment and increment course stats inside the Student model
     await StudentCourse.enroll(studentId, courseId);
 
-    // NOTE: avoid calling Course.updateCourseEnrollment here to prevent duplicate creation
-    // and double-incrementing enrolled_count. StudentCourse.enroll handles increment.
+    // Award enrollment bonus (non-blocking)
+    try {
+      if (CreditsModel && typeof CreditsModel.addCredits === "function") {
+        await CreditsModel.addCredits(
+          studentId,
+          50,
+          "bonus",
+          courseId,
+          "Course enrollment bonus!"
+        );
+      }
+    } catch (creditError) {
+      console.error("Error awarding enrollment credits:", creditError);
+    }
 
     const redirectUrl = `/view_course?courseID=${courseId}&studentID=${studentId}`;
     return res.send(
@@ -89,11 +92,9 @@ exports.enrollStudent = async (req, res) => {
 
 exports.fetchStudentProgress = async (req, res) => {
   const studentId = req.session.student;
-  // console.log("Fetching progress for student:", studentId);
 
   try {
     const rows = await StudentCourse.getStudentCourseProgress(studentId);
-    // console.log(rows);
     const progressRows = rows.map((row) => ({
       ...row,
       progress:
@@ -117,7 +118,6 @@ exports.getCompletedModules = async (req, res) => {
     return res.status(400).send("Student ID and Course ID are required.");
   }
 
-  // Validate courseId is a proper ObjectId to avoid Mongoose CastError
   if (!mongoose.Types.ObjectId.isValid(courseId)) {
     return res.status(400).send("Invalid Course ID.");
   }
@@ -143,10 +143,8 @@ exports.redirectToProgressView = (req, res) => {
 };
 
 exports.markModuleComplete = async (req, res) => {
-  // Accept moduleId from body (recommended) or query for backward compatibility
   const moduleId =
     req.body && req.body.moduleId ? req.body.moduleId : req.query.moduleId;
-  // studentId can come from session or body (when called from client with studentId param)
   const studentId = (req.body && req.body.studentId) || req.session.student;
 
   if (!moduleId) {
@@ -154,10 +152,8 @@ exports.markModuleComplete = async (req, res) => {
   }
 
   try {
-    // Coerce to string to avoid mongoose treating numeric input oddly
     const moduleIdStr = String(moduleId);
 
-    // If moduleId is not a valid ObjectId, return success for demo/sample ids (avoid CastError)
     if (!mongoose.Types.ObjectId.isValid(moduleIdStr)) {
       console.warn(
         "markModuleComplete called with non-ObjectId moduleId:",
@@ -167,7 +163,6 @@ exports.markModuleComplete = async (req, res) => {
     }
 
     if (!studentId) {
-      // If we don't have a studentId, return 401 to indicate auth required
       return res
         .status(401)
         .json({ error: "Unauthorized: student not logged in." });
@@ -177,8 +172,57 @@ exports.markModuleComplete = async (req, res) => {
       studentId,
       moduleIdStr
     );
+
     if (result && result.changes > 0) {
-      return res.status(200).json({ status: "ok" });
+      try {
+        let creditsAwarded = { total_credits: 0 };
+        if (
+          CreditsModel &&
+          typeof CreditsModel.awardModuleCompletion === "function"
+        ) {
+          creditsAwarded = await CreditsModel.awardModuleCompletion(
+            studentId,
+            moduleIdStr
+          );
+        }
+
+        const Module = require("../required/db").Module;
+        const module = await Module.findById(moduleIdStr);
+        if (module && module.course_id) {
+          const allModules = await Module.find({ course_id: module.course_id });
+          const completedModules = await StudentCourse.getCompletedModules(
+            studentId,
+            module.course_id
+          );
+
+          if (allModules.length === completedModules.length) {
+            if (
+              CreditsModel &&
+              typeof CreditsModel.awardCourseCompletion === "function"
+            ) {
+              await CreditsModel.awardCourseCompletion(
+                studentId,
+                module.course_id
+              );
+            }
+            return res.status(200).json({
+              status: "ok",
+              message: "Module completed!",
+              courseCompleted: true,
+              creditsAwarded: creditsAwarded.total_credits,
+            });
+          }
+        }
+
+        return res.status(200).json({
+          status: "ok",
+          message: "Module completed!",
+          creditsAwarded: creditsAwarded.total_credits,
+        });
+      } catch (creditError) {
+        console.error("Error awarding module credits:", creditError);
+        return res.status(200).json({ status: "ok" });
+      }
     }
 
     return res

@@ -43,6 +43,8 @@ const courseSchema = new mongoose.Schema({
   title: { type: String, required: true },
   instructor_id: { type: mongoose.Schema.Types.ObjectId, ref: "Instructor" }, // Reference to Instructor
   subject: { type: String },
+   completion_credits: { type: Number, default: 100 }, // Credits awarded on completion
+  module_credits: { type: Number, default: 10 }, 
   overview: { type: String, default: "" },
   tagline: { type: String, default: "" },
   whatYouWillLearn: { type: [String], default: [] },
@@ -72,6 +74,115 @@ const magazineSchema = new mongoose.Schema({
 //   image: { type: String, required: true }, // image URL
 //   url:   { type: String, required: true }  // external magazine link
 // });
+
+
+// Add these new schemas to your db.js file
+
+// Credits/Points Schema
+const studentCreditsSchema = new mongoose.Schema({
+  student_id: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: "Student", 
+    unique: true 
+  },
+  total_credits: { type: Number, default: 0 },
+  lifetime_credits: { type: Number, default: 0 }, // Total earned ever
+  level: { type: Number, default: 1 },
+  experience: { type: Number, default: 0 },
+  created_at: { type: Date, default: Date.now },
+  updated_at: { type: Date, default: Date.now }
+});
+
+// Credit Transactions Schema (History)
+const creditTransactionSchema = new mongoose.Schema({
+  student_id: { type: mongoose.Schema.Types.ObjectId, ref: "Student" },
+  amount: { type: Number, required: true }, // Positive for earning, negative for spending
+  type: { 
+    type: String, 
+    enum: ['course_completion', 'module_completion', 'purchase', 'bonus', 'achievement'],
+    required: true 
+  },
+  reference_id: { type: mongoose.Schema.Types.ObjectId }, // Course/Item ID
+  description: { type: String },
+  created_at: { type: Date, default: Date.now }
+});
+
+// Store Items Schema (Profile Customizations)
+const storeItemSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  description: { type: String },
+  type: { 
+    type: String, 
+    enum: ['banner', 'avatar_frame', 'badge', 'theme', 'title'],
+    required: true 
+  },
+  price: { type: Number, required: true },
+  rarity: { 
+    type: String, 
+    enum: ['common', 'rare', 'epic', 'legendary'],
+    default: 'common' 
+  },
+  image_url: { type: String },
+  preview_url: { type: String },
+  is_active: { type: Boolean, default: true },
+  unlock_level: { type: Number, default: 1 }, // Level required to purchase
+  limited_edition: { type: Boolean, default: false },
+  available_until: { type: Date }, // For limited time items
+  created_at: { type: Date, default: Date.now }
+});
+
+// Student Inventory Schema (Owned Items)
+const studentInventorySchema = new mongoose.Schema({
+  student_id: { type: mongoose.Schema.Types.ObjectId, ref: "Student" },
+  item_id: { type: mongoose.Schema.Types.ObjectId, ref: "StoreItem" },
+  is_equipped: { type: Boolean, default: false },
+  purchased_at: { type: Date, default: Date.now }
+});
+
+// Student Profile Customization Schema
+const studentProfileSchema = new mongoose.Schema({
+  student_id: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: "Student", 
+    unique: true 
+  },
+  banner_id: { type: mongoose.Schema.Types.ObjectId, ref: "StoreItem" },
+  avatar_frame_id: { type: mongoose.Schema.Types.ObjectId, ref: "StoreItem" },
+  equipped_badge_ids: [{ type: mongoose.Schema.Types.ObjectId, ref: "StoreItem" }], // Max 3-5 badges
+  theme_id: { type: mongoose.Schema.Types.ObjectId, ref: "StoreItem" },
+  custom_title: { type: String, maxlength: 50 },
+  profile_color: { type: String, default: "#8A2BE2" },
+  bio: { type: String, maxlength: 200 },
+  updated_at: { type: Date, default: Date.now }
+});
+
+// Achievements Schema
+const achievementSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  description: { type: String },
+  icon_url: { type: String },
+  category: { 
+    type: String, 
+    enum: ['courses', 'social', 'special', 'seasonal'],
+    default: 'courses'
+  },
+  criteria: { type: Object }, // Flexible criteria object
+  reward_credits: { type: Number, default: 0 },
+  reward_item_id: { type: mongoose.Schema.Types.ObjectId, ref: "StoreItem" },
+  is_hidden: { type: Boolean, default: false }, // Secret achievements
+  created_at: { type: Date, default: Date.now }
+});
+
+// Student Achievements Schema
+const studentAchievementSchema = new mongoose.Schema({
+  student_id: { type: mongoose.Schema.Types.ObjectId, ref: "Student" },
+  achievement_id: { type: mongoose.Schema.Types.ObjectId, ref: "Achievement" },
+  progress: { type: Number, default: 0 }, // For progressive achievements
+  completed: { type: Boolean, default: false },
+  completed_at: { type: Date },
+  created_at: { type: Date, default: Date.now }
+});
+
 
 const courseStatsSchema = new mongoose.Schema({
   course_id: {
@@ -137,6 +248,231 @@ const Comment = mongoose.model("Comment", commentSchema);
 const CommentVote = mongoose.model("CommentVote", commentVoteSchema);
 
 //  Insert Initial Data (using Mongoose methods)
+
+// Create Models
+const StudentCredits = mongoose.model("StudentCredits", studentCreditsSchema);
+const CreditTransaction = mongoose.model("CreditTransaction", creditTransactionSchema);
+const StoreItem = mongoose.model("StoreItem", storeItemSchema);
+const StudentInventory = mongoose.model("StudentInventory", studentInventorySchema);
+const StudentProfile = mongoose.model("StudentProfile", studentProfileSchema);
+const Achievement = mongoose.model("Achievement", achievementSchema);
+const StudentAchievement = mongoose.model("StudentAchievement", studentAchievementSchema);
+
+// Add seed data for store items
+async function seedStoreItems() {
+  try {
+    // Banners
+    await StoreItem.insertMany([
+      // ========== BANNERS ==========
+      {
+        name: "Cosmic Purple Banner",
+        description: "A stunning purple cosmic background with nebula effects",
+        type: "banner",
+        price: 500,
+        rarity: "epic",
+        image_url: "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=800&q=80",
+        unlock_level: 5
+      },
+      {
+        name: "Gradient Wave Banner",
+        description: "Smooth gradient waves in purple and blue",
+        type: "banner",
+        price: 250,
+        rarity: "rare",
+        image_url: "https://images.unsplash.com/photo-1557672172-298e090bd0f1?w=800&q=80",
+        unlock_level: 1
+      },
+      {
+        name: "Northern Lights Banner",
+        description: "Beautiful aurora borealis effect",
+        type: "banner",
+        price: 750,
+        rarity: "epic",
+        image_url: "https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=800&q=80",
+        unlock_level: 10
+      },
+      {
+        name: "Legendary Dragon Banner",
+        description: "Exclusive dragon-themed banner with animated effects",
+        type: "banner",
+        price: 1500,
+        rarity: "legendary",
+        image_url: "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&q=80",
+        unlock_level: 20
+      },
+      {
+        name: "Cyberpunk City Banner",
+        description: "Futuristic neon cityscape",
+        type: "banner",
+        price: 600,
+        rarity: "epic",
+        image_url: "https://images.unsplash.com/photo-1542831371-29b0f74f9713?w=800&q=80",
+        unlock_level: 8
+      },
+      
+      // ========== AVATAR FRAMES ==========
+      {
+        name: "Gold Crown Frame",
+        description: "Prestigious golden crown frame",
+        type: "avatar_frame",
+        price: 400,
+        rarity: "epic",
+        image_url: "/images/frames/gold-crown.png",
+        unlock_level: 15
+      },
+      {
+        name: "Neon Glow Frame",
+        description: "Pulsating neon outline",
+        type: "avatar_frame",
+        price: 200,
+        rarity: "rare",
+        image_url: "/images/frames/neon-glow.png",
+        unlock_level: 5
+      },
+      {
+        name: "Diamond Elite Frame",
+        description: "Sparkling diamond border - ultimate prestige",
+        type: "avatar_frame",
+        price: 1000,
+        rarity: "legendary",
+        image_url: "/images/frames/diamond.png",
+        unlock_level: 25
+      },
+      {
+        name: "Fire Ring Frame",
+        description: "Blazing fire effect around avatar",
+        type: "avatar_frame",
+        price: 350,
+        rarity: "rare",
+        image_url: "/images/frames/fire-ring.png",
+        unlock_level: 7
+      },
+      
+      // ========== BADGES ==========
+      {
+        name: "First Course Badge",
+        description: "Completed your first course!",
+        type: "badge",
+        price: 50,
+        rarity: "common",
+        image_url: "/images/badges/first-course.png",
+        unlock_level: 1
+      },
+      {
+        name: "Speed Learner Badge",
+        description: "Complete 3 courses in a month",
+        type: "badge",
+        price: 300,
+        rarity: "rare",
+        image_url: "/images/badges/speed-learner.png",
+        unlock_level: 5
+      },
+      {
+        name: "Master Scholar Badge",
+        description: "Complete 10 courses",
+        type: "badge",
+        price: 800,
+        rarity: "epic",
+        image_url: "/images/badges/master-scholar.png",
+        unlock_level: 15
+      },
+      {
+        name: "Perfect Score Badge",
+        description: "Achieve 100% in any course",
+        type: "badge",
+        price: 500,
+        rarity: "epic",
+        image_url: "/images/badges/perfect-score.png",
+        unlock_level: 10
+      },
+      {
+        name: "Community Helper Badge",
+        description: "Help 50 other students",
+        type: "badge",
+        price: 600,
+        rarity: "epic",
+        image_url: "/images/badges/helper.png",
+        unlock_level: 12
+      },
+      
+      // ========== THEMES ==========
+      {
+        name: "Dark Mode Pro",
+        description: "Enhanced dark theme with custom accents",
+        type: "theme",
+        price: 150,
+        rarity: "common",
+        image_url: "/images/themes/dark-pro.png",
+        unlock_level: 1
+      },
+      {
+        name: "Midnight Purple Theme",
+        description: "Deep purple and black theme",
+        type: "theme",
+        price: 400,
+        rarity: "rare",
+        image_url: "/images/themes/midnight-purple.png",
+        unlock_level: 8
+      },
+      {
+        name: "Ocean Breeze Theme",
+        description: "Calming blue and teal colors",
+        type: "theme",
+        price: 300,
+        rarity: "rare",
+        image_url: "/images/themes/ocean-breeze.png",
+        unlock_level: 5
+      },
+      {
+        name: "Legendary Holographic",
+        description: "Premium holographic theme with animations",
+        type: "theme",
+        price: 1200,
+        rarity: "legendary",
+        image_url: "/images/themes/holographic.png",
+        unlock_level: 20
+      },
+      
+      // ========== CUSTOM TITLES ==========
+      {
+        name: "Scholar Title",
+        description: "Display 'Scholar' before your name",
+        type: "title",
+        price: 100,
+        rarity: "common",
+        unlock_level: 1
+      },
+      {
+        name: "Master Title",
+        description: "Display 'Master' before your name",
+        type: "title",
+        price: 400,
+        rarity: "rare",
+        unlock_level: 10
+      },
+      {
+        name: "Legend Title",
+        description: "Display 'Legend' before your name",
+        type: "title",
+        price: 1000,
+        rarity: "legendary",
+        unlock_level: 25
+      },
+      {
+        name: "Professor Title",
+        description: "Display 'Professor' before your name",
+        type: "title",
+        price: 800,
+        rarity: "epic",
+        unlock_level: 18
+      }
+    ]);
+    
+    console.log("✅ Store items seeded successfully!");
+  } catch (error) {
+    console.error("Error seeding store items:", error);
+  }
+}
 async function seedData() {
   try {
     // Insert Students
@@ -361,4 +697,12 @@ module.exports = {
   StudentModule,
   Comment,
   CommentVote,
+   StudentCredits,
+  CreditTransaction,
+  StoreItem,
+  StudentInventory,
+  StudentProfile,
+  Achievement,
+  StudentAchievement,
+  seedStoreItems
 };

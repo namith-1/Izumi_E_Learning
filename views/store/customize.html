@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customize Profile</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #8A2BE2;
+            --secondary: #e0b0ff;
+            --accent: #FFD700;
+            --bg-dark: #1a1a2e;
+            --bg-card: #16213e;
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, var(--bg-dark) 0%, #0f3460 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .back-btn {
+            padding: 10px 20px;
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 30px;
+        }
+
+        /* Profile Preview */
+        .profile-preview {
+            background: var(--bg-card);
+            border-radius: 16px;
+            overflow: hidden;
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+
+        .profile-banner {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .profile-banner img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profile-content {
+            padding: 20px;
+            position: relative;
+            margin-top: -60px;
+        }
+
+        .profile-avatar-wrapper {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 5px solid var(--bg-card);
+            position: relative;
+            margin: 0 auto;
+        }
+
+        .avatar-frame {
+            position: absolute;
+            inset: -10px;
+            border-radius: 50%;
+            border: 4px solid transparent;
+            background: linear-gradient(45deg, var(--accent), var(--primary));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            padding: 4px;
+        }
+
+        .profile-avatar {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: var(--bg-dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            font-weight: 700;
+        }
+
+        .profile-info {
+            text-align: center;
+            margin-top: 16px;
+        }
+
+        .profile-name {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .profile-level {
+            background: var(--accent);
+            color: var(--bg-dark);
+            padding: 4px 12px;
+            border-radius: 20px;
+            display: inline-block;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .profile-bio {
+            color: var(--text-secondary);
+            margin: 16px 0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .profile-badges {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 16px;
+        }
+
+        .badge-item {
+            width: 50px;
+            height: 50px;
+            background: var(--bg-dark);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        /* Inventory Section */
+        .inventory-section {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 24px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .tab-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            background: var(--bg-dark);
+            border: 2px solid transparent;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .tab-btn:hover {
+            border-color: var(--primary);
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .inventory-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .inventory-item {
+            background: var(--bg-dark);
+            border-radius: 12px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .inventory-item:hover {
+            transform: translateY(-4px);
+            border-color: var(--primary);
+        }
+
+        .inventory-item.equipped {
+            border-color: var(--accent);
+            background: rgba(255, 215, 0, 0.1);
+        }
+
+        .item-preview {
+            width: 100%;
+            height: 120px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin-bottom: 12px;
+            object-fit: cover;
+        }
+
+        .item-name {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .item-type {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .equip-btn {
+            margin-top: 8px;
+            width: 100%;
+            padding: 8px;
+            background: var(--primary);
+            border: none;
+            border-radius: 6px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .equip-btn.equipped {
+            background: var(--accent);
+            color: var(--bg-dark);
+        }
+
+        /* Bio Editor */
+        .bio-editor {
+            margin-top: 20px;
+        }
+
+        .bio-textarea {
+            width: 100%;
+            min-height: 100px;
+            background: var(--bg-dark);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: white;
+            padding: 12px;
+            font-family: 'Poppins', sans-serif;
+            resize: vertical;
+        }
+
+        .bio-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .save-btn {
+            margin-top: 12px;
+            padding: 10px 24px;
+            background: var(--primary);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+
+        @media (max-width: 1024px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+
+            .profile-preview {
+                position: static;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Customize Your Profile</h1>
+            <a href="/store" class="back-btn">Visit Store</a>
+        </div>
+
+        <div class="layout">
+            <!-- Profile Preview -->
+            <div class="profile-preview">
+                <div class="profile-banner" id="profileBanner">
+                    <img id="bannerImage" style="display: none;">
+                </div>
+                <div class="profile-content">
+                    <div class="profile-avatar-wrapper">
+                        <div class="avatar-frame" id="avatarFrame"></div>
+                        <div class="profile-avatar" id="profileAvatar">A</div>
+                    </div>
+                    <div class="profile-info">
+                        <div class="profile-name" id="profileName">Loading...</div>
+                        <div class="profile-level" id="profileLevel">Level 1</div>
+                        <div class="profile-bio" id="profileBio">No bio set</div>
+                        <div class="profile-badges" id="profileBadges"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inventory & Customization -->
+            <div class="inventory-section">
+                <div class="section-header">
+                    <h2 class="section-title">Your Inventory</h2>
+                </div>
+
+                <div class="tab-group">
+                    <button class="tab-btn active" data-type="all">All Items</button>
+                    <button class="tab-btn" data-type="banner">Banners</button>
+                    <button class="tab-btn" data-type="avatar_frame">Frames</button>
+                    <button class="tab-btn" data-type="badge">Badges</button>
+                    <button class="tab-btn" data-type="theme">Themes</button>
+                </div>
+
+                <div id="inventoryContainer" class="loading">Loading inventory...</div>
+
+                <div class="bio-editor">
+                    <h3>Edit Bio</h3>
+                    <textarea 
+                        id="bioInput" 
+                        class="bio-textarea" 
+                        placeholder="Tell others about yourself..." 
+                        maxlength="200"></textarea>
+                    <button class="save-btn" onclick="saveBio()">Save Bio</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let inventory = [];
+        let profile = {};
+        let credits = {};
+        let currentTab = 'all';
+
+        async function init() {
+            await loadUserData();
+            await loadInventory();
+            await loadProfile();
+        }
+
+        async function loadUserData() {
+            try {
+                const [creditsRes, userRes] = await Promise.all([
+                    fetch('/api/credits'),
+                    fetch('/load_user_info')
+                ]);
+                
+                credits = await creditsRes.json();
+                const user = await userRes.json();
+                
+                document.getElementById('profileName').textContent = user.name;
+                document.getElementById('profileLevel').textContent = `Level ${credits.level}`;
+                document.getElementById('profileAvatar').textContent = user.name.charAt(0).toUpperCase();
+            } catch (error) {
+                console.error('Error loading user data:', error);
+            }
+        }
+
+        async function loadInventory() {
+            try {
+                const response = await fetch('/api/store/inventory');
+                inventory = await response.json();
+                renderInventory();
+            } catch (error) {
+                console.error('Error loading inventory:', error);
+                document.getElementById('inventoryContainer').innerHTML = 
+                    '<p class="loading">Error loading inventory</p>';
+            }
+        }
+
+        async function loadProfile() {
+            try {
+                const response = await fetch('/api/profile/customization');
+                profile = await response.json();
+                updatePreview();
+            } catch (error) {
+                console.error('Error loading profile:', error);
+            }
+        }
+
+        function renderInventory() {
+            const container = document.getElementById('inventoryContainer');
+            const filtered = currentTab === 'all' 
+                ? inventory 
+                : inventory.filter(item => item.item_id.type === currentTab);
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<p class="loading">No items in inventory</p>';
+                return;
+            }
+
+            container.className = 'inventory-grid';
+            container.innerHTML = filtered.map(item => `
+                <div class="inventory-item ${item.is_equipped ? 'equipped' : ''}" 
+                     onclick="toggleEquip('${item.item_id._id}', '${item.is_equipped}')">
+                    <img src="${item.item_id.image_url}" class="item-preview" 
+                         onerror="this.src='https://via.placeholder.com/200x120?text=${encodeURIComponent(item.item_id.name)}'">
+                    <div class="item-name">${item.item_id.name}</div>
+                    <div class="item-type">${item.item_id.type.replace('_', ' ')}</div>
+                    <button class="equip-btn ${item.is_equipped ? 'equipped' : ''}">
+                        ${item.is_equipped ? '✓ Equipped' : 'Equip'}
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        async function toggleEquip(itemId, isEquipped) {
+            try {
+                const endpoint = isEquipped === 'true' ? '/api/profile/unequip' : '/api/profile/equip';
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ itemId })
+                });
+
+                if (response.ok) {
+                    await loadInventory();
+                    await loadProfile();
+                }
+            } catch (error) {
+                console.error('Error toggling equip:', error);
+            }
+        }
+
+        function updatePreview() {
+            // Update banner
+            if (profile.banner_id) {
+                const bannerImg = document.getElementById('bannerImage');
+                bannerImg.src = profile.banner_id.image_url;
+                bannerImg.style.display = 'block';
+            }
+
+            // Update bio
+            if (profile.bio) {
+                document.getElementById('profileBio').textContent = profile.bio;
+                document.getElementById('bioInput').value = profile.bio;
+            }
+
+            // Update badges
+            if (profile.equipped_badge_ids && profile.equipped_badge_ids.length > 0) {
+                const badgesHtml = profile.equipped_badge_ids.map(badge => 
+                    `<div class="badge-item">🏆</div>`
+                ).join('');
+                document.getElementById('profileBadges').innerHTML = badgesHtml;
+            }
+        }
+
+        async function saveBio() {
+            const bio = document.getElementById('bioInput').value;
+            try {
+                const response = await fetch('/api/profile/update', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ bio })
+                });
+
+                if (response.ok) {
+                    await loadProfile();
+                    alert('Bio updated successfully!');
+                }
+            } catch (error) {
+                console.error('Error saving bio:', error);
+                alert('Error saving bio');
+            }
+        }
+
+        // Tab switching
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentTab = btn.dataset.type;
+                renderInventory();
+            });
+        });
+
+        init();
+    </script>
+</body>
+</html>

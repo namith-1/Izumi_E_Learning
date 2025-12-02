@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rewards Store</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #8A2BE2;
+            --secondary: #e0b0ff;
+            --accent: #FFD700;
+            --bg-dark: #1a1a2e;
+            --bg-card: #16213e;
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
+            --success: #00e676;
+            --error: #ff1744;
+            --rarity-common: #9e9e9e;
+            --rarity-rare: #2196f3;
+            --rarity-epic: #9c27b0;
+            --rarity-legendary: #ff9800;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, var(--bg-dark) 0%, #0f3460 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 20px;
+            padding-top: 100px;
+        }
+
+        /* Header with Credits Display */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(22, 33, 62, 0.95);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .back-btn {
+            padding: 10px 20px;
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .back-btn:hover {
+            background: var(--secondary);
+            transform: translateY(-2px);
+        }
+
+        .credits-display {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            padding: 12px 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(138, 43, 226, 0.3);
+        }
+
+        .credit-amount {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .level-badge {
+            background: var(--accent);
+            color: var(--bg-dark);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        /* Navigation Tabs */
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .nav-tab {
+            padding: 12px 24px;
+            background: var(--bg-card);
+            border: 2px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .nav-tab:hover {
+            border-color: var(--primary);
+        }
+
+        .nav-tab.active {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        /* Store Grid */
+        .store-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        /* Item Card */
+        .item-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: all 0.3s;
+            position: relative;
+            border: 2px solid transparent;
+        }
+
+        .item-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 30px rgba(138, 43, 226, 0.4);
+        }
+
+        .item-card.rarity-common { border-color: var(--rarity-common); }
+        .item-card.rarity-rare { border-color: var(--rarity-rare); }
+        .item-card.rarity-epic { border-color: var(--rarity-epic); }
+        .item-card.rarity-legendary { border-color: var(--rarity-legendary); }
+
+        .item-image {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .item-info {
+            padding: 16px;
+        }
+
+        .rarity-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .rarity-badge.common { background: var(--rarity-common); }
+        .rarity-badge.rare { background: var(--rarity-rare); }
+        .rarity-badge.epic { background: var(--rarity-epic); }
+        .rarity-badge.legendary { background: var(--rarity-legendary); }
+
+        .item-name {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .item-description {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+
+        .item-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .item-price {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .buy-btn {
+            padding: 8px 16px;
+            background: var(--primary);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .buy-btn:hover:not(:disabled) {
+            background: var(--secondary);
+            transform: scale(1.05);
+        }
+
+        .buy-btn:disabled {
+            background: #555;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .owned-badge {
+            background: var(--success);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 60px;
+            font-size: 18px;
+            color: var(--text-secondary);
+        }
+
+        /* Success Toast */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: var(--success);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            transform: translateY(150%);
+            transition: transform 0.5s;
+            z-index: 2000;
+            max-width: 400px;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+        }
+
+        .toast.error {
+            background: var(--error);
+        }
+
+        /* Level Requirement Badge */
+        .level-req {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .store-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-left">
+            <a href="/home" class="back-btn">← Back</a>
+            <h1>Rewards Store</h1>
+        </div>
+        <div class="credits-display">
+            <div>
+                <div style="font-size: 12px; opacity: 0.8;">Your Credits</div>
+                <div class="credit-amount" id="creditAmount">0</div>
+            </div>
+            <div class="level-badge" id="levelBadge">Level 1</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="nav-tabs">
+            <button class="nav-tab active" data-filter="all">All Items</button>
+            <button class="nav-tab" data-filter="banner">Banners</button>
+            <button class="nav-tab" data-filter="avatar_frame">Avatar Frames</button>
+            <button class="nav-tab" data-filter="badge">Badges</button>
+            <button class="nav-tab" data-filter="theme">Themes</button>
+            <button class="nav-tab" data-filter="title">Titles</button>
+        </div>
+
+        <div id="storeContainer" class="loading">Loading store items...</div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        let currentFilter = 'all';
+        let allItems = [];
+        let userCredits = 0;
+        let userLevel = 1;
+
+        // Load credits and items
+        async function init() {
+            await loadCredits();
+            await loadStoreItems();
+        }
+
+        async function loadCredits() {
+            try {
+                const response = await fetch('/api/credits');
+                const data = await response.json();
+                userCredits = data.total_credits;
+                userLevel = data.level;
+                
+                document.getElementById('creditAmount').textContent = userCredits.toLocaleString();
+                document.getElementById('levelBadge').textContent = `Level ${userLevel}`;
+            } catch (error) {
+                console.error('Error loading credits:', error);
+                showToast('Error loading credits', true);
+            }
+        }
+
+        async function loadStoreItems(filter = 'all') {
+            try {
+                const url = filter === 'all' ? '/api/store/items' : `/api/store/items?type=${filter}`;
+                const response = await fetch(url);
+                allItems = await response.json();
+                renderItems(allItems);
+            } catch (error) {
+                console.error('Error loading store items:', error);
+                document.getElementById('storeContainer').innerHTML = 
+                    '<p class="loading">Error loading store items</p>';
+            }
+        }
+
+        function renderItems(items) {
+            const container = document.getElementById('storeContainer');
+            
+            if (items.length === 0) {
+                container.innerHTML = '<p class="loading">No items found</p>';
+                return;
+            }
+
+            container.className = 'store-grid';
+            container.innerHTML = items.map(item => `
+                <div class="item-card rarity-${item.rarity}">
+                    ${item.unlock_level > userLevel ? 
+                        `<div class="level-req">🔒 Level ${item.unlock_level}</div>` : ''}
+                    <img src="${item.image_url}" alt="${item.name}" class="item-image" 
+                         onerror="this.src='https://via.placeholder.com/280x180?text=${encodeURIComponent(item.name)}'">
+                    <div class="item-info">
+                        <span class="rarity-badge ${item.rarity}">${item.rarity}</span>
+                        <div class="item-name">${item.name}</div>
+                        <div class="item-description">${item.description}</div>
+                        <div class="item-footer">
+                            <div class="item-price">💎 ${item.price.toLocaleString()}</div>
+                            ${item.owned ? 
+                                '<div class="owned-badge">✓ Owned</div>' :
+                                `<button class="buy-btn" 
+                                    onclick="purchaseItem('${item._id}')"
+                                    ${item.unlock_level > userLevel || userCredits < item.price ? 'disabled' : ''}>
+                                    ${item.unlock_level > userLevel ? 'Locked' : 
+                                      userCredits < item.price ? 'Insufficient Credits' : 'Purchase'}
+                                </button>`
+                            }
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function purchaseItem(itemId) {
+            try {
+                const response = await fetch('/api/store/purchase', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ itemId })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showToast(data.message);
+                    await loadCredits();
+                    await loadStoreItems(currentFilter);
+                } else {
+                    showToast(data.error || 'Purchase failed', true);
+                }
+            } catch (error) {
+                console.error('Error purchasing item:', error);
+                showToast('Error purchasing item', true);
+            }
+        }
+
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast show ${isError ? 'error' : ''}`;
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Tab filtering
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                currentFilter = tab.dataset.filter;
+                loadStoreItems(currentFilter === 'all' ? 'all' : currentFilter);
+            });
+        });
+
+        // Initialize
+        init();
+    </script>
+</body>
+</html>
