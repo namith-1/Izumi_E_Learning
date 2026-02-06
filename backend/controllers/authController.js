@@ -181,3 +181,46 @@ exports.getAllTeachers = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
+
+exports.updateProfile = async (req, res) => {
+    try {
+        const { name, currentPassword, newPassword } = req.body;
+        const userId = req.session.user.id;
+        
+        // Block mock admin updates
+        if (userId === MOCK_ADMIN_ID && req.session.user.role === 'admin') {
+             return res.status(403).json({ message: 'Cannot update admin profile.' });
+        }
+
+        const role = req.session.user.role === 'admin' ? 'teacher' : req.session.user.role; 
+        const Model = getModel(role);
+
+        const user = await Model.findById(userId);
+        if (!user) return res.status(404).json({ message: 'User not found' });
+        
+        // Verify password
+        if (!currentPassword || !(await bcrypt.compare(currentPassword, user.password))) {
+            return res.status(401).json({ message: 'Invalid current password.' });
+        }
+
+        // Handle File path from Multer
+        if (req.file) {
+            user.profilePic = `/uploads/profiles/${req.file.filename}`;
+            req.session.user.profilePic = user.profilePic;
+        }
+
+        if (name) {
+            user.name = name;
+            req.session.user.name = name;
+        }
+
+        if (newPassword && newPassword.length >= 6) {
+            user.password = await bcrypt.hash(newPassword, 10);
+        }
+
+        await user.save();
+        res.json({ message: 'Profile updated successfully', user: req.session.user });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};

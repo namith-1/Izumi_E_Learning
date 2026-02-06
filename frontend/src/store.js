@@ -6,18 +6,21 @@ import { configureStore, createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 const BASE_URL = 'http://localhost:5000/api';
 
 /**
- * Universal fetch wrapper that handles JSON headers and credentials (cookies).
+ * Universal fetch wrapper.
+ * Automatically detects FormData to allow multipart/form-data (Multer) uploads.
  */
 const apiRequest = async (endpoint, method = 'GET', body = null) => {
   const config = {
     method,
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include', // CRITICAL: Allows session cookies to be sent/received
+    headers: {}, 
+    credentials: 'include', // CRITICAL: Allows session cookies
   };
 
-  if (body) {
+  // If body is FormData, we let the browser set the boundary and Content-Type
+  if (body instanceof FormData) {
+    config.body = body;
+  } else if (body) {
+    config.headers['Content-Type'] = 'application/json';
     config.body = JSON.stringify(body);
   }
 
@@ -87,6 +90,7 @@ export const updateStudentProfile = createAsyncThunk(
     'auth/updateProfile',
     async (profileData, { rejectWithValue }) => {
         try {
+            // profileData can now be FormData (containing profileImage) or JSON
             const data = await apiRequest('/auth/profile', 'PUT', profileData);
             return data.user;
         } catch (err) {
@@ -109,23 +113,19 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Register
       .addCase(registerUser.pending, (state) => { state.loading = true; state.error = null; })
       .addCase(registerUser.fulfilled, (state, action) => { state.loading = false; state.user = action.payload; })
       .addCase(registerUser.rejected, (state, action) => { state.loading = false; state.error = action.payload; })
-      // Login
       .addCase(loginUser.pending, (state) => { state.loading = true; state.error = null; })
       .addCase(loginUser.fulfilled, (state, action) => { state.loading = false; state.user = action.payload; })
       .addCase(loginUser.rejected, (state, action) => { state.loading = false; state.error = action.payload; })
-      // Logout
       .addCase(logoutUser.fulfilled, (state) => { state.user = null; })
-      // Check Auth Status
       .addCase(checkAuthStatus.pending, (state) => { state.loading = true; })
       .addCase(checkAuthStatus.fulfilled, (state, action) => { state.loading = false; state.user = action.payload; })
       .addCase(checkAuthStatus.rejected, (state) => { state.loading = false; state.user = null; })
-      // Profile Update
       .addCase(updateStudentProfile.fulfilled, (state, action) => { 
-        state.user = { ...state.user, name: action.payload.name };
+        // Update user state with new name and profilePic path
+        state.user = action.payload; 
       });
   },
 });
@@ -210,19 +210,15 @@ const courseSlice = createSlice({
       .addCase(fetchAllCourses.pending, (state) => { state.loading = true; state.error = null; })
       .addCase(fetchAllCourses.fulfilled, (state, action) => { state.loading = false; state.list = action.payload; })
       .addCase(fetchAllCourses.rejected, (state, action) => { state.loading = false; state.error = action.payload; })
-      
       .addCase(fetchCourseById.pending, (state) => { state.loading = true; state.error = null; })
       .addCase(fetchCourseById.fulfilled, (state, action) => { state.loading = false; state.currentCourse = action.payload; })
       .addCase(fetchCourseById.rejected, (state, action) => { state.loading = false; state.error = action.payload; })
-      
       .addCase(createNewCourse.fulfilled, (state, action) => { state.list.push(action.payload); })
-      
       .addCase(updateCourse.fulfilled, (state, action) => {
         state.currentCourse = action.payload;
         const index = state.list.findIndex((c) => c._id === action.payload._id);
         if (index !== -1) state.list[index] = action.payload;
       })
-      
       .addCase(fetchCourseAnalytics.pending, (state) => { state.loading = true; state.error = null; })
       .addCase(fetchCourseAnalytics.fulfilled, (state, action) => { state.loading = false; state.analyticsData = action.payload; })
       .addCase(fetchCourseAnalytics.rejected, (state, action) => { state.loading = false; state.error = action.payload; state.analyticsData = []; });
@@ -298,20 +294,10 @@ const enrollmentSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(enrollInCourse.pending, (state) => { state.loading = true; state.error = null; })
-      .addCase(enrollInCourse.fulfilled, (state, action) => { 
-        state.loading = false; 
-        state.currentEnrollment = action.payload; 
-      })
-      .addCase(enrollInCourse.rejected, (state, action) => { 
-        state.loading = false; 
-        state.error = action.payload; 
-      })
-      
+      .addCase(enrollInCourse.fulfilled, (state, action) => { state.loading = false; state.currentEnrollment = action.payload; })
+      .addCase(enrollInCourse.rejected, (state, action) => { state.loading = false; state.error = action.payload; })
       .addCase(fetchEnrollmentStatus.pending, (state) => { state.loading = true; state.error = null; })
-      .addCase(fetchEnrollmentStatus.fulfilled, (state, action) => { 
-        state.loading = false; 
-        state.currentEnrollment = action.payload; 
-      })
+      .addCase(fetchEnrollmentStatus.fulfilled, (state, action) => { state.loading = false; state.currentEnrollment = action.payload; })
       .addCase(fetchEnrollmentStatus.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
@@ -320,18 +306,13 @@ const enrollmentSlice = createSlice({
              state.error = null; 
         }
       })
-      
       .addCase(fetchEnrolledCourses.pending, (state) => { state.loading = true; state.error = null; })
-      .addCase(fetchEnrolledCourses.fulfilled, (state, action) => { 
-        state.loading = false; 
-        state.enrolledList = action.payload; 
-      })
+      .addCase(fetchEnrolledCourses.fulfilled, (state, action) => { state.loading = false; state.enrolledList = action.payload; })
       .addCase(fetchEnrolledCourses.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
         state.enrolledList = [];
       })
-      
       .addCase(updateProgress.fulfilled, (state, action) => {
         state.currentEnrollment = action.payload;
       });
@@ -373,10 +354,7 @@ const teachersSlice = createSlice({
             return acc;
         }, {});
       })
-      .addCase(fetchAllTeachers.rejected, (state, action) => { 
-        state.loading = false; 
-        state.error = action.payload; 
-      });
+      .addCase(fetchAllTeachers.rejected, (state, action) => { state.loading = false; state.error = action.payload; });
   },
 });
 
@@ -474,22 +452,20 @@ const adminSlice = createSlice({
     enrollments: [],
     loading: false,
     error: null,
-    // Lookup States
     lookupResult: null, 
     lookupError: null,
     lookupLoading: false,
-    lookupType: null, // 'student' or 'teacher'
+    lookupType: null, 
   },
   reducers: {
-       clearLookup: (state) => {
+        clearLookup: (state) => {
             state.lookupResult = null;
             state.lookupError = null;
             state.lookupType = null;
-       }
+        }
   },
   extraReducers: (builder) => {
     builder
-      // Fetch All Data
       .addCase(fetchAllAdminData.pending, (state) => { state.loading = true; state.error = null; })
       .addCase(fetchAllAdminData.fulfilled, (state, action) => {
         state.loading = false;
@@ -499,37 +475,25 @@ const adminSlice = createSlice({
         state.enrollments = action.payload.enrollments;
       })
       .addCase(fetchAllAdminData.rejected, (state, action) => { state.loading = false; state.error = action.payload; })
-      
-      // Delete User
       .addCase(deleteUserAdmin.fulfilled, (state, action) => {
         const { role, id } = action.payload;
         if (role === 'student') {
             state.students = state.students.filter(u => u._id !== id);
-            // Also clean up enrollments
-            state.enrollments = state.enrollments.filter(e => e.studentName !== action.payload.name); // Using ID would be safer if enrollment had studentID flat
         } else if (role === 'teacher') {
             state.teachers = state.teachers.filter(u => u._id !== id);
             state.courses = state.courses.filter(c => c.teacherId !== id);
         }
       })
-      
-      // Delete Course
       .addCase(deleteCourseAdmin.fulfilled, (state, action) => {
         const id = action.payload;
         state.courses = state.courses.filter(c => c._id !== id);
-        state.enrollments = state.enrollments.filter(e => e.courseId !== id); // Note: Assuming enrollment objects have courseId available or mapped
+        state.enrollments = state.enrollments.filter(e => e.courseId !== id);
       })
-
-      // Update Course
       .addCase(updateCourseAdmin.fulfilled, (state, action) => {
           const updatedCourse = action.payload;
           const index = state.courses.findIndex(c => c._id === updatedCourse._id);
-          if (index !== -1) {
-              state.courses[index] = updatedCourse;
-          }
+          if (index !== -1) state.courses[index] = updatedCourse;
       })
-      
-      // Student Lookup
       .addCase(fetchStudentEnrollmentByEmail.pending, (state) => {
           state.lookupLoading = true;
           state.lookupError = null;
@@ -544,8 +508,6 @@ const adminSlice = createSlice({
           state.lookupLoading = false;
           state.lookupError = action.payload;
       })
-
-      // Teacher Lookup
       .addCase(fetchTeacherCoursesByEmail.pending, (state) => {
           state.lookupLoading = true;
           state.lookupError = null;
