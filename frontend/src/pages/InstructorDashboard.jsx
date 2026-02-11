@@ -2,53 +2,62 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
 import { Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
-import { BookOpen, BarChart3, PlusCircle, Layers, Settings } from 'lucide-react';
-import ProfileDropdown from '../components/ProfileDropdown'; 
+import { BarChart3, PlusCircle, Layers, Settings, Users, BookOpen } from 'lucide-react';
+import ProfileDropdown from '../components/ProfileDropdown';
 // Import new components for nested routes
 import MyCourses from './InstructorCourse/MyCourses';
-import StudentAnalytics from './InstructorCourse/StudentAnalytics';
+import InstructorAnalytics from '../components/analytics/InstructorAnalytics';
+import InstructorStudentAnalytics from '../components/analytics/InstructorStudentAnalytics';
 import InstructorProfileSettings from './InstructorCourse/InstructorProfileSettings';
 // Import StudentDashboard CSS for shared styling elements (navbar, content layout)
-import '../pages/css/StudentDashboard.css'; 
+import '../pages/css/StudentDashboard.css';
 
 const InstructorDashboard = () => {
   const { user } = useSelector((state) => state.auth);
-  const location = useLocation(); 
-  
+  const location = useLocation();
+
   // Helper to check if the path is active or is the index route
   const isActive = (path) => location.pathname === path || location.pathname === path + '/';
 
   return (
     // Reuse student-dash-layout for consistent structure
-    <div className="student-dash-layout"> 
-      
+    <div className="student-dash-layout">
+
       {/* 1. Navigation Bar (Using student-navbar class for styling) */}
       <header className="student-navbar">
         <div className="nav-brand">
           <BookOpen size={24} />
           <span>Instructor Studio</span>
         </div>
-        
+
         <nav className="nav-links">
           {/* My Courses (Index) */}
-          <Link 
-            to="/instructor-dashboard/" 
+          <Link
+            to="/instructor-dashboard/"
             className={`nav-link-item ${isActive('/instructor-dashboard') ? 'active' : ''}`}
           >
             <Layers size={18} /> My Courses
           </Link>
-          
-          {/* Student Analytics */}
-          <Link 
-            to="/instructor-dashboard/analytics" 
-            className={`nav-link-item ${location.pathname.startsWith('/instructor-dashboard/analytics') ? 'active' : ''}`}
+
+          {/* Analytics Overview */}
+          <Link
+            to="/instructor-dashboard/analytics"
+            className={`nav-link-item ${isActive('/instructor-dashboard/analytics') ? 'active' : ''}`}
           >
-            <BarChart3 size={18} /> Student Analytics
+            <BarChart3 size={18} /> Overview
+          </Link>
+
+          {/* Student Analytics */}
+          <Link
+            to="/instructor-dashboard/students"
+            className={`nav-link-item ${isActive('/instructor-dashboard/students') ? 'active' : ''}`}
+          >
+            <Users size={18} /> Students
           </Link>
 
           {/* Create Course */}
-          <Link 
-            to="/create-course" 
+          <Link
+            to="/create-course"
             className={`nav-link-item ${location.pathname.startsWith('/create-course') ? 'active' : ''}`}
             style={{ backgroundColor: '#f0fdf4', color: '#10b981', marginLeft: '1rem' }}
           >
@@ -66,16 +75,19 @@ const InstructorDashboard = () => {
       <main className="student-main-content">
         <Routes>
           {/* Default Route: My Courses */}
-          <Route index element={<MyCourses />} /> 
-          
+          <Route index element={<MyCourses />} />
+
+          {/* Instructor Analytics Route (Overview) */}
+          <Route path="analytics" element={<InstructorAnalytics />} />
+
           {/* Student Analytics Route */}
-          <Route path="analytics" element={<StudentAnalytics />} />
-          
+          <Route path="students" element={<InstructorStudentAnalytics />} />
+
           {/* Profile Settings Route */}
           <Route path="settings" element={<InstructorProfileSettings />} />
 
           {/* Fallback to My Courses for unknown nested paths */}
-          <Route path="*" element={<Navigate to="/instructor-dashboard" replace />} /> 
+          <Route path="*" element={<Navigate to="/instructor-dashboard" replace />} />
         </Routes>
       </main>
 
