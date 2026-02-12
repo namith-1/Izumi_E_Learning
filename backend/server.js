@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const connectDB = require('./config/db');
+const path = require('path');
 
 // Import Custom Middlewares
 const setupLogging = require('./middleware/logger');
@@ -27,6 +28,14 @@ app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/courses', require('./routes/courseRoutes'));
 app.use('/api/enrollment', require('./routes/enrollmentRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
+app.use('/api/analytics', require('./routes/analyticsRoutes'));
+app.use('/uploads', (req, res, next) => {
+    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    next();
+});
+
+// Your existing static line
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // 5. Error Handling 
 app.use(errorHandler);
