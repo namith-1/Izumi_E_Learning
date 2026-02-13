@@ -58,19 +58,19 @@ const Login = () => {
   const formatRemaining = (secs) => {
     const m = Math.floor(secs / 60);
     const s = secs % 60;
-    const mm = m.toString().padStart(2, '0');
-    const ss = s.toString().padStart(2, '0');
+    const mm = m.toString().padStart(2, "0");
+    const ss = s.toString().padStart(2, "0");
     return `${mm}:${ss}`;
   };
 
   const formatAbsoluteTime = (isoOrDate) => {
     try {
       const d = isoOrDate instanceof Date ? isoOrDate : new Date(isoOrDate);
-      if (Number.isNaN(d.getTime())) return '';
+      if (Number.isNaN(d.getTime())) return "";
       // Show date and time in user's locale
       return d.toLocaleString();
     } catch (e) {
-      return '';
+      return "";
     }
   };
 
@@ -116,8 +116,9 @@ const Login = () => {
               {typeof error === "object" ? error.message || "Error" : error}
               {error?.blockedUntil && remainingSeconds > 0 && (
                 <div style={{ marginTop: 6 }}>
-                  Too many attempts. Try again in {formatRemaining(remainingSeconds)}.
-                  <div style={{ fontSize: 12, color: '#555', marginTop: 4 }}>
+                  Too many attempts. Try again in{" "}
+                  {formatRemaining(remainingSeconds)}.
+                  <div style={{ fontSize: 12, color: "#555", marginTop: 4 }}>
                     (until {formatAbsoluteTime(error.blockedUntil)})
                   </div>
                 </div>
