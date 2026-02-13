@@ -1,26 +1,30 @@
-import { configureStore, createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import {
+  configureStore,
+  createSlice,
+  createAsyncThunk,
+} from "@reduxjs/toolkit";
 
 // ==========================================
 // 1. API UTILITY (Internal Helper)
 // ==========================================
-const BASE_URL = 'http://localhost:5000/api';
+const BASE_URL = "http://localhost:5000/api";
 
 /**
  * Universal fetch wrapper.
  * Automatically detects FormData to allow multipart/form-data (Multer) uploads.
  */
-const apiRequest = async (endpoint, method = 'GET', body = null) => {
+const apiRequest = async (endpoint, method = "GET", body = null) => {
   const config = {
     method,
     headers: {},
-    credentials: 'include', // CRITICAL: Allows session cookies
+    credentials: "include", // CRITICAL: Allows session cookies
   };
 
   // If body is FormData, we let the browser set the boundary and Content-Type
   if (body instanceof FormData) {
     config.body = body;
   } else if (body) {
-    config.headers['Content-Type'] = 'application/json';
+    config.headers["Content-Type"] = "application/json";
     config.body = JSON.stringify(body);
   }
 
@@ -28,7 +32,10 @@ const apiRequest = async (endpoint, method = 'GET', body = null) => {
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.message || data.error || 'Something went wrong');
+    // Throw the parsed response object so callers can inspect fields like blockedUntil
+    const err = data || { message: "Something went wrong" };
+    err.status = response.status;
+    throw err;
   }
 
   return data;
@@ -39,68 +46,69 @@ const apiRequest = async (endpoint, method = 'GET', body = null) => {
 // ==========================================
 
 export const registerUser = createAsyncThunk(
-  'auth/register',
+  "auth/register",
   async (userData, { rejectWithValue }) => {
     try {
-      const data = await apiRequest('/auth/register', 'POST', userData);
+      const data = await apiRequest("/auth/register", "POST", userData);
       return data.user;
     } catch (err) {
       return rejectWithValue(err.message);
     }
-  }
+  },
 );
 
 export const loginUser = createAsyncThunk(
-  'auth/login',
+  "auth/login",
   async (credentials, { rejectWithValue }) => {
     try {
-      const data = await apiRequest('/auth/login', 'POST', credentials);
+      const data = await apiRequest("/auth/login", "POST", credentials);
       return data.user;
     } catch (err) {
-      return rejectWithValue(err.message);
+      // Pass the whole error object so callers can inspect e.g. blockedUntil
+      return rejectWithValue(err);
     }
-  }
+  },
 );
 
 export const logoutUser = createAsyncThunk(
-  'auth/logout',
+  "auth/logout",
   async (_, { rejectWithValue }) => {
     try {
-      await apiRequest('/auth/logout', 'POST');
+      await apiRequest("/auth/logout", "POST");
       return null;
     } catch (err) {
       return rejectWithValue(err.message);
     }
-  }
+  },
 );
 
 export const checkAuthStatus = createAsyncThunk(
-  'auth/checkStatus',
+  "auth/checkStatus",
   async (_, { rejectWithValue }) => {
     try {
-      const data = await apiRequest('/auth/me', 'GET');
+      const data = await apiRequest("/auth/me", "GET");
       return data.user;
     } catch (err) {
       return rejectWithValue(err.message);
     }
-  }
+  },
 );
 
 export const updateStudentProfile = createAsyncThunk(
-  'auth/updateProfile',
+  "auth/updateProfile",
   async (profileData, { rejectWithValue }) => {
     try {
       // profileData can now be FormData (containing profileImage) or JSON
-      const data = await apiRequest('/auth/profile', 'PUT', profileData);
+      const data = await apiRequest("/auth/profile", "PUT", profileData);
       return data.user;
     } catch (err) {
       return rejectWithValue(err.message);
     }
-  }
+  },
 );
 
 const authSlice = createSlice({
-  name: 'auth',
+  name: "auth",
   initialState: {
     user: null,
     loading: true,
@@ -113,16 +121,44 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(registerUser.pending, (state) => { state.loading = true; state.error = null; })
-      .addCase(registerUser.fulfilled, (state, action) => { state.loading = false; state.user = action.payload; })
-      .addCase(registerUser.rejected, (state, action) => { state.loading = false; state.error = action.payload; })
-      .addCase(loginUser.pending, (state) => { state.loading = true; state.error = null; })
-      .addCase(loginUser.fulfilled, (state, action) => { state.loading = false; state.user = action.payload; })
-      .addCase(loginUser.rejected, (state, action) => { state.loading = false; state.error = action.payload; })
-      .addCase(logoutUser.fulfilled, (state) => { state.user = null; })
-      .addCase(checkAuthStatus.pending, (state) => { state.loading = true; })
-      .addCase(checkAuthStatus.fulfilled, (state, action) => { state.loading = false; state.user = action.payload; })
-      .addCase(checkAuthStatus.rejected, (state) => { state.loading = false; state.user = null; })
+      .addCase(registerUser.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(registerUser.fulfilled, (state, action) => {
+        state.loading = false;
+        state.user = action.payload;
+      })
+      .addCase(registerUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(loginUser.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(loginUser.fulfilled, (state, action) => {
+        state.loading = false;
+        state.user = action.payload;
+      })
+      .addCase(loginUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(logoutUser.fulfilled, (state) => {
+        state.user = null;
+      })
+      .addCase(checkAuthStatus.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(checkAuthStatus.fulfilled, (state, action) => {
+        state.loading = false;
+        state.user = action.payload;
+      })
+      .addCase(checkAuthStatus.rejected, (state) => {
+        state.loading = false;
+        state.user = null;
+      })
       .addCase(updateStudentProfile.fulfilled, (state, action) => {
         // Update user state with new name and profilePic path
         state.user = action.payload;
@@ -137,62 +173,62 @@ export const { clearAuthErrors } = authSlice.actions;
 // ==========================================
 
 export const fetchAllCourses = createAsyncThunk(
-  'courses/fetchAll',
+  "courses/fetchAll",
   async (_, { rejectWithValue }) => {
     try {
-      return await apiRequest('/courses', 'GET');
+      return await apiRequest("/courses", "GET");
     } catch (err) {
       return rejectWithValue(err.message);
     }
-  }
+  },
 );
 
 export const fetchCourseById = createAsyncThunk(
-  'courses/fetchById',
+  "courses/fetchById",
   async (id, { rejectWithValue }) => {
     try {
-      return await apiRequest(`/courses/${id}`, 'GET');
+      return await apiRequest(`/courses/${id}`, "GET");
     } catch (err) {
       return rejectWithValue(err.message);
     }
-  }
+  },
 );
 
 export const createNewCourse = createAsyncThunk(
-  'courses/create',
+  "courses/create",
   async (courseData, { rejectWithValue }) => {
     try {
-      return await apiRequest('/courses', 'POST', courseData);
+      return await apiRequest("/courses", "POST", courseData);
     } catch (err) {
       return rejectWithValue(err.message);
     }
-  }
+  },
 );
 
 export const updateCourse = createAsyncThunk(
-  'courses/update',
+  "courses/update",
   async ({ id, data }, { rejectWithValue }) => {
     try {
-      return await apiRequest(`/courses/${id}`, 'PUT', data);
+      return await apiRequest(`/courses/${id}`, "PUT", data);
     } catch (err) {
       return rejectWithValue(err.message);
     }
-  }
+  },
 );
 
 export const fetchCourseAnalytics = createAsyncThunk(
-  'courses/fetchAnalytics',
+  "courses/fetchAnalytics",
   async (_, { rejectWithValue }) => {
     try {
-      return await apiRequest('/courses/analytics', 'GET');
+      return await apiRequest("/courses/analytics", "GET");
     } catch (err) {
       return rejectWithValue(err.message);
     }
-  }
+  },
 );
 
 const courseSlice = createSlice({
-  name: 'courses',
+  name: "courses",
   initialState: {
     list: [],
     currentCourse: null,
@@ -207,21 +243,51 @@ const courseSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchAllCourses.pending, (state) => { state.loading = true; state.error = null; })
-      .addCase(fetchAllCourses.fulfilled, (state, action) => { state.loading = false; state.list = action.payload; })
-      .addCase(fetchAllCourses.rejected, (state, action) => { state.loading = false; state.error = action.payload; })
-      .addCase(fetchCourseById.pending, (state) => { state.loading = true; state.error = null; })
-      .addCase(fetchCourseById.fulfilled, (state, action) => { state.loading = false; state.currentCourse = action.payload; })
-      .addCase(fetchCourseById.rejected, (state, action) => { state.loading = false; state.error = action.payload; })
-      .addCase(createNewCourse.fulfilled, (state, action) => { state.list.push(action.payload); })
+      .addCase(fetchAllCourses.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchAllCourses.fulfilled, (state, action) => {
+        state.loading = false;
+        state.list = action.payload;
+      })
+      .addCase(fetchAllCourses.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(fetchCourseById.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchCourseById.fulfilled, (state, action) => {
+        state.loading = false;
+        state.currentCourse = action.payload;
+      })
+      .addCase(fetchCourseById.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(createNewCourse.fulfilled, (state, action) => {
+        state.list.push(action.payload);
+      })
       .addCase(updateCourse.fulfilled, (state, action) => {
         state.currentCourse = action.payload;
         const index = state.list.findIndex((c) => c._id === action.payload._id);
         if (index !== -1) state.list[index] = action.payload;
       })
-      .addCase(fetchCourseAnalytics.pending, (state) => { state.loading = true; state.error = null; })
-      .addCase(fetchCourseAnalytics.fulfilled, (state, action) => { state.loading = false; state.analyticsData = action.payload; })
-      .addCase(fetchCourseAnalytics.rejected, (state, action) => { state.loading = false; state.error = action.payload; state.analyticsData = []; });
+      .addCase(fetchCourseAnalytics.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchCourseAnalytics.fulfilled, (state, action) => {
+        state.loading = false;
+        state.analyticsData = action.payload;
+      })
+      .addCase(fetchCourseAnalytics.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+        state.analyticsData = [];
+      });
   },
 });
 
@@ -232,53 +298,59 @@ export const { clearCurrentCourse } = courseSlice.actions;
 // ==========================================
 
 export const enrollInCourse = createAsyncThunk(
-  'enrollment/enroll',
+  "enrollment/enroll",
   async (courseId, { rejectWithValue }) => {
     try {
-      const result = await apiRequest('/enrollment/enroll', 'POST', { courseId });
+      const result = await apiRequest("/enrollment/enroll", "POST", {
+        courseId,
+      });
       return result;
     } catch (err) {
       return rejectWithValue(err.message);
     }
-  }
+  },
 );
 
 export const fetchEnrollmentStatus = createAsyncThunk(
-  'enrollment/fetchStatus',
+  "enrollment/fetchStatus",
   async (courseId, { rejectWithValue }) => {
     try {
-      const enrollment = await apiRequest(`/enrollment/${courseId}`, 'GET');
+      const enrollment = await apiRequest(`/enrollment/${courseId}`, "GET");
       return enrollment;
     } catch (err) {
       return rejectWithValue(err.message);
     }
-  }
+  },
 );
 
 export const updateProgress = createAsyncThunk(
-  'enrollment/updateProgress',
+  "enrollment/updateProgress",
   async ({ courseId, progressData }, { rejectWithValue }) => {
     try {
-      return await apiRequest(`/enrollment/${courseId}/progress`, 'PUT', progressData);
+      return await apiRequest(
+        `/enrollment/${courseId}/progress`,
+        "PUT",
+        progressData,
+      );
     } catch (err) {
       return rejectWithValue(err.message);
     }
-  }
+  },
 );
 
 export const fetchEnrolledCourses = createAsyncThunk(
-  'enrollment/fetchEnrolledCourses',
+  "enrollment/fetchEnrolledCourses",
   async (_, { rejectWithValue }) => {
     try {
-      return await apiRequest('/enrollment/my-courses', 'GET');
+      return await apiRequest("/enrollment/my-courses", "GET");
     } catch (err) {
       return rejectWithValue(err.message);
     }
-  }
+  },
 );
 
 const enrollmentSlice = createSlice({
-  name: 'enrollment',
+  name: "enrollment",
   initialState: {
     currentEnrollment: null,
     enrolledList: [],
@@ -293,21 +365,42 @@ const enrollmentSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(enrollInCourse.pending, (state) => { state.loading = true; state.error = null; })
-      .addCase(enrollInCourse.fulfilled, (state, action) => { state.loading = false; state.currentEnrollment = action.payload; })
-      .addCase(enrollInCourse.rejected, (state, action) => { state.loading = false; state.error = action.payload; })
-      .addCase(fetchEnrollmentStatus.pending, (state) => { state.loading = true; state.error = null; })
-      .addCase(fetchEnrollmentStatus.fulfilled, (state, action) => { state.loading = false; state.currentEnrollment = action.payload; })
+      .addCase(enrollInCourse.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(enrollInCourse.fulfilled, (state, action) => {
+        state.loading = false;
+        state.currentEnrollment = action.payload;
+      })
+      .addCase(enrollInCourse.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(fetchEnrollmentStatus.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchEnrollmentStatus.fulfilled, (state, action) => {
+        state.loading = false;
+        state.currentEnrollment = action.payload;
+      })
       .addCase(fetchEnrollmentStatus.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
-        if (action.payload && action.payload.includes('Not enrolled')) {
+        if (action.payload && action.payload.includes("Not enrolled")) {
           state.currentEnrollment = null;
           state.error = null;
         }
       })
-      .addCase(fetchEnrolledCourses.pending, (state) => { state.loading = true; state.error = null; })
-      .addCase(fetchEnrolledCourses.fulfilled, (state, action) => { state.loading = false; state.enrolledList = action.payload; })
+      .addCase(fetchEnrolledCourses.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchEnrolledCourses.fulfilled, (state, action) => {
+        state.loading = false;
+        state.enrolledList = action.payload;
+      })
       .addCase(fetchEnrolledCourses.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
@@ -326,18 +419,18 @@ export const { resetEnrollment } = enrollmentSlice.actions;
 // ==========================================
 
 export const fetchAllTeachers = createAsyncThunk(
-  'teachers/fetchAll',
+  "teachers/fetchAll",
   async (_, { rejectWithValue }) => {
     try {
-      return await apiRequest('/auth/teachers', 'GET');
+      return await apiRequest("/auth/teachers", "GET");
     } catch (err) {
       return rejectWithValue(null);
     }
-  }
+  },
 );
 
 const teachersSlice = createSlice({
-  name: 'teachers',
+  name: "teachers",
   initialState: {
     entities: {},
     loading: false,
@@ -346,7 +439,10 @@ const teachersSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-      .addCase(fetchAllTeachers.pending, (state) => { state.loading = true; state.error = null; })
+      .addCase(fetchAllTeachers.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
       .addCase(fetchAllTeachers.fulfilled, (state, action) => {
         state.loading = false;
         state.entities = action.payload.reduce((acc, user) => {
@@ -354,7 +450,10 @@ const teachersSlice = createSlice({
           return acc;
         }, {});
       })
-      .addCase(fetchAllTeachers.rejected, (state, action) => { state.loading = false; state.error = action.payload; });
+      .addCase(fetchAllTeachers.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      });
   },
 });
 
@@ -363,88 +462,91 @@ const teachersSlice = createSlice({
 // ==========================================
 
 export const fetchAllAdminData = createAsyncThunk(
-  'admin/fetchAllData',
+  "admin/fetchAllData",
   async (_, { rejectWithValue }) => {
     try {
       const [users, courses, enrollments] = await Promise.all([
-        apiRequest('/admin/users', 'GET'),
-        apiRequest('/admin/courses', 'GET'),
-        apiRequest('/admin/enrollments', 'GET')
+        apiRequest("/admin/users", "GET"),
+        apiRequest("/admin/courses", "GET"),
+        apiRequest("/admin/enrollments", "GET"),
       ]);
       return { users, courses, enrollments };
     } catch (err) {
       return rejectWithValue(err.message);
     }
-  }
+  },
 );
 
 export const deleteUserAdmin = createAsyncThunk(
-  'admin/deleteUser',
+  "admin/deleteUser",
   async ({ role, id }, { rejectWithValue }) => {
     try {
-      await apiRequest(`/admin/users/${role}/${id}`, 'DELETE');
+      await apiRequest(`/admin/users/${role}/${id}`, "DELETE");
       return { role, id };
     } catch (err) {
       return rejectWithValue(err.message);
     }
-  }
+  },
 );
 
 export const deleteCourseAdmin = createAsyncThunk(
-  'admin/deleteCourse',
+  "admin/deleteCourse",
   async (id, { rejectWithValue }) => {
     try {
-      await apiRequest(`/admin/courses/${id}`, 'DELETE');
+      await apiRequest(`/admin/courses/${id}`, "DELETE");
       return id;
     } catch (err) {
       return rejectWithValue(err.message);
     }
-  }
+  },
 );
 
 export const updateCourseAdmin = createAsyncThunk(
-  'admin/updateCourse',
+  "admin/updateCourse",
   async ({ id, data }, { rejectWithValue }) => {
     try {
-      return await apiRequest(`/admin/courses/${id}`, 'PUT', data);
+      return await apiRequest(`/admin/courses/${id}`, "PUT", data);
     } catch (err) {
       return rejectWithValue(err.message);
     }
-  }
+  },
 );
 
 export const fetchStudentEnrollmentByEmail = createAsyncThunk(
-  'admin/lookupStudent',
+  "admin/lookupStudent",
   async (email, { rejectWithValue }) => {
     try {
       const encodedEmail = encodeURIComponent(email);
-      return await apiRequest(`/admin/enrollments/student/${encodedEmail}`, 'GET');
+      return await apiRequest(
+        `/admin/enrollments/student/${encodedEmail}`,
+        "GET",
+      );
     } catch (err) {
-      if (err.message.includes('Student not found')) {
-        return rejectWithValue('Student not found with that email.');
+      if (err.message.includes("Student not found")) {
+        return rejectWithValue("Student not found with that email.");
       }
       return rejectWithValue(err.message);
     }
-  }
+  },
 );
 
 export const fetchTeacherCoursesByEmail = createAsyncThunk(
-  'admin/lookupTeacher',
+  "admin/lookupTeacher",
   async (email, { rejectWithValue }) => {
     try {
       const encodedEmail = encodeURIComponent(email);
-      return await apiRequest(`/admin/teachers/courses/${encodedEmail}`, 'GET');
+      return await apiRequest(`/admin/teachers/courses/${encodedEmail}`, "GET");
     } catch (err) {
-      if (err.message.includes('Teacher not found')) {
-        return rejectWithValue('Teacher not found with that email.');
+      if (err.message.includes("Teacher not found")) {
+        return rejectWithValue("Teacher not found with that email.");
       }
       return rejectWithValue(err.message);
     }
-  }
+  },
 );
 
 const adminSlice = createSlice({
-  name: 'admin',
+  name: "admin",
   initialState: {
     students: [],
     teachers: [],
@@ -462,11 +564,14 @@ const adminSlice = createSlice({
       state.lookupResult = null;
       state.lookupError = null;
       state.lookupType = null;
-    }
+    },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchAllAdminData.pending, (state) => { state.loading = true; state.error = null; })
+      .addCase(fetchAllAdminData.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
       .addCase(fetchAllAdminData.fulfilled, (state, action) => {
         state.loading = false;
         state.students = action.payload.users.students;
@@ -474,31 +579,36 @@ const adminSlice = createSlice({
         state.courses = action.payload.courses;
         state.enrollments = action.payload.enrollments;
       })
-      .addCase(fetchAllAdminData.rejected, (state, action) => { state.loading = false; state.error = action.payload; })
+      .addCase(fetchAllAdminData.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
       .addCase(deleteUserAdmin.fulfilled, (state, action) => {
         const { role, id } = action.payload;
-        if (role === 'student') {
-          state.students = state.students.filter(u => u._id !== id);
-        } else if (role === 'teacher') {
-          state.teachers = state.teachers.filter(u => u._id !== id);
-          state.courses = state.courses.filter(c => c.teacherId !== id);
+        if (role === "student") {
+          state.students = state.students.filter((u) => u._id !== id);
+        } else if (role === "teacher") {
+          state.teachers = state.teachers.filter((u) => u._id !== id);
+          state.courses = state.courses.filter((c) => c.teacherId !== id);
         }
       })
       .addCase(deleteCourseAdmin.fulfilled, (state, action) => {
         const id = action.payload;
-        state.courses = state.courses.filter(c => c._id !== id);
-        state.enrollments = state.enrollments.filter(e => e.courseId !== id);
+        state.courses = state.courses.filter((c) => c._id !== id);
+        state.enrollments = state.enrollments.filter((e) => e.courseId !== id);
       })
       .addCase(updateCourseAdmin.fulfilled, (state, action) => {
         const updatedCourse = action.payload;
-        const index = state.courses.findIndex(c => c._id === updatedCourse._id);
+        const index = state.courses.findIndex(
+          (c) => c._id === updatedCourse._id,
+        );
         if (index !== -1) state.courses[index] = updatedCourse;
       })
       .addCase(fetchStudentEnrollmentByEmail.pending, (state) => {
         state.lookupLoading = true;
         state.lookupError = null;
         state.lookupResult = null;
-        state.lookupType = 'student';
+        state.lookupType = "student";
       })
       .addCase(fetchStudentEnrollmentByEmail.fulfilled, (state, action) => {
         state.lookupLoading = false;
@@ -512,7 +622,7 @@ const adminSlice = createSlice({
         state.lookupLoading = true;
         state.lookupError = null;
         state.lookupResult = null;
-        state.lookupType = 'teacher';
+        state.lookupType = "teacher";
       })
       .addCase(fetchTeacherCoursesByEmail.fulfilled, (state, action) => {
         state.lookupLoading = false;
@@ -532,99 +642,102 @@ export const { clearLookup } = adminSlice.actions;
 // ==========================================
 
 export const fetchAdminAnalytics = createAsyncThunk(
-  'analytics/fetchAdminOverview',
+  "analytics/fetchAdminOverview",
   async (days = 30, { rejectWithValue }) => {
     try {
-      return await apiRequest(`/analytics/admin/overview?days=${days}`, 'GET');
+      return await apiRequest(`/analytics/admin/overview?days=${days}`, "GET");
     } catch (err) {
       return rejectWithValue(err.message);
     }
-  }
+  },
 );
 
 export const fetchGrowthTrends = createAsyncThunk(
-  'analytics/fetchGrowthTrends',
+  "analytics/fetchGrowthTrends",
   async (params = 30, { rejectWithValue }) => {
     try {
-      const days = typeof params === 'number' ? params : (params.days || 30);
-      const subject = typeof params === 'object' ? params.subject : null;
+      const days = typeof params === "number" ? params : params.days || 30;
+      const subject = typeof params === "object" ? params.subject : null;
       let query = `/analytics/admin/growth-trends?days=${days}`;
-      if (subject && subject !== 'All') query += `&subject=${encodeURIComponent(subject)}`;
-      return await apiRequest(query, 'GET');
+      if (subject && subject !== "All")
+        query += `&subject=${encodeURIComponent(subject)}`;
+      return await apiRequest(query, "GET");
     } catch (err) {
       return rejectWithValue(err.message);
     }
-  }
+  },
 );
 
 export const fetchSubjectDistribution = createAsyncThunk(
-  'analytics/fetchSubjectDistribution',
+  "analytics/fetchSubjectDistribution",
   async (_, { rejectWithValue }) => {
     try {
-      return await apiRequest('/analytics/admin/subject-distribution', 'GET');
+      return await apiRequest("/analytics/admin/subject-distribution", "GET");
     } catch (err) {
       return rejectWithValue(err.message);
     }
-  }
+  },
 );
 
 export const fetchTopCourses = createAsyncThunk(
-  'analytics/fetchTopCourses',
+  "analytics/fetchTopCourses",
   async (params = {}, { rejectWithValue }) => {
     try {
       const limit = params.limit || 10;
-      const sortBy = params.sortBy || 'enrollments';
+      const sortBy = params.sortBy || "enrollments";
       const subject = params.subject;
 
       let query = `/analytics/admin/top-courses?limit=${limit}&sortBy=${sortBy}`;
-      if (subject && subject !== 'All') query += `&subject=${encodeURIComponent(subject)}`;
+      if (subject && subject !== "All")
+        query += `&subject=${encodeURIComponent(subject)}`;
 
-      return await apiRequest(query, 'GET');
+      return await apiRequest(query, "GET");
     } catch (err) {
       return rejectWithValue(err.message);
     }
-  }
+  },
 );
 
 export const fetchInstructorLeaderboard = createAsyncThunk(
-  'analytics/fetchInstructorLeaderboard',
+  "analytics/fetchInstructorLeaderboard",
   async (_, { rejectWithValue }) => {
     try {
-      return await apiRequest('/analytics/admin/instructor-leaderboard', 'GET');
+      return await apiRequest("/analytics/admin/instructor-leaderboard", "GET");
     } catch (err) {
       return rejectWithValue(err.message);
     }
-  }
+  },
 );
 
 export const fetchInstructorAnalytics = createAsyncThunk(
-  'analytics/fetchInstructorAnalytics',
+  "analytics/fetchInstructorAnalytics",
   async (params = 30, { rejectWithValue }) => {
     try {
-      const days = typeof params === 'number' ? params : (params.days || 30);
-      const instructorId = typeof params === 'object' ? params.instructorId : null;
+      const days = typeof params === "number" ? params : params.days || 30;
+      const instructorId =
+        typeof params === "object" ? params.instructorId : null;
       let query = `/analytics/instructor/my-stats?days=${days}`;
       if (instructorId) query += `&instructorId=${instructorId}`;
-      return await apiRequest(query, 'GET');
+      return await apiRequest(query, "GET");
     } catch (err) {
       return rejectWithValue(err.message);
     }
-  }
+  },
 );
 
 export const fetchInstructorStudentAnalytics = createAsyncThunk(
-  'analytics/fetchInstructorStudentAnalytics',
+  "analytics/fetchInstructorStudentAnalytics",
   async (_, { rejectWithValue }) => {
     try {
-      return await apiRequest('/analytics/instructor/student-analytics', 'GET'); // Prefix with /analytics
+      return await apiRequest("/analytics/instructor/student-analytics", "GET"); // Prefix with /analytics
     } catch (err) {
       return rejectWithValue(err.message);
     }
-  }
+  },
 );
 
 const analyticsSlice = createSlice({
-  name: 'analytics',
+  name: "analytics",
   initialState: {
     overview: null,
     growthTrends: null,
@@ -650,23 +763,65 @@ const analyticsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchAdminAnalytics.pending, (state) => { state.loading = true; state.error = null; })
-      .addCase(fetchAdminAnalytics.fulfilled, (state, action) => { state.loading = false; state.overview = action.payload; })
-      .addCase(fetchAdminAnalytics.rejected, (state, action) => { state.loading = false; state.error = action.payload; })
-      .addCase(fetchGrowthTrends.pending, (state) => { state.loading = true; state.error = null; })
-      .addCase(fetchGrowthTrends.fulfilled, (state, action) => { state.loading = false; state.growthTrends = action.payload; })
-      .addCase(fetchGrowthTrends.rejected, (state, action) => { state.loading = false; state.error = action.payload; })
-      .addCase(fetchSubjectDistribution.fulfilled, (state, action) => { state.subjectDistribution = action.payload; })
-      .addCase(fetchTopCourses.fulfilled, (state, action) => { state.topCourses = action.payload; })
-      .addCase(fetchInstructorLeaderboard.fulfilled, (state, action) => { state.instructorLeaderboard = action.payload; })
+      .addCase(fetchAdminAnalytics.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchAdminAnalytics.fulfilled, (state, action) => {
+        state.loading = false;
+        state.overview = action.payload;
+      })
+      .addCase(fetchAdminAnalytics.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(fetchGrowthTrends.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchGrowthTrends.fulfilled, (state, action) => {
+        state.loading = false;
+        state.growthTrends = action.payload;
+      })
+      .addCase(fetchGrowthTrends.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(fetchSubjectDistribution.fulfilled, (state, action) => {
+        state.subjectDistribution = action.payload;
+      })
+      .addCase(fetchTopCourses.fulfilled, (state, action) => {
+        state.topCourses = action.payload;
+      })
+      .addCase(fetchInstructorLeaderboard.fulfilled, (state, action) => {
+        state.instructorLeaderboard = action.payload;
+      })
       // Instructor Analytics
-      .addCase(fetchInstructorAnalytics.pending, (state) => { state.loading = true; state.error = null; })
-      .addCase(fetchInstructorAnalytics.fulfilled, (state, action) => { state.loading = false; state.instructorStats = action.payload; })
-      .addCase(fetchInstructorAnalytics.rejected, (state, action) => { state.loading = false; state.error = action.payload; })
+      .addCase(fetchInstructorAnalytics.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchInstructorAnalytics.fulfilled, (state, action) => {
+        state.loading = false;
+        state.instructorStats = action.payload;
+      })
+      .addCase(fetchInstructorAnalytics.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
       // Instructor Student Analytics
-      .addCase(fetchInstructorStudentAnalytics.pending, (state) => { state.loading = true; state.error = null; })
-      .addCase(fetchInstructorStudentAnalytics.fulfilled, (state, action) => { state.loading = false; state.studentAnalytics = action.payload; })
-      .addCase(fetchInstructorStudentAnalytics.rejected, (state, action) => { state.loading = false; state.error = action.payload; });
+      .addCase(fetchInstructorStudentAnalytics.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchInstructorStudentAnalytics.fulfilled, (state, action) => {
+        state.loading = false;
+        state.studentAnalytics = action.payload;
+      })
+      .addCase(fetchInstructorStudentAnalytics.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      });
   },
 });
 

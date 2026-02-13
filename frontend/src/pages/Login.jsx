@@ -12,6 +12,7 @@ const Login = () => {
     password: "",
     role: "student",
   });
+  const [remainingSeconds, setRemainingSeconds] = useState(0);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -33,6 +34,45 @@ const Login = () => {
       dispatch(clearAuthErrors());
     };
   }, [user, navigate, dispatch]);
+
+  // Watch for blocking error (structured object may contain blockedUntil)
+  useEffect(() => {
+    if (error && typeof error === "object" && error.blockedUntil) {
+      const until = new Date(error.blockedUntil);
+      const tick = () => {
+        const secs = Math.max(
+          0,
+          Math.ceil((until.getTime() - Date.now()) / 1000),
+        );
+        setRemainingSeconds(secs);
+      };
+      tick();
+      const timerId = setInterval(tick, 1000);
+      return () => clearInterval(timerId);
+    } else {
+      // If error is cleared or not a block, reset
+      setRemainingSeconds(0);
+    }
+  }, [error]);
+
+  const formatRemaining = (secs) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    const mm = m.toString().padStart(2, '0');
+    const ss = s.toString().padStart(2, '0');
+    return `${mm}:${ss}`;
+  };
+
+  const formatAbsoluteTime = (isoOrDate) => {
+    try {
+      const d = isoOrDate instanceof Date ? isoOrDate : new Date(isoOrDate);
+      if (Number.isNaN(d.getTime())) return '';
+      // Show date and time in user's locale
+      return d.toLocaleString();
+    } catch (e) {
+      return '';
+    }
+  };
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -71,7 +111,19 @@ const Login = () => {
             </button>
           </div>
 
-          {error && <div className="error-msg">{error}</div>}
+          {error && (
+            <div className="error-msg">
+              {typeof error === "object" ? error.message || "Error" : error}
+              {error?.blockedUntil && remainingSeconds > 0 && (
+                <div style={{ marginTop: 6 }}>
+                  Too many attempts. Try again in {formatRemaining(remainingSeconds)}.
+                  <div style={{ fontSize: 12, color: '#555', marginTop: 4 }}>
+                    (until {formatAbsoluteTime(error.blockedUntil)})
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit}>
             <div className="form-group">
@@ -98,7 +150,11 @@ const Login = () => {
               />
             </div>
 
-            <button type="submit" className="btn-primary" disabled={loading}>
+            <button
+              type="submit"
+              className="btn-primary"
+              disabled={loading || remainingSeconds > 0}
+            >
               {loading ? "Signing In..." : "Sign In"}
             </button>
           </form>

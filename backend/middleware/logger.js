@@ -33,7 +33,22 @@ const setupLogging = (app) => {
         // immutable: true, 
     });
 
-    const logFormat = '[:date[iso]] :method :url :status :response-time ms';
+    // morgan token that emits auth attempt info when available on req
+    morgan.token('auth', (req) => {
+        try {
+            if (req.authAttemptInfo && req.authAttemptInfo.key) {
+                const key = req.authAttemptInfo.key;
+                const rec = req.authAttemptInfo.rec || {};
+                const bu = rec.blockedUntil ? rec.blockedUntil : null;
+                return `AuthAttempts ${key} count=${rec.count || 0} blockedUntil=${bu}`;
+            }
+        } catch (e) {
+            return '';
+        }
+        return '';
+    });
+
+    const logFormat = '[:date[iso]] :method :url :status :response-time ms :auth';
     app.use(morgan(logFormat, { stream: accessLogStream }));
 };
 

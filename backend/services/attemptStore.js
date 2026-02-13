@@ -1,5 +1,6 @@
 const AuthAttempt = require("../models/AuthAttempt");
 const { promisify } = require("util");
+const authLogger = require("../middleware/authLogger");
 
 // Try to use redis if configured, otherwise fallback to in-memory store
 let redisClient = null;
@@ -86,6 +87,16 @@ async function recordFailedAttempt(key, ip) {
       ip: rec.ip,
       lastAttemptAt: rec.lastAttemptAt,
     });
+    // Also write a short audit line to auth log
+    try {
+      const bu = rec.blockedUntil ? rec.blockedUntil : null;
+      authLogger.write(
+        `AuthAttempts ${key} count=${rec.count} blockedUntil=${bu}`,
+      );
+    } catch (e) {
+      // ignore logging errors
+      console.error("Auth log write failed", e && e.message);
+    }
   } catch (e) {
     // ignore DB write errors
     console.error("AuthAttempt DB write failed", e.message);
@@ -99,6 +110,11 @@ async function clearAttempts(key) {
     await redisClient.del(keyForRedis(key));
   } else {
     memory.delete(key);
+  }
+  try {
+    authLogger.write(`AuthAttempts ${key} cleared`);
+  } catch (e) {
+    console.error("Auth log write failed", e && e.message);
   }
 }
 

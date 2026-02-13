@@ -20,6 +20,10 @@ app.use(express.urlencoded({ extended: true }));
 app.use(securityMiddleware);
 app.use(sessionMiddleware);
 
+// Attach auth attempt info before logging so morgan can include it
+const authAttemptInfo = require('./middleware/authAttemptInfo');
+app.use(authAttemptInfo);
+
 // 3. Logging
 setupLogging(app);
 
