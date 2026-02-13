@@ -76,6 +76,9 @@ const Login = () => {
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    // Clear any auth errors / blocking when user edits email/password
+    dispatch(clearAuthErrors());
+    setRemainingSeconds(0);
   };
 
   const handleSubmit = (e) => {
@@ -98,14 +101,22 @@ const Login = () => {
             <button
               type="button"
               className={`role-btn ${formData.role === "student" ? "active" : ""}`}
-              onClick={() => setFormData({ ...formData, role: "student" })}
+              onClick={() => {
+                setFormData({ ...formData, role: "student" });
+                dispatch(clearAuthErrors());
+                setRemainingSeconds(0);
+              }}
             >
               Student
             </button>
             <button
               type="button"
               className={`role-btn ${formData.role === "teacher" ? "active" : ""}`}
-              onClick={() => setFormData({ ...formData, role: "teacher" })}
+              onClick={() => {
+                setFormData({ ...formData, role: "teacher" });
+                dispatch(clearAuthErrors());
+                setRemainingSeconds(0);
+              }}
             >
               Instructor
             </button>

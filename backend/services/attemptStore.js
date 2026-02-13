@@ -87,19 +87,21 @@ async function recordFailedAttempt(key, ip) {
       ip: rec.ip,
       lastAttemptAt: rec.lastAttemptAt,
     });
-    // Also write a short audit line to auth log
-    try {
-      const bu = rec.blockedUntil ? rec.blockedUntil : null;
-      authLogger.write(
-        `AuthAttempts ${key} count=${rec.count} blockedUntil=${bu}`,
-      );
-    } catch (e) {
-      // ignore logging errors
-      console.error("Auth log write failed", e && e.message);
-    }
   } catch (e) {
-    // ignore DB write errors
-    console.error("AuthAttempt DB write failed", e.message);
+    // ignore DB write errors but still log the attempt to the auth log
+    console.error("AuthAttempt DB write failed", e && e.message);
+  }
+
+  // Always write a short audit line to auth log (even if DB write failed)
+  try {
+    const bu = rec.blockedUntil ? rec.blockedUntil : null;
+    const ipstr = rec.ip ? ` ip=${rec.ip}` : "";
+    authLogger.write(
+      `AuthAttempts ${key} count=${rec.count} blockedUntil=${bu}${ipstr}`,
+    );
+  } catch (e) {
+    // ignore logging errors
+    console.error("Auth log write failed", e && e.message);
   }
 
   return rec;

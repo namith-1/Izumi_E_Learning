@@ -34,8 +34,18 @@ const setupLogging = (app) => {
   });
 
   // morgan token that emits auth attempt info when available on req
-  morgan.token("auth", (req) => {
+  morgan.token("auth", (req, res) => {
     try {
+      // Prefer controller-provided latest attempt info stored in res.locals
+      if (res && res.locals && res.locals.authAttempt) {
+        const info = res.locals.authAttempt;
+        const key = info.key;
+        if (info.cleared) return `AuthAttempts ${key} cleared`;
+        const rec = info.rec || {};
+        const bu = rec.blockedUntil ? rec.blockedUntil : null;
+        return `AuthAttempts ${key} count=${rec.count || 0} blockedUntil=${bu}`;
+      }
+      // Fallback to pre-request info attached by authAttemptInfo
       if (req.authAttemptInfo && req.authAttemptInfo.key) {
         const key = req.authAttemptInfo.key;
         const rec = req.authAttemptInfo.rec || {};

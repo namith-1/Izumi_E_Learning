@@ -83,8 +83,8 @@ exports.login = async (req, res) => {
     // Build a key that includes role so locking is role-scoped
     const key = `${actualRole}:${email}`;
 
-    // Only apply blocking logic for students (role-based)
-    if (actualRole === "student") {
+    // Only apply blocking logic for students and teachers (role-scoped)
+    if (actualRole === "student" || actualRole === "teacher") {
       const blocked = await attemptStore.isBlocked(key);
       if (blocked.blocked) {
         const blockedUntil =
@@ -94,12 +94,10 @@ exports.login = async (req, res) => {
         const remainingMs = blockedUntil
           ? Math.max(0, blockedUntil.getTime() - Date.now())
           : 0;
-        return res
-          .status(429)
-          .json({
-            message: `Too many attempts. Try again in ${Math.ceil(remainingMs / 1000)} seconds.`,
-            blockedUntil,
-          });
+        return res.status(429).json({
+          message: `Too many attempts. Try again in ${Math.ceil(remainingMs / 1000)} seconds.`,
+          blockedUntil,
+        });
       }
     }
     const Model = getModel(actualRole);
@@ -109,13 +107,15 @@ exports.login = async (req, res) => {
     const user = await Model.findOne({ email });
 
     if (!user || !(await bcrypt.compare(password, user.password))) {
-      // Record failed attempt only for students (role-based)
+      // Record failed attempt for students and teachers (role-based)
       try {
-        if (actualRole === "student") {
-          await attemptStore.recordFailedAttempt(
+        if (actualRole === "student" || actualRole === "teacher") {
+          const rec = await attemptStore.recordFailedAttempt(
             `${actualRole}:${email}`,
             req.ip,
           );
+          if (res && res.locals)
+            res.locals.authAttempt = { key: `${actualRole}:${email}`, rec };
         }
       } catch (e) {
         console.error("Failed to record attempt", e && e.message);
@@ -131,10 +131,15 @@ exports.login = async (req, res) => {
       email: user.email,
     };
 
-    // Successful login — clear any recorded attempts for this user (students)
+    // Successful login — clear any recorded attempts for this user (students/teachers)
     try {
-      if (actualRole === "student") {
+      if (actualRole === "student" || actualRole === "teacher") {
         await attemptStore.clearAttempts(`${actualRole}:${email}`);
+        if (res && res.locals)
+          res.locals.authAttempt = {
+            key: `${actualRole}:${email}`,
+            cleared: true,
+          };
       }
     } catch (e) {
       console.error("Failed to clear attempts", e && e.message);
