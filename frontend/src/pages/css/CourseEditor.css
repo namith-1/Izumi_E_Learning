@@ -4,7 +4,7 @@
   display: flex;
   height: 100vh;
   background-color: #f3f4f6;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   overflow: hidden;
 }
 
@@ -88,7 +88,8 @@
 }
 
 /* --- TREE STRUCTURE --- */
-.module-tree-list, .module-children-list {
+.module-tree-list,
+.module-children-list {
   list-style: none;
   padding: 0;
   margin: 0;
@@ -373,10 +374,29 @@
   flex-direction: column;
 }
 
+/* Small preview thumbnail in sidebar */
+.image-preview-small {
+  width: 96px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 6px;
+  margin-left: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+/* Large preview banner (also applied inline styles) */
+.course-image-preview-banner {
+  background-size: cover !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  width: 100%;
+  border-radius: 6px;
+}
+
 /* Red border for invalid inputs */
 .input-error {
   border-color: #ef4444 !important; /* Red-500 */
-  background-color: #fef2f2;        /* Red-50 */
+  background-color: #fef2f2; /* Red-50 */
 }
 
 .input-error:focus {

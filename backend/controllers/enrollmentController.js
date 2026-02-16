@@ -125,7 +125,8 @@ exports.getMyEnrolledCourses = async (req, res) => {
       // Deeply populate the Course details (need modules for correct completion count)
       .populate({
         path: "courseId",
-        select: "title description subject teacherId rating rootModule modules", // Include modules and rootModule
+        select:
+          "title description subject teacherId rating imageUrl rootModule modules", // Include imageUrl, modules and rootModule
         populate: {
           path: "teacherId",
           select: "name",
@@ -180,8 +181,10 @@ exports.getMyEnrolledCourses = async (req, res) => {
         courseTitle: course.title,
         description: course.description,
         subject: course.subject,
+        imageUrl: course.imageUrl || null,
         rating: course.rating,
         instructorName: course.teacherId.name,
+        teacherId: course.teacherId._id,
         completionStatus: updatedEnrollment.completionStatus,
         modules_status: updatedEnrollment.modules_status,
         totalContentModules: totalContentModules,

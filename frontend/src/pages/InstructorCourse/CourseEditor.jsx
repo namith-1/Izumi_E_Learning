@@ -740,6 +740,21 @@ const CourseEditor = () => {
 
       {/* EDITOR AREA */}
       <div className="module-editor-content">
+        {/* Large preview banner for selected/uploaded image */}
+        <div
+          className="course-image-preview-banner"
+          style={{
+            height: "420px",
+            marginBottom: "18px",
+            backgroundColor: "#f3f4f6",
+            backgroundImage: imagePreviewUrl
+              ? `url(${(imagePreviewUrl || "").startsWith("http") ? imagePreviewUrl : `${import.meta.env.VITE_API_BASE || "http://localhost:5000"}${imagePreviewUrl}`})`
+              : "none",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            borderRadius: "6px",
+          }}
+        />
         <div className="module-editor-card">
           <div className="card-header">
             <h2>{isIntroModuleForm ? "Course Settings" : "Edit Module"}</h2>
