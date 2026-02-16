@@ -7,7 +7,8 @@ const mongoose = require('mongoose'); // Need mongoose for ObjectId conversion
 exports.createCourse = async (req, res) => {
     try {
         // 1. Extract 'subject' from the request body
-        const { courseTitle, courseDescription, subject, rootModule, modules } = req.body;
+        const { courseTitle, courseDescription, subject, rootModule, modules,
+        price ,duration} = req.body;
         
         // Basic validation
         if (!subject) {
@@ -20,7 +21,9 @@ exports.createCourse = async (req, res) => {
             subject: subject, // 2. Save it to database
             rootModule,
             modules,
-            teacherId: req.session.user.id
+            teacherId: req.session.user.id,
+            price: price || 0, // 3. Save price if provided, default to 0
+            duration: duration || 0 // Save duration if provided, default to 0
         });
         console.log(modules);
         res.status(201).json(newCourse);
@@ -84,7 +87,8 @@ exports.getCourseById = async (req, res) => {
 exports.updateCourse = async (req, res) => {
     try {
         // 4. Allow updating the subject
-        const { courseTitle, courseDescription, subject, rootModule, modules } = req.body;
+        const { courseTitle, courseDescription, subject, rootModule, modules ,
+            price, duration} = req.body;
         
         const updatedCourse = await Course.findOneAndUpdate(
             { _id: req.params.id, teacherId: req.session.user.id },
@@ -93,7 +97,9 @@ exports.updateCourse = async (req, res) => {
                 description: courseDescription,
                 subject: subject, // Update subject
                 rootModule, 
-                modules 
+                modules,
+                price: price || 0, // Update price if provided
+                duration: duration || 0 // Update duration if provided
             },
             { new: true }
         );

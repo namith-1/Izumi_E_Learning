@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { fetchAllCourses, enrollInCourse } from '../store';
-import { BookOpen, User, Zap, CheckCircle } from 'lucide-react';
+import { BookOpen, User, Zap, CheckCircle, DollarSign } from 'lucide-react';
 import './css/CourseCatalog.css';
 
 const CourseCatalog = () => {
@@ -11,9 +11,7 @@ const CourseCatalog = () => {
     const { list: courses, loading, error } = useSelector((state) => state.courses);
     const { user } = useSelector((state) => state.auth);
     
-    // MOCK: Replace this with actual enrolled course IDs fetched from your backend
-    // For now, we assume the enrollment list is available globally or fetched separately.
-    const mockEnrolledIds = []; // Placeholder for student's enrolled course IDs
+    const mockEnrolledIds = []; 
     
     useEffect(() => {
         dispatch(fetchAllCourses());
@@ -51,47 +49,51 @@ const CourseCatalog = () => {
             </header>
 
             <div className="course-grid">
-               {courses.map((course) => {
-    const isEnrolled = mockEnrolledIds.includes(course._id);
-    // Use course._id as a seed so each course has a consistent random image
-    const imageUrl = `https://picsum.photos/seed/${course._id}/400/200`;
-    
-    return (
-        <div key={course._id} className={`course-card ${isEnrolled ? 'enrolled-card' : ''}`}>
-            {/* NEW: Background Image Section */}
-            <div 
-                className="card-banner" 
-                style={{ backgroundImage: `url(${imageUrl})` }}
-            >
-                <div className="card-icon-overlay">
-                    <BookOpen size={24} className="card-icon" />
-                </div>
-            </div>
+                {courses.map((course) => {
+                    const isEnrolled = mockEnrolledIds.includes(course._id);
+                    // Updated image URL to match requested dimensions
+                    const imageUrl = `https://picsum.photos/seed/${course._id}/400/220`;
+                    
+                    return (
+                        <div key={course._id} className={`course-card ${isEnrolled ? 'enrolled-card' : ''}`}>
+                            <div 
+                                className="card-banner" 
+                                style={{ backgroundImage: `url(${imageUrl})` }}
+                            >
+                                <div className="card-icon-overlay">
+                                    <BookOpen size={24} className="card-icon" />
+                                </div>
+                            </div>
 
-            <div className="card-content">
-                <h2 className="card-title">{course.title}</h2>
-                <p className="card-description">{course.description}</p>
-                
-                <div className="card-meta">
-                    <span><Zap size={14} /> {course.subject}</span>
-                    <span><User size={14} /> Teacher {course.teacherId.substring(0, 4)}</span>
-                </div>
+                            <div className="card-content">
+                                <h2 className="card-title">{course.title}</h2>
+                                <p className="card-description">{course.description}</p>
+                                
+                                <div className="card-meta">
+                                    <span><Zap size={14} /> {course.subject}</span>
+                                    <span><User size={14} /> Teacher {course.teacherId.substring(0, 4)}</span>
+                                    {/* Added Course Price */}
+                                    <span className="course-price">
+                                        <DollarSign size={14} /> 
+                                        {course.price > 0 ? course.price : 'Free'}
+                                    </span>
+                                </div>
 
-                <button 
-                    onClick={() => isEnrolled ? navigate(`/course/${course._id}`) : handleEnroll(course._id)}
-                    className={`btn-action ${isEnrolled ? 'btn-view' : 'btn-enroll'}`}
-                    disabled={!user}
-                >
-                    {isEnrolled ? (
-                        <><CheckCircle size={18} /> Continue</>
-                    ) : (
-                        'Enroll Now'
-                    )}
-                </button>
-            </div>
-        </div>
-    );
-})}
+                                <button 
+                                    onClick={() => isEnrolled ? navigate(`/course/${course._id}`) : handleEnroll(course._id)}
+                                    className={`btn-action ${isEnrolled ? 'btn-view' : 'btn-enroll'}`}
+                                    disabled={!user}
+                                >
+                                    {isEnrolled ? (
+                                        <><CheckCircle size={18} /> Continue</>
+                                    ) : (
+                                        'Enroll Now'
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    );
+                })}
             </div>
         </div>
     );

@@ -41,10 +41,11 @@ const initialCourseStructure = {
     courseTitle: "Untitled Course",
     courseDescription: "A description for the entire course.",
     subject: "General",
+    price: 0,
+    duration: 0, // ADDED DURATION
     _id: null, 
 };
 
-// ... [renderModuleIcon and deleteModuleFromStructure remain unchanged] ...
 const renderModuleIcon = (type) => {
     const props = { size: 16, className: "module-icon-type" };
     switch (type) {
@@ -80,7 +81,6 @@ const deleteModuleFromStructure = (modules, moduleId) => {
     return newModules;
 };
 
-// ... [ModuleActions and ModuleTreeItem remain unchanged] ...
 const ModuleActions = ({ module, onAction, isRoot }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const menuRef = useRef(null);
@@ -199,7 +199,6 @@ const CourseEditor = () => {
     const [isIntroModuleForm, setIsIntroModuleForm] = useState(true);
     const [isLoadingCourse, setIsLoadingCourse] = useState(!!courseId);
     
-    // NEW: Validation Errors State
     const [validationErrors, setValidationErrors] = useState({});
 
     const allModules = useMemo(() => ({
@@ -209,7 +208,6 @@ const CourseEditor = () => {
 
     const selectedModule = allModules[selectedModuleId] || courseStructure.rootModule;
     
-    // --- Effect 1: Fetch Existing Course Data or Load Draft ---
     useEffect(() => {
         if (courseId) {
             dispatch(fetchCourseById(courseId));
@@ -231,7 +229,6 @@ const CourseEditor = () => {
         }
     }, [dispatch, courseId]);
     
-    // --- Effect 2: Populate state after fetching existing course ---
     useEffect(() => {
         if (courseId && currentCourse && currentCourse._id === courseId && isLoadingCourse) {
             setCourseStructure({
@@ -240,6 +237,8 @@ const CourseEditor = () => {
                 courseTitle: currentCourse.title,
                 courseDescription: currentCourse.description,
                 subject: currentCourse.subject,
+                price: currentCourse.price || 0,
+                duration: currentCourse.duration || 0, // LOAD DURATION
                 _id: currentCourse._id, 
             });
             setSelectedModuleId(currentCourse.rootModule.id);
@@ -259,11 +258,9 @@ const CourseEditor = () => {
         }
     }, [courseId]);
 
-    // --- ACTIONS ---
     const handleSelectModule = (id) => {
         setSelectedModuleId(id);
         setIsIntroModuleForm(id === courseStructure.rootModule.id);
-        // Clear specific module errors on switch (optional, depends on UX preference)
         setValidationErrors(prev => {
             const newErrors = { ...prev };
             delete newErrors.moduleTitle;
@@ -351,7 +348,6 @@ const CourseEditor = () => {
     };
 
     const handleModuleFormChange = (field, value) => {
-        // Clear specific error on change
         if (validationErrors[field]) {
             setValidationErrors(prev => {
                 const newErrors = { ...prev };
@@ -359,7 +355,6 @@ const CourseEditor = () => {
                 return newErrors;
             });
         }
-        // Specific clear for moduleTitle which maps to 'title'
         if (field === 'title' && validationErrors.moduleTitle) {
             setValidationErrors(prev => { const n = {...prev}; delete n.moduleTitle; return n;});
         }
@@ -389,7 +384,6 @@ const CourseEditor = () => {
     };
 
     const handleCourseMetaChange = (field, value) => {
-        // Clear errors
         if (validationErrors[field]) {
             setValidationErrors(prev => {
                 const newErrors = { ...prev };
@@ -405,46 +399,31 @@ const CourseEditor = () => {
         });
     };
 
-    // Autosave Timer
     useEffect(() => {
         const timer = setTimeout(() => saveDraft(courseStructure), 60000);
         return () => clearTimeout(timer);
     }, [courseStructure, saveDraft]);
 
-    // --- VALIDATION LOGIC ---
     const validateEntireCourse = () => {
         const errors = {};
-        
-        // 1. Validate Global Metadata
         if (!courseStructure.courseTitle.trim()) errors.courseTitle = "Course Title is required.";
         if (!courseStructure.subject.trim()) errors.subject = "Subject is required.";
-
-        // 2. Validate Currently Open Module (Immediate Feedback)
-        // Note: For a production app, you might want to iterate through ALL modules 
-        // to find errors, but here we prioritize global fields + current view.
-        if (!selectedModule.title.trim()) {
-            errors.moduleTitle = "Module Title is required.";
-        }
-
+        if (!selectedModule.title.trim()) errors.moduleTitle = "Module Title is required.";
         if (selectedModule.type === 'video') {
             if (!selectedModule.videoLink || !URL_REGEX.test(selectedModule.videoLink)) {
                 errors.videoLink = "A valid Video URL is required.";
             }
         }
-
         if (selectedModule.type === 'quiz') {
             if (!selectedModule.quizData.questions || selectedModule.quizData.questions.length === 0) {
                 errors.quizData = "Quiz must have at least one question.";
             }
         }
-
         setValidationErrors(errors);
         return Object.keys(errors).length === 0;
     };
 
-    // Publish/Update Course
     const handlePublishCourse = async () => {
-        // RUN VALIDATION
         if (!validateEntireCourse()) {
             alert("Please fix the errors highlighted in red before publishing.");
             return;
@@ -460,6 +439,8 @@ const CourseEditor = () => {
                     courseTitle: courseStructure.courseTitle,
                     courseDescription: courseStructure.courseDescription,
                     subject: courseStructure.subject,
+                    price: Number(courseStructure.price),
+                    duration: Number(courseStructure.duration), // PAYLOAD UPDATED
                     rootModule: courseStructure.rootModule,
                     modules: courseStructure.modules
                 };
@@ -503,7 +484,6 @@ const CourseEditor = () => {
 
     return (
         <div className="course-editor-app">
-            {/* SIDEBAR */}
             <div className="module-tree-sidebar">
                 <div className="editor-header">
                     <h2>Course Builder</h2>
@@ -552,7 +532,6 @@ const CourseEditor = () => {
                 </div>
             </div>
 
-            {/* EDITOR AREA */}
             <div className="module-editor-content">
                 <div className="module-editor-card">
                     <div className="card-header">
@@ -588,7 +567,6 @@ const CourseEditor = () => {
                                             if (e.target.value === 'quiz') {
                                                 handleModuleFormChange('quizData', { questions: [] });
                                             }
-                                            // Reset validation for type-specific fields on switch
                                             setValidationErrors(prev => {
                                                 const n = {...prev};
                                                 delete n.videoLink; delete n.quizData;
@@ -612,8 +590,6 @@ const CourseEditor = () => {
                                 </div>
                             </div>
 
-                            {/* --- CONDITIONAL RENDERING --- */}
-                            
                             {selectedModule.type === 'text' && (
                                 <div className="form-field">
                                     <label>Content</label>
@@ -656,14 +632,38 @@ const CourseEditor = () => {
                             )}
                         </>
                     ) : (
-                         <div className="form-field">
-                            <label>Course Description</label>
-                            <textarea 
-                                rows="6"
-                                value={courseStructure.courseDescription}
-                                onChange={(e) => handleCourseMetaChange('courseDescription', e.target.value)}
-                                placeholder="Describe the course..."
-                            />
+                         <div className="form-grid">
+                            <div className="form-field">
+                                <label>Course Price (USD)</label>
+                                <input 
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={courseStructure.price}
+                                    onChange={(e) => handleCourseMetaChange('price', e.target.value)}
+                                    placeholder="0.00"
+                                />
+                            </div>
+                            {/* NEW DURATION FIELD */}
+                            <div className="form-field">
+                                <label>Course Duration (Minutes)</label>
+                                <input 
+                                    type="number"
+                                    min="0"
+                                    value={courseStructure.duration}
+                                    onChange={(e) => handleCourseMetaChange('duration', e.target.value)}
+                                    placeholder="Total minutes"
+                                />
+                            </div>
+                            <div className="form-field" style={{ gridColumn: 'span 2' }}>
+                                <label>Course Description</label>
+                                <textarea 
+                                    rows="6"
+                                    value={courseStructure.courseDescription}
+                                    onChange={(e) => handleCourseMetaChange('courseDescription', e.target.value)}
+                                    placeholder="Describe the course..."
+                                />
+                            </div>
                         </div>
                     )}
 

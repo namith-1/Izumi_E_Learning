@@ -15,7 +15,10 @@ const courseSchema = new mongoose.Schema({
     // Recursive structure
     rootModule: { type: Object, required: true },
     
+    price: { type: Number, default: 0 },
     // Flat map for lookups
+    duration: { type: Number, default: 0 }, // Total duration in minutes
+
     modules: { type: Map, of: Object, required: true } 
 }, { timestamps: true });
 

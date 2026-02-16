@@ -19,6 +19,9 @@ const enrollmentSchema = new mongoose.Schema(
       default: "in-progress",
     },
 
+    enrolledAt: { type: Date, default: Date.now },
+    endDate: { type: Date, default: null },
+
     // Tracks individual module progress
     modules_status: [
       {
