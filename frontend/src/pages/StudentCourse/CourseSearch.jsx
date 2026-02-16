@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import { Search } from 'lucide-react';
 import { fetchAllCourses, fetchAllTeachers } from '../../store';
+import '../css/CourseSearch.css';
 
 const CourseSearch = () => {
   const dispatch = useDispatch();
@@ -110,29 +111,49 @@ const CourseSearch = () => {
           <div className="loading-state">Loading courses and instructors...</div>
         ) : filteredCourses.length > 0 ? (
           <div className="course-grid student-course-grid">
-            {filteredCourses.map(course => (
-              <div key={course._id} className="course-card"> 
-                <div className="course-card-header">
-                  <span className="badge-subject">{course.subject}</span>
-                  <span className="badge-rating">★ {course.rating || 0}</span>
-                </div>
-                <p className="course-instructor">By: {course.instructorName}</p>
-                <h3>{course.title}</h3>
-                <p className="course-desc">
-                  {course.description 
-                    ? course.description.substring(0, 80) + '...' 
-                    : 'No description provided.'}
-                </p>
-                <div className="course-card-footer">
-                  <button 
-                    className="btn-browse"
-                    onClick={() => handleViewCourse(course._id)} // Navigate to view course
-                  >
-                    View Course
-                  </button>
-                </div>
-              </div>
-            ))}
+           {/* ... inside the return statement, mapping filteredCourses ... */}
+{filteredCourses.map(course => {
+  // Use course._id to generate a consistent random image
+  const imageUrl = `https://picsum.photos/seed/${course._id}/400/220`;
+
+  return (
+    <div key={course._id} className="course-card"> 
+      {/* 1. New Banner Image Section */}
+      <div 
+        className="course-card-banner" 
+        style={{ backgroundImage: `url(${imageUrl})` }}
+      >
+        <div className="banner-overlay">
+          <span className="badge-subject">{course.subject}</span>
+        </div>
+      </div>
+
+      {/* 2. Content Section */}
+      <div className="course-card-body">
+        <div className="course-card-header">
+           <span className="badge-rating">★ {course.rating || 0}</span>
+           <p className="course-instructor">By: {course.instructorName}</p>
+        </div>
+        
+        <h3>{course.title}</h3>
+        <p className="course-desc">
+          {course.description 
+            ? course.description.substring(0, 80) + '...' 
+            : 'No description provided.'}
+        </p>
+        
+        <div className="course-card-footer">
+          <button 
+            className="btn-browse"
+            onClick={() => handleViewCourse(course._id)}
+          >
+            View Course
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+})}
           </div>
         ) : (
           <div className="empty-state">

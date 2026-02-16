@@ -51,39 +51,47 @@ const CourseCatalog = () => {
             </header>
 
             <div className="course-grid">
-                {courses.map((course) => {
-                    const isEnrolled = mockEnrolledIds.includes(course._id);
-                    
-                    return (
-                        <div key={course._id} className={`course-card ${isEnrolled ? 'enrolled-card' : ''}`}>
-                            <div className="card-icon-wrapper">
-                                <BookOpen size={30} className="card-icon" />
-                            </div>
-                            <h2 className="card-title">{course.title}</h2>
-                            <p className="card-description">{course.description}</p>
-                            
-                            <div className="card-meta">
-                                <span><Zap size={14} /> Subject: {course.subject}</span>
-                                <span><User size={14} /> Taught by: Teacher {course.teacherId.substring(0, 4)}...</span>
-                                <span className="rating">★ {course.rating || 0}</span>
-                            </div>
+               {courses.map((course) => {
+    const isEnrolled = mockEnrolledIds.includes(course._id);
+    // Use course._id as a seed so each course has a consistent random image
+    const imageUrl = `https://picsum.photos/seed/${course._id}/400/200`;
+    
+    return (
+        <div key={course._id} className={`course-card ${isEnrolled ? 'enrolled-card' : ''}`}>
+            {/* NEW: Background Image Section */}
+            <div 
+                className="card-banner" 
+                style={{ backgroundImage: `url(${imageUrl})` }}
+            >
+                <div className="card-icon-overlay">
+                    <BookOpen size={24} className="card-icon" />
+                </div>
+            </div>
 
-                            <button 
-                                onClick={() => isEnrolled ? navigate(`/course/${course._id}`) : handleEnroll(course._id)}
-                                className={`btn-action ${isEnrolled ? 'btn-view' : 'btn-enroll'}`}
-                                disabled={!user}
-                            >
-                                {isEnrolled ? (
-                                    <>
-                                        <CheckCircle size={18} /> Continue Learning
-                                    </>
-                                ) : (
-                                    'Enroll Now'
-                                )}
-                            </button>
-                        </div>
-                    );
-                })}
+            <div className="card-content">
+                <h2 className="card-title">{course.title}</h2>
+                <p className="card-description">{course.description}</p>
+                
+                <div className="card-meta">
+                    <span><Zap size={14} /> {course.subject}</span>
+                    <span><User size={14} /> Teacher {course.teacherId.substring(0, 4)}</span>
+                </div>
+
+                <button 
+                    onClick={() => isEnrolled ? navigate(`/course/${course._id}`) : handleEnroll(course._id)}
+                    className={`btn-action ${isEnrolled ? 'btn-view' : 'btn-enroll'}`}
+                    disabled={!user}
+                >
+                    {isEnrolled ? (
+                        <><CheckCircle size={18} /> Continue</>
+                    ) : (
+                        'Enroll Now'
+                    )}
+                </button>
+            </div>
+        </div>
+    );
+})}
             </div>
         </div>
     );

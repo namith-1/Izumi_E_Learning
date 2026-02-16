@@ -1,0 +1,67 @@
+/* Card Container */
+.course-card {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  overflow: hidden; /* Clips the image to the card's rounded corners */
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.course-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* Banner Image */
+.course-card-banner {
+  height: 160px;
+  width: 100%;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+.banner-overlay {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+}
+
+.badge-subject {
+  background-color: rgba(37, 99, 235, 0.9); /* Izumi Blue */
+  color: white;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+/* Body Spacing */
+.course-card-body {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.course-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.badge-rating {
+  color: #f59e0b; /* Amber/Gold */
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.course-instructor {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin: 0;
+}

@@ -1,0 +1,34 @@
+.course-card {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Important for rounded corners with the image */
+    background: white;
+    border-radius: 12px;
+    transition: transform 0.2s ease;
+}
+
+.card-banner {
+    height: 160px;
+    width: 100%;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+}
+
+.card-icon-overlay {
+    position: absolute;
+    bottom: -20px;
+    right: 20px;
+    background: #2563eb;
+    color: white;
+    padding: 10px;
+    border-radius: 50%;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.card-content {
+    padding: 25px 20px 20px; /* Top padding extra to clear the icon */
+}
