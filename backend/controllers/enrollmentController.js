@@ -7,7 +7,7 @@ const mongoose = require("mongoose"); // Needed for ObjectId conversion, even if
 const checkCourseCompletion = async (courseId, enrollment) => {
   // 1. Fetch the full course structure to determine total modules and quiz modules
   const course = await Course.findById(courseId).select(
-    "_id rootModule modules title"
+    "_id rootModule modules title",
   );
   if (!course) return enrollment;
 
@@ -16,16 +16,21 @@ const checkCourseCompletion = async (courseId, enrollment) => {
   // Retrieve the root module's unique ID/key
   const rootModuleId = course.rootModule.id;
 
+  // Support `course.modules` being either a Map (Mongoose Map) or a plain object.
+  // Use the values iterator for Map, or Object.values for plain objects.
+  const modulesValues =
+    course.modules instanceof Map
+      ? Array.from(course.modules.values())
+      : Object.values(course.modules || {});
+
   // Combine root and sub-modules, filtering out any corrupt entries (null/undefined/missing ID)
-  const allModulesMap = {
-    ...course.modules,
-    [rootModuleId]: course.rootModule,
-  };
-  const allModulesList = Object.values(allModulesMap).filter((m) => m && m.id);
+  const allModulesList = modulesValues
+    .concat([course.rootModule])
+    .filter((m) => m && m.id);
 
   // 2. Identify and count Non-Root Content Modules (Text, Video, Quiz)
   const nonRootContentModules = allModulesList.filter(
-    (m) => m.id !== rootModuleId && m.id !== courseObjectId
+    (m) => m.id !== rootModuleId && m.id !== courseObjectId,
   );
   const totalContentModules = nonRootContentModules.length;
 
@@ -36,7 +41,7 @@ const checkCourseCompletion = async (courseId, enrollment) => {
 
   // Count how many of the actual content modules have been completed
   const completedContentModules = nonRootContentModules.filter((m) =>
-    completedModuleIds.includes(m.id)
+    completedModuleIds.includes(m.id),
   ).length;
 
   // 4. Check mandatory completion conditions
@@ -44,7 +49,7 @@ const checkCourseCompletion = async (courseId, enrollment) => {
   // Condition A: All quiz modules must be completed.
   const quizModules = allModulesList.filter((m) => m.type === "quiz");
   const allQuizzesCompleted = quizModules.every((quiz) =>
-    completedModuleIds.includes(quiz.id)
+    completedModuleIds.includes(quiz.id),
   );
 
   // Condition B: Percentage of non-root modules completed >= 70%.
@@ -64,13 +69,14 @@ const checkCourseCompletion = async (courseId, enrollment) => {
     enrollment.completionStatus = "in-progress";
   }
 
-  // Diagnostic Logging (Optional, kept for debugging clarity)
-  console.log("----------------------------------------------------");
-  console.log(`[Completion Check] Course: ${course.title || courseId}`);
-  console.log(`Total Content Modules (Non-Root): ${totalContentModules}`);
-  console.log(`Completed Content Modules: ${completedContentModules}`);
-  console.log(`Final Status: ${enrollment.completionStatus}`);
-  console.log("----------------------------------------------------");
+  // Update enrollment snapshot so callers can avoid recomputing unless module count changes
+  try {
+    enrollment.moduleSnapshotCount = totalContentModules;
+  } catch (e) {
+    // ignore assignment failures (defensive)
+  }
+
+  // No logging here (silent operation in production)
 
   return enrollment;
 };
@@ -83,7 +89,6 @@ exports.enroll = async (req, res) => {
       courseId,
       studentId: req.session.user.id,
     });
-    console.log("New enrollment created:", enrollment);
     res.status(201).json(enrollment);
   } catch (err) {
     // Use consistent error handling for unique constraint violation (Error code 11000)
@@ -127,52 +132,62 @@ exports.getMyEnrolledCourses = async (req, res) => {
         },
       });
 
-    // Map and flatten the results for a clean frontend response
-    const enrolledCoursesData = enrollments
-      .map((enrollment) => {
-        const course = enrollment.courseId;
+    // Build response, but avoid recomputing completion unless course module count changed
+    const enrolledCoursesData = [];
+    for (const enrollment of enrollments) {
+      const course = enrollment.courseId;
+      if (!course || !course.teacherId) continue;
 
-        if (!course || !course.teacherId) return null;
+      // Determine current course content module count without converting Map
+      const modulesValuesLocal =
+        course.modules instanceof Map
+          ? Array.from(course.modules.values())
+          : Object.values(course.modules || {});
+      const allModulesLocal = modulesValuesLocal
+        .concat([course.rootModule])
+        .filter((m) => m && m.id);
+      const nonRootContentModulesLocal = allModulesLocal.filter(
+        (m) => m.id !== course.rootModule.id && m.id !== course._id.toString(),
+      );
+      const totalContentModules = nonRootContentModulesLocal.length;
 
-        // --- NEW PROGRESS CALCULATION ---
-        const rootModuleId = course.rootModule.id;
-        const allModulesMap = {
-          ...course.modules,
-          [rootModuleId]: course.rootModule,
-        };
-        const allModulesList = Object.values(allModulesMap).filter(
-          (m) => m && m.id
-        );
+      let updatedEnrollment = enrollment;
 
-        // Count modules to be completed (excluding root module and corrupt entries)
-        const nonRootContentModules = allModulesList.filter(
-          (m) => m.id !== rootModuleId && m.id !== course._id.toString()
-        );
-        const totalContentModules = nonRootContentModules.length;
+      // Only recompute & persist completion if the module count changed since last snapshot
+      if ((enrollment.moduleSnapshotCount || 0) !== totalContentModules) {
+        try {
+          updatedEnrollment = await checkCourseCompletion(
+            course._id,
+            enrollment,
+          );
+          // update snapshot count to avoid repeated recompute
+          updatedEnrollment.moduleSnapshotCount = totalContentModules;
+          await updatedEnrollment.save();
+        } catch (e) {
+          // keep silent on failures to save snapshot; use in-memory values
+        }
+      }
 
-        const completedModulesCount = enrollment.modules_status
-          .filter((s) => s.completed)
-          .map((s) => s.moduleId)
-          .filter((id) =>
-            nonRootContentModules.some((m) => m.id === id)
-          ).length; // Ensure completed ID is a real content module
-        // ---------------------------------
+      const completedModulesCount = (updatedEnrollment.modules_status || [])
+        .filter((s) => s.completed)
+        .map((s) => s.moduleId)
+        .filter((id) =>
+          nonRootContentModulesLocal.some((m) => m.id === id),
+        ).length;
 
-        return {
-          _id: course._id,
-          courseTitle: course.title,
-          description: course.description,
-          subject: course.subject,
-          rating: course.rating,
-          instructorName: course.teacherId.name,
-          completionStatus: enrollment.completionStatus,
-          modules_status: enrollment.modules_status,
-          // Pass accurate counts to the frontend:
-          totalContentModules: totalContentModules,
-          completedContentModules: completedModulesCount,
-        };
-      })
-      .filter((item) => item !== null);
+      enrolledCoursesData.push({
+        _id: course._id,
+        courseTitle: course.title,
+        description: course.description,
+        subject: course.subject,
+        rating: course.rating,
+        instructorName: course.teacherId.name,
+        completionStatus: updatedEnrollment.completionStatus,
+        modules_status: updatedEnrollment.modules_status,
+        totalContentModules: totalContentModules,
+        completedContentModules: completedModulesCount,
+      });
+    }
 
     res.json(enrolledCoursesData);
   } catch (err) {
@@ -205,7 +220,7 @@ exports.updateProgress = async (req, res) => {
 
     // Check if module exists in progress array
     const moduleIndex = enrollment.modules_status.findIndex(
-      (m) => m.moduleId === moduleId
+      (m) => m.moduleId === moduleId,
     );
 
     if (moduleIndex > -1) {

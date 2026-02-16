@@ -325,13 +325,26 @@ export const fetchEnrollmentStatus = createAsyncThunk(
 
 export const updateProgress = createAsyncThunk(
   "enrollment/updateProgress",
-  async ({ courseId, progressData }, { rejectWithValue }) => {
+  async ({ courseId, progressData }, { rejectWithValue, dispatch }) => {
     try {
-      return await apiRequest(
+      const updated = await apiRequest(
         `/enrollment/${courseId}/progress`,
         "PUT",
         progressData,
       );
+
+      // Refresh enrolled courses list so dashboard progress bars update immediately
+      try {
+        dispatch(fetchEnrolledCourses());
+      } catch (e) {
+        // non-fatal
+        console.warn(
+          "Failed to refresh enrolled courses after progress update",
+          e,
+        );
+      }
+
+      return updated;
     } catch (err) {
       return rejectWithValue(err.message);
     }
