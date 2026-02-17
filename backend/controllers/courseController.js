@@ -8,7 +8,7 @@ exports.createCourse = async (req, res) => {
     try {
         // 1. Extract 'subject' from the request body
         const { courseTitle, courseDescription, subject, rootModule, modules,
-        price ,duration} = req.body;
+        price ,duration,imageUrl} = req.body;
         
         // Basic validation
         if (!subject) {
@@ -23,7 +23,8 @@ exports.createCourse = async (req, res) => {
             modules,
             teacherId: req.session.user.id,
             price: price || 0, // 3. Save price if provided, default to 0
-            duration: duration || 0 // Save duration if provided, default to 0
+            duration: duration || 0, // Save duration if provided, default to 0
+            imageUrl
         });
         console.log(modules);
         res.status(201).json(newCourse);
@@ -61,6 +62,7 @@ exports.getAllCourses = async (req, res) => {
                     createdAt: 1,
                     teacherId: 1, // Keep the ID
                     // Extract the name and put it at the root level of the document
+                    imageUrl: 1,
                     instructorName: '$teacherDetails.name'
                 }
             }
@@ -83,12 +85,14 @@ exports.getCourseById = async (req, res) => {
     }
 };
 
+
+
 // Update Course
 exports.updateCourse = async (req, res) => {
     try {
         // 4. Allow updating the subject
         const { courseTitle, courseDescription, subject, rootModule, modules ,
-            price, duration} = req.body;
+            price, duration,imageUrl} = req.body;
         
         const updatedCourse = await Course.findOneAndUpdate(
             { _id: req.params.id, teacherId: req.session.user.id },
@@ -99,7 +103,8 @@ exports.updateCourse = async (req, res) => {
                 rootModule, 
                 modules,
                 price: price || 0, // Update price if provided
-                duration: duration || 0 // Update duration if provided
+                duration: duration || 0 ,// Update duration if provided
+                imageUrl
             },
             { new: true }
         );
@@ -109,6 +114,18 @@ exports.updateCourse = async (req, res) => {
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
+};
+
+exports.uploadCourseImage = async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+
+    // Construct a publicly accessible URL for the uploaded file
+    const imageUrl = `/uploads/courses/${req.file.filename}`;
+    res.json({ imageUrl });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 };
 
 // NEW: Get Course Analytics for Instructor's Courses

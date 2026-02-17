@@ -6,7 +6,9 @@ const courseSchema = new mongoose.Schema({
     
     // --- NEW FIELD ---
     subject: { type: String, required: true, index: true }, 
+
     // -----------------
+    imageUrl: { type: String },
     
     teacherId: { type: mongoose.Schema.Types.ObjectId, ref: 'Teacher', required: true },
     rating: { type: Number, default: 0 },

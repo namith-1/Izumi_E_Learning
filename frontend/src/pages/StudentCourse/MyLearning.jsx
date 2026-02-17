@@ -53,8 +53,15 @@ const MyLearning = () => {
         ) : enrolledList.length > 0 ? (
           <div className="course-grid student-course-grid">
             {enrolledList.map((course) => {
-              const imageUrl = `https://picsum.photos/seed/${course._id}/400/220`;
-              
+// Check if imageUrl exists, then swap the port if it points to 5173
+const BACKEND_URL = "http://localhost:5000";
+
+const imageUrl = course?.imageUrl 
+    ? (course.imageUrl.startsWith('http') 
+        ? course.imageUrl.replace(':5173', ':5000') 
+        : `${BACKEND_URL}${course.imageUrl}`)
+    : `https://picsum.photos/seed/${course._id}/400/220`;
+
               // --- RESTORED LOGIC FOR COUNTS ---
               const backendCompleted = course.completedContentModules;
               const backendTotal = course.totalContentModules;

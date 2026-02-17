@@ -21,7 +21,18 @@ const CourseViewer = () => {
     const loading = courseLoading || enrollmentLoading || isProcessing;
     
     // UPDATED: Seeded background image logic to match Catalog and My Learning
-    const courseBgUrl = `https://picsum.photos/seed/${courseId}/1200/400`; 
+const BACKEND_URL = "http://localhost:5000";
+
+// Use optional chaining (?.) to prevent crashing if course is null
+const imageUrl = course?.imageUrl 
+    ? (course.imageUrl.startsWith('http') 
+        ? course.imageUrl.replace(':5173', ':5000') 
+        : `${BACKEND_URL}${course.imageUrl}`)
+    : `https://picsum.photos/seed/${course?._id || 'default'}/400/220`;
+
+// Use the courseId from useParams (which is always available) 
+// or the course._id with a fallback
+const courseBgUrl = `https://picsum.photos/seed/${courseId || 'fallback'}/1200/400`;
 
     // --- 2. EFFECTS ---
     useEffect(() => {
