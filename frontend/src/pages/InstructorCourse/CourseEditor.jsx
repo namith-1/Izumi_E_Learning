@@ -59,13 +59,103 @@ const createNewModule = (type = "text", parentId = null) => ({
   children: [],
 });
 
+const DEFAULT_PASSING_POLICY = {
+  mode: "threshold",
+  passingThreshold: 70,
+  minimumWeightedScore: 60,
+};
+
 const initialCourseStructure = {
   rootModule: createNewModule("intro", null),
   modules: {},
   courseTitle: "Untitled Course",
   courseDescription: "A description for the entire course.",
   subject: "General",
+  passingPolicy: { ...DEFAULT_PASSING_POLICY },
   _id: null,
+};
+
+// ─── Helper: compute total weight assigned to graded modules ────────────────
+const computeWeightTotal = (modules) => {
+  return Object.values(modules)
+    .filter((m) => m && m.isGraded !== false && (m.isGraded === true || m.type === "quiz"))
+    .reduce((sum, m) => sum + (Number(m.weight) || 0), 0);
+};
+
+// ─── GradingPolicyPanel subcomponent ──────────────────────────────────────
+const GradingPolicyPanel = ({ policy, onChange, modules }) => {
+  const weightTotal = computeWeightTotal(modules);
+  const weightOk = Math.abs(weightTotal - 100) < 0.01 || weightTotal === 0;
+
+  return (
+    <div className="grading-policy-panel">
+      <h4 style={{ margin: "0 0 10px", fontSize: "13px", fontWeight: 700, color: "#374151" }}>
+        Grading Policy
+      </h4>
+
+      {/* Mode selector */}
+      <div className="input-group" style={{ marginBottom: 8 }}>
+        <label style={{ fontSize: "12px", color: "#6b7280" }}>Grading Mode</label>
+        <select
+          value={policy.mode}
+          onChange={(e) => onChange("mode", e.target.value)}
+          style={{ width: "100%", padding: "6px 8px", borderRadius: 6, border: "1px solid #d1d5db", fontSize: 13 }}
+        >
+          <option value="threshold">Threshold (% of modules done)</option>
+          <option value="weighted">Weighted Score</option>
+          <option value="all-pass">All Must Pass</option>
+        </select>
+      </div>
+
+      {/* Threshold mode fields */}
+      {policy.mode === "threshold" && (
+        <div className="input-group" style={{ marginBottom: 8 }}>
+          <label style={{ fontSize: 12, color: "#6b7280" }}>Min. completion % to pass</label>
+          <input
+            type="number" min={0} max={100}
+            value={policy.passingThreshold}
+            onChange={(e) => onChange("passingThreshold", Number(e.target.value))}
+            style={{ width: "100%", padding: "5px 8px", borderRadius: 6, border: "1px solid #d1d5db", fontSize: 13 }}
+          />
+        </div>
+      )}
+
+      {/* Weighted mode fields */}
+      {policy.mode === "weighted" && (
+        <>
+          <div className="input-group" style={{ marginBottom: 8 }}>
+            <label style={{ fontSize: 12, color: "#6b7280" }}>Min. weighted score to pass (0-100)</label>
+            <input
+              type="number" min={0} max={100}
+              value={policy.minimumWeightedScore}
+              onChange={(e) => onChange("minimumWeightedScore", Number(e.target.value))}
+              style={{ width: "100%", padding: "5px 8px", borderRadius: 6, border: "1px solid #d1d5db", fontSize: 13 }}
+            />
+          </div>
+          {/* Weight total indicator */}
+          <div
+            style={{
+              padding: "6px 10px", borderRadius: 6, fontSize: 12, fontWeight: 600,
+              background: weightOk ? "#d1fae5" : "#fef3c7",
+              color: weightOk ? "#065f46" : "#92400e",
+              marginBottom: 4,
+            }}
+          >
+            {weightOk
+              ? `Module weights: ${weightTotal.toFixed(0)} / 100`
+              : `Weights total ${weightTotal.toFixed(0)} / 100 — will be auto-normalised`}
+          </div>
+        </>
+      )}
+
+      {/* All-pass mode: no extra fields needed */}
+      {policy.mode === "all-pass" && (
+        <div style={{ fontSize: 12, color: "#6b7280", padding: "4px 0" }}>
+          Every graded module must meet its individual passing score.
+        </div>
+      )}
+    </div>
+  );
 };
 
 // ... [renderModuleIcon and deleteModuleFromStructure remain unchanged] ...
@@ -310,6 +400,7 @@ const CourseEditor = () => {
         courseDescription: currentCourse.description,
         subject: currentCourse.subject,
         imageUrl: currentCourse.imageUrl || null,
+        passingPolicy: currentCourse.passingPolicy || { ...DEFAULT_PASSING_POLICY },
         _id: currentCourse._id,
       });
       setSelectedModuleId(currentCourse.rootModule.id);
@@ -595,6 +686,7 @@ const CourseEditor = () => {
           rootModule: courseStructure.rootModule,
           modules: courseStructure.modules,
           imageUrl: courseStructure.imageUrl || null,
+          passingPolicy: courseStructure.passingPolicy || DEFAULT_PASSING_POLICY,
         };
 
         // If a new image file was selected, upload it first and set returned imageUrl
@@ -722,6 +814,18 @@ const CourseEditor = () => {
           >
             <Save size={16} /> {publishButtonText}
           </button>
+
+          {/* ── Grading Policy Panel ─────────────────────────── */}
+          <GradingPolicyPanel
+            policy={courseStructure.passingPolicy || DEFAULT_PASSING_POLICY}
+            modules={courseStructure.modules}
+            onChange={(field, val) =>
+              setCourseStructure((prev) => ({
+                ...prev,
+                passingPolicy: { ...(prev.passingPolicy || DEFAULT_PASSING_POLICY), [field]: val },
+              }))
+            }
+          />
         </div>
 
         <div className="tree-container">
@@ -780,6 +884,80 @@ const CourseEditor = () => {
 
           {!isIntroModuleForm ? (
             <>
+              {/* ── Per-module grading settings ──────────────────────────── */}
+              {(selectedModule.type === "quiz" || selectedModule.type === "video" || selectedModule.type === "text") && (
+                <div
+                  style={{
+                    background: "#f0fdf4",
+                    border: "1px solid #bbf7d0",
+                    borderRadius: 8,
+                    padding: "12px 14px",
+                    marginBottom: 16,
+                  }}
+                >
+                  <h5 style={{ margin: "0 0 10px", fontSize: 13, color: "#166534", fontWeight: 700 }}>
+                    Module Grading
+                  </h5>
+
+                  {/* isGraded toggle */}
+                  <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, marginBottom: 8, cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedModule.isGraded !== false}
+                      onChange={(e) => handleModuleFormChange("isGraded", e.target.checked)}
+                    />
+                    <span>Count toward course grade</span>
+                  </label>
+
+                  {selectedModule.isGraded !== false && (
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 6 }}>
+                      {/* Weight */}
+                      <div>
+                        <label style={{ fontSize: 12, color: "#6b7280", display: "block", marginBottom: 4 }}>
+                          Weight (%)
+                        </label>
+                        <input
+                          type="number" min={0} max={100}
+                          placeholder="e.g. 25"
+                          value={selectedModule.weight ?? ""}
+                          onChange={(e) => handleModuleFormChange("weight", e.target.value === "" ? null : Number(e.target.value))}
+                          style={{ width: "100%", padding: "5px 8px", borderRadius: 6, border: "1px solid #d1d5db", fontSize: 13 }}
+                        />
+                      </div>
+
+                      {/* Passing Score */}
+                      <div>
+                        <label style={{ fontSize: 12, color: "#6b7280", display: "block", marginBottom: 4 }}>
+                          Passing Score (%)
+                        </label>
+                        <input
+                          type="number" min={0} max={100}
+                          placeholder="e.g. 60"
+                          value={selectedModule.passingScore ?? ""}
+                          onChange={(e) => handleModuleFormChange("passingScore", e.target.value === "" ? null : Number(e.target.value))}
+                          style={{ width: "100%", padding: "5px 8px", borderRadius: 6, border: "1px solid #d1d5db", fontSize: 13 }}
+                        />
+                      </div>
+
+                      {/* Max Attempts (quiz only) */}
+                      {selectedModule.type === "quiz" && (
+                        <div style={{ gridColumn: "span 2" }}>
+                          <label style={{ fontSize: 12, color: "#6b7280", display: "block", marginBottom: 4 }}>
+                            Max Attempts (blank = unlimited)
+                          </label>
+                          <input
+                            type="number" min={1}
+                            placeholder="Unlimited"
+                            value={selectedModule.maxAttempts ?? ""}
+                            onChange={(e) => handleModuleFormChange("maxAttempts", e.target.value === "" ? null : Number(e.target.value))}
+                            style={{ width: "100%", padding: "5px 8px", borderRadius: 6, border: "1px solid #d1d5db", fontSize: 13 }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="form-grid">
                 <div className="form-field">
                   <label>Type</label>
