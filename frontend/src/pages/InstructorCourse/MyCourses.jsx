@@ -1,10 +1,11 @@
 // v1/frontend/src/pages/InstructorCourse/MyCourses.jsx
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { fetchAllCourses } from "../../store"; // New thunk
-import { Loader2 } from "lucide-react";
+import { fetchAllCourses } from "../../store";
+import { Loader2, Send, AlertCircle } from "lucide-react";
+import "../css/ReviewerDashboard.css"; // for status-badge styles
 
 // Helper to calculate completion percentage for a single course
 const getCourseCompletionPercentage = (course) => {
@@ -47,8 +48,32 @@ const MyCourses = () => {
   };
 
   const handleViewClick = (courseId) => {
-    // Navigate to the course viewer (same as student view, for preview)
     navigate(`/student-dashboard/courses/${courseId}`);
+  };
+
+  // Submit course for review
+  const [submitting, setSubmitting] = useState(null);
+  const [submitError, setSubmitError] = useState({});
+
+  const handleSubmitForReview = async (courseId) => {
+    setSubmitting(courseId);
+    setSubmitError({});
+    try {
+      const res = await fetch(`http://localhost:5000/api/review/submit/${courseId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (res.ok) {
+        dispatch(fetchAllCourses()); // Refresh
+      } else {
+        setSubmitError({ [courseId]: data.issues || [data.message] });
+      }
+    } catch (err) {
+      setSubmitError({ [courseId]: ["Network error."] });
+    }
+    setSubmitting(null);
   };
 
   // Calculate metrics (simplified version from old dashboard)
@@ -121,21 +146,66 @@ const MyCourses = () => {
                     ? course.description.substring(0, 80) + "..."
                     : "No description provided."}
                 </p>
-                <div className="course-card-footer">
-                  <button
-                    className="btn-browse"
-                    onClick={() => handleEditClick(course._id)}
-                    style={{ backgroundColor: "#2563eb" }}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    className="btn-browse"
-                    onClick={() => handleViewClick(course._id)}
-                    style={{ backgroundColor: "#10b981" }}
-                  >
-                    View Preview
-                  </button>
+                <div className="course-card-footer" style={{ flexDirection: "column", gap: 8 }}>
+                  {/* Approval Status Badge */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
+                    <span className={`status-badge ${course.approvalStatus || "draft"}`}>
+                      {course.approvalStatus || "draft"}
+                    </span>
+
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <button
+                        className="btn-browse"
+                        onClick={() => handleEditClick(course._id)}
+                        style={{ backgroundColor: "#2563eb", fontSize: 12, padding: "6px 12px" }}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        className="btn-browse"
+                        onClick={() => handleViewClick(course._id)}
+                        style={{ backgroundColor: "#10b981", fontSize: 12, padding: "6px 12px" }}
+                      >
+                        Preview
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Submit for Review button (only for draft/rejected/revision-requested) */}
+                  {["draft", "rejected", "revision-requested", undefined].includes(course.approvalStatus) && (
+                    <button
+                      className="btn-browse"
+                      onClick={() => handleSubmitForReview(course._id)}
+                      disabled={submitting === course._id}
+                      style={{
+                        backgroundColor: "#3b82f6",
+                        width: "100%",
+                        fontSize: 12,
+                        padding: "8px 12px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 6,
+                      }}
+                    >
+                      <Send size={13} />
+                      {submitting === course._id ? "Submitting..." : "Submit for Review"}
+                    </button>
+                  )}
+
+                  {/* Pre-check errors */}
+                  {submitError[course._id] && (
+                    <div className="precheck-issues">
+                      <h4 style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                        <AlertCircle size={14} /> Pre-check failed
+                      </h4>
+                      <ul>
+                        {submitError[course._id].map((issue, i) => (
+                          <li key={i}>{issue}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               </div>
             );

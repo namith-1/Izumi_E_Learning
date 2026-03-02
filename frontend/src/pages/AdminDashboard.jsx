@@ -6,10 +6,11 @@ import {
     fetchStudentEnrollmentByEmail, fetchTeacherCoursesByEmail, clearLookup
 } from '../store';
 import {
-    Users, BookOpen, BarChart3, Loader2, Trash2, Edit, Save, X, Search, Eye
+    Users, BookOpen, BarChart3, Loader2, Trash2, Edit, Save, X, Search, Eye, Shield, UserPlus
 } from 'lucide-react';
 import ProfileDropdown from '../components/ProfileDropdown';
 import AnalyticsDashboard from '../components/analytics/AnalyticsDashboard';
+import './css/ReviewerDashboard.css';
 import './css/AdminDashboard.css';
 import '../components/analytics/AnalyticsDashboard.css';
 import '../pages/css/StudentDashboard.css';
@@ -49,11 +50,28 @@ const AdminDashboard = () => {
     const [isEditingCourse, setIsEditingCourse] = useState(null);
     const [courseEditData, setCourseEditData] = useState({});
 
+    // Reviewer States
+    const [reviewers, setReviewers] = useState([]);
+    const [reviewerLoading, setReviewerLoading] = useState(false);
+    const [reviewerForm, setReviewerForm] = useState({ name: '', email: '', password: '', specialization: '' });
+    const [reviewerMsg, setReviewerMsg] = useState({ text: '', type: '' });
+
     // --- Effects ---
     useEffect(() => {
         if (user?.role === 'admin') dispatch(fetchAllAdminData());
         else navigate('/login', { replace: true });
     }, [dispatch, user, navigate]);
+
+    // Fetch reviewers when tab is active
+    useEffect(() => {
+        if (activeTab === 'reviewers') {
+            setReviewerLoading(true);
+            fetch('http://localhost:5000/api/admin/reviewers', { credentials: 'include' })
+                .then(r => r.json())
+                .then(data => { setReviewers(Array.isArray(data) ? data : []); setReviewerLoading(false); })
+                .catch(() => setReviewerLoading(false));
+        }
+    }, [activeTab]);
 
     // --- Filtering Logic (With Null Checks) ---
     const filteredTeachers = useMemo(() => teachers.filter(t =>
@@ -263,7 +281,7 @@ const AdminDashboard = () => {
 
                 <div className="admin-table-container">
                     <table className="admin-table">
-                        <thead><tr><th>Title</th><th>Subject</th><th>Instructor</th><th>Students</th><th>Score</th><th>Actions</th></tr></thead>
+                        <thead><tr><th>Title</th><th>Subject</th><th>Instructor</th><th>Status</th><th>Reviewed By</th><th>Students</th><th>Score</th><th>Actions</th></tr></thead>
                         <tbody>
                             {filteredCourses.map(c => (
                                 <tr key={c._id}>
@@ -272,6 +290,8 @@ const AdminDashboard = () => {
                                             <td><input className="table-input" value={courseEditData.title} onChange={e => setCourseEditData({ ...courseEditData, title: e.target.value })} /></td>
                                             <td><input className="table-input" value={courseEditData.subject} onChange={e => setCourseEditData({ ...courseEditData, subject: e.target.value })} /></td>
                                             <td>{c.instructorName}</td>
+                                            <td><span className={`status-badge ${c.approvalStatus || 'draft'}`}>{c.approvalStatus || 'draft'}</span></td>
+                                            <td>—</td>
                                             <td>{c.totalStudentsRegistered}</td>
                                             <td>-</td>
                                             <td className="flex gap-1">
@@ -284,6 +304,8 @@ const AdminDashboard = () => {
                                             <td>{c.title}</td>
                                             <td>{c.subject}</td>
                                             <td>{c.instructorName}</td>
+                                            <td><span className={`status-badge ${c.approvalStatus || 'draft'}`}>{c.approvalStatus || 'draft'}</span></td>
+                                            <td>{c.reviewerName || '—'}</td>
                                             <td>{c.totalStudentsRegistered}</td>
                                             <td>{c.averageQuizScore ? c.averageQuizScore.toFixed(1) + '%' : 'N/A'}</td>
                                             <td className="flex gap-1">
@@ -301,6 +323,143 @@ const AdminDashboard = () => {
         );
     }; // Close renderCourses
 
+    const handleCreateReviewer = async (e) => {
+        e.preventDefault();
+        setReviewerMsg({ text: '', type: '' });
+        try {
+            const res = await fetch('http://localhost:5000/api/admin/reviewers', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(reviewerForm),
+            });
+            const data = await res.json();
+            if (res.ok) {
+                setReviewerMsg({ text: `Reviewer "${data.reviewer.name}" created!`, type: 'success' });
+                setReviewerForm({ name: '', email: '', password: '', specialization: '' });
+                // Refresh list
+                const listRes = await fetch('http://localhost:5000/api/admin/reviewers', { credentials: 'include' });
+                if (listRes.ok) setReviewers(await listRes.json());
+            } else {
+                setReviewerMsg({ text: data.message || 'Failed to create reviewer.', type: 'error' });
+            }
+        } catch (err) {
+            setReviewerMsg({ text: 'Network error.', type: 'error' });
+        }
+    };
+
+    const handleDeleteReviewer = async (id) => {
+        if (!window.confirm('Delete this reviewer account?')) return;
+        try {
+            await fetch(`http://localhost:5000/api/admin/users/reviewer/${id}`, {
+                method: 'DELETE',
+                credentials: 'include',
+            });
+            setReviewers(prev => prev.filter(r => r._id !== id));
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const renderReviewers = () => (
+        <div>
+            <div className="metrics-grid" style={{ marginBottom: '2rem' }}>
+                <div className="stat-card purple">
+                    <div className="stat-icon"><Shield size={24} /></div>
+                    <div className="stat-content">
+                        <h3>Total Reviewers</h3>
+                        <p className="stat-value">{reviewers.length}</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Create Reviewer Form */}
+            <div style={{
+                background: 'white', border: '1px solid #e5e7eb', borderRadius: 12,
+                padding: 20, marginBottom: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
+            }}>
+                <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <UserPlus size={18} /> Create Reviewer Account
+                </h3>
+
+                {reviewerMsg.text && (
+                    <div style={{
+                        padding: '10px 14px', borderRadius: 8, marginBottom: 14, fontSize: 13,
+                        background: reviewerMsg.type === 'success' ? '#d1fae5' : '#fee2e2',
+                        color: reviewerMsg.type === 'success' ? '#065f46' : '#991b1b',
+                        border: `1px solid ${reviewerMsg.type === 'success' ? '#a7f3d0' : '#fecaca'}`,
+                    }}>
+                        {reviewerMsg.text}
+                    </div>
+                )}
+
+                <form onSubmit={handleCreateReviewer} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <input
+                        type="text" placeholder="Full Name *" required
+                        value={reviewerForm.name}
+                        onChange={e => setReviewerForm({ ...reviewerForm, name: e.target.value })}
+                        style={{ padding: '10px 14px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 13, outline: 'none' }}
+                    />
+                    <input
+                        type="email" placeholder="Email Address *" required
+                        value={reviewerForm.email}
+                        onChange={e => setReviewerForm({ ...reviewerForm, email: e.target.value })}
+                        style={{ padding: '10px 14px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 13, outline: 'none' }}
+                    />
+                    <input
+                        type="password" placeholder="Password *" required minLength={6}
+                        value={reviewerForm.password}
+                        onChange={e => setReviewerForm({ ...reviewerForm, password: e.target.value })}
+                        style={{ padding: '10px 14px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 13, outline: 'none' }}
+                    />
+                    <input
+                        type="text" placeholder="Specialization (optional)"
+                        value={reviewerForm.specialization}
+                        onChange={e => setReviewerForm({ ...reviewerForm, specialization: e.target.value })}
+                        style={{ padding: '10px 14px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 13, outline: 'none' }}
+                    />
+                    <button type="submit" style={{
+                        gridColumn: 'span 2', padding: '10px 20px',
+                        background: '#3b82f6',
+                        color: 'white', border: 'none', borderRadius: 8,
+                        fontWeight: 600, fontSize: 13, cursor: 'pointer',
+                    }}>
+                        <UserPlus size={14} style={{ display: 'inline', marginRight: 6, verticalAlign: 'middle' }} />
+                        Create Reviewer
+                    </button>
+                </form>
+            </div>
+
+            {/* Reviewers List */}
+            <h3 className="tab-section-title">Reviewer Accounts ({reviewers.length})</h3>
+            {reviewerLoading ? (
+                <div className="p-4 text-center"><Loader2 className="animate-spin inline" /> Loading...</div>
+            ) : (
+                <div className="admin-table-container">
+                    <table className="admin-table">
+                        <thead><tr><th>Name</th><th>Email</th><th>Specialization</th><th>Created</th><th>Actions</th></tr></thead>
+                        <tbody>
+                            {reviewers.map(r => (
+                                <tr key={r._id}>
+                                    <td>{r.name}</td>
+                                    <td>{r.email}</td>
+                                    <td>{r.specialization || '—'}</td>
+                                    <td>{new Date(r.createdAt).toLocaleDateString()}</td>
+                                    <td>
+                                        <button onClick={() => handleDeleteReviewer(r._id)} className="btn-action-delete">
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                            {reviewers.length === 0 && <tr><td colSpan="5" style={{ textAlign: 'center', color: '#9ca3af' }}>No reviewers yet. Create one above.</td></tr>}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+        </div>
+    );
+
     return (
         <div className="admin-dash-layout student-dash-layout">
             <header className="student-navbar">
@@ -310,6 +469,7 @@ const AdminDashboard = () => {
                     <button onClick={() => setActiveTab('instructors')} className={`nav-link-item ${activeTab === 'instructors' ? 'active' : ''}`}><Users size={18} /> Instructors</button>
                     <button onClick={() => setActiveTab('students')} className={`nav-link-item ${activeTab === 'students' ? 'active' : ''}`}><Users size={18} /> Students</button>
                     <button onClick={() => setActiveTab('courses')} className={`nav-link-item ${activeTab === 'courses' ? 'active' : ''}`}><BookOpen size={18} /> Courses</button>
+                    <button onClick={() => setActiveTab('reviewers')} className={`nav-link-item ${activeTab === 'reviewers' ? 'active' : ''}`}><Shield size={18} /> Reviewers</button>
                 </nav>
                 <div className="nav-user-info"><ProfileDropdown user={user} currentPath="/admin" /></div>
             </header>
@@ -319,6 +479,7 @@ const AdminDashboard = () => {
                 {activeTab === 'instructors' && renderInstructors()}
                 {activeTab === 'students' && renderStudents()}
                 {activeTab === 'courses' && renderCourses()}
+                {activeTab === 'reviewers' && renderReviewers()}
                 <LookupResults />
             </main>
         </div>

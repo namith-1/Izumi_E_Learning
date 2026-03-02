@@ -22,6 +22,31 @@ const courseSchema = new mongoose.Schema(
     // Flat map for O(1) lookups
     modules: { type: Map, of: Object, required: true },
 
+    // ── Course Approval Workflow ─────────────────────────────────────────
+    approvalStatus: {
+      type: String,
+      enum: ["draft", "pending", "approved", "rejected", "revision-requested"],
+      default: "draft",
+      index: true,
+    },
+    reviewerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Reviewer",
+      default: null,
+    },
+    // Comment thread between reviewer and instructor
+    reviewNotes: [
+      {
+        author: { type: String, required: true },        // name
+        authorRole: { type: String, enum: ["reviewer", "teacher"], required: true },
+        content: { type: String, required: true },
+        createdAt: { type: Date, default: Date.now },
+      },
+    ],
+    submittedAt: { type: Date, default: null },   // when instructor submitted for review
+    reviewedAt: { type: Date, default: null },    // when reviewer last acted
+    // ─────────────────────────────────────────────────────────────────────
+
     // ── Grading / Passing Policy (set by instructor) ────────────────────────
     passingPolicy: {
       // "threshold" → student must complete ≥ passingThreshold % of content modules (legacy default)

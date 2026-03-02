@@ -23,8 +23,9 @@ const Login = () => {
       if (user.role === "teacher") {
         navigate("/instructor-dashboard");
       } else if (user.role === "admin") {
-        // Handle admin redirect
         navigate("/admin-dashboard");
+      } else if (user.role === "reviewer") {
+        navigate("/reviewer-dashboard");
       } else {
         navigate("/student-dashboard");
       }
@@ -97,7 +98,7 @@ const Login = () => {
           </div>
 
           {/* ROLE TOGGLE (Student / Instructor) - admin removed from main login */}
-          <div className="role-toggle two-options">
+          <div className="role-toggle" style={{ gridTemplateColumns: "1fr 1fr 1fr" }}>
             <button
               type="button"
               className={`role-btn ${formData.role === "student" ? "active" : ""}`}
@@ -119,6 +120,17 @@ const Login = () => {
               }}
             >
               Instructor
+            </button>
+            <button
+              type="button"
+              className={`role-btn ${formData.role === "reviewer" ? "active" : ""}`}
+              onClick={() => {
+                setFormData({ ...formData, role: "reviewer" });
+                dispatch(clearAuthErrors());
+                setRemainingSeconds(0);
+              }}
+            >
+              Reviewer
             </button>
           </div>
 

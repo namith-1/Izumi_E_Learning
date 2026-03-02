@@ -4,11 +4,11 @@ const adminController = require('../controllers/adminController');
 const { isAdmin } = require('../middleware/authMiddleware');
 
 // Apply isAdmin middleware to all routes in this file
-router.use(isAdmin); 
+router.use(isAdmin);
 
 // --- Enrollment & Reporting ---
 router.get('/enrollments', adminController.getAllEnrollments);
-router.get('/enrollments/student/:email', adminController.getStudentEnrollmentByEmail); 
+router.get('/enrollments/student/:email', adminController.getStudentEnrollmentByEmail);
 
 // --- User Management ---
 router.get('/users', adminController.getAllUsers);
@@ -22,5 +22,9 @@ router.get('/teachers/courses/:email', adminController.getTeacherCoursesByEmail)
 router.get('/courses', adminController.getAllCoursesAdmin);
 router.put('/courses/:id', adminController.updateCourseAdmin);
 router.delete('/courses/:id', adminController.deleteCourse);
+
+// --- Reviewer Management ---
+router.get('/reviewers', adminController.getAllReviewers);
+router.post('/reviewers', adminController.createReviewer);
 
 module.exports = router;

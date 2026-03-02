@@ -1,6 +1,7 @@
 // v2/backend/controllers/authController.js
 const Student = require("../models/Student");
 const Teacher = require("../models/Teacher");
+const Reviewer = require("../models/Reviewer");
 const bcrypt = require("bcryptjs");
 const attemptStore = require("../services/attemptStore");
 
@@ -13,6 +14,7 @@ const MOCK_ADMIN_ID = "60c728362d294d1f88c88888";
 // Helper to get the correct model based on role
 const getModel = (role) => {
   if (role === "student") return Student;
+  if (role === "reviewer") return Reviewer;
   // Treat 'teacher' and 'admin' (if not mock) as searching the Teacher model
   if (role === "teacher" || role === "admin") return Teacher;
   return null;

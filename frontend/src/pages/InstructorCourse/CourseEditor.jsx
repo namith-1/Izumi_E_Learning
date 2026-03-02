@@ -636,41 +636,83 @@ const CourseEditor = () => {
     if (!courseStructure.subject.trim())
       errors.subject = "Subject is required.";
 
-    // 2. Validate Currently Open Module (Immediate Feedback)
-    // Note: For a production app, you might want to iterate through ALL modules
-    // to find errors, but here we prioritize global fields + current view.
+    // 2. Validate ALL modules (not just the selected one)
+    const allModulesList = Object.values(allModules);
+    const moduleIssues = [];
+
+    for (const mod of allModulesList) {
+      if (!mod || !mod.id) continue;
+
+      if (!mod.title || !mod.title.trim()) {
+        moduleIssues.push(`Module "${mod.id.substring(0, 8)}..." has no title.`);
+      }
+
+      if (mod.type === "video" && (!mod.videoLink || !URL_REGEX.test(mod.videoLink))) {
+        moduleIssues.push(`"${mod.title || 'Untitled'}" (video) needs a valid URL.`);
+      }
+
+      if (mod.type === "quiz") {
+        if (!mod.quizData?.questions || mod.quizData.questions.length === 0) {
+          moduleIssues.push(`"${mod.title || 'Untitled'}" (quiz) has no questions.`);
+        }
+      }
+    }
+
+    if (moduleIssues.length > 0) {
+      errors.moduleIssues = moduleIssues;
+    }
+
+    // 3. Validate weight sum for weighted grading mode
+    const policy = courseStructure.passingPolicy;
+    if (policy?.mode === "weighted") {
+      const weightTotal = computeWeightTotal(courseStructure.modules);
+      if (weightTotal > 0 && Math.abs(weightTotal - 100) > 0.01) {
+        errors.weightWarning = `Graded module weights sum to ${weightTotal.toFixed(0)}, not 100. Scores will be auto-normalised.`;
+      }
+    }
+
+    // 4. Also validate currently selected module for inline error display
     if (!selectedModule.title.trim()) {
       errors.moduleTitle = "Module Title is required.";
     }
-
-    if (selectedModule.type === "video") {
-      if (
-        !selectedModule.videoLink ||
-        !URL_REGEX.test(selectedModule.videoLink)
-      ) {
-        errors.videoLink = "A valid Video URL is required.";
-      }
+    if (selectedModule.type === "video" && (!selectedModule.videoLink || !URL_REGEX.test(selectedModule.videoLink))) {
+      errors.videoLink = "A valid Video URL is required.";
     }
-
-    if (selectedModule.type === "quiz") {
-      if (
-        !selectedModule.quizData.questions ||
-        selectedModule.quizData.questions.length === 0
-      ) {
-        errors.quizData = "Quiz must have at least one question.";
-      }
+    if (selectedModule.type === "quiz" && (!selectedModule.quizData?.questions || selectedModule.quizData.questions.length === 0)) {
+      errors.quizData = "Quiz must have at least one question.";
     }
 
     setValidationErrors(errors);
-    return Object.keys(errors).length === 0;
+    return errors;
   };
 
   // Publish/Update Course
   const handlePublishCourse = async () => {
-    // RUN VALIDATION
-    if (!validateEntireCourse()) {
-      alert("Please fix the errors highlighted in red before publishing.");
+    // RUN VALIDATION — returns the errors object directly (not from async state)
+    const errors = validateEntireCourse();
+    const blockingKeys = Object.keys(errors).filter(k => k !== "weightWarning");
+
+    if (blockingKeys.length > 0) {
+      // Build a detailed message
+      let msg = "Please fix these issues before publishing:\n\n";
+      if (errors.courseTitle) msg += `• ${errors.courseTitle}\n`;
+      if (errors.subject) msg += `• ${errors.subject}\n`;
+      if (errors.moduleIssues) {
+        msg += "\nModule issues:\n";
+        errors.moduleIssues.forEach(issue => { msg += `• ${issue}\n`; });
+      }
+      if (errors.moduleTitle) msg += `• Current module: ${errors.moduleTitle}\n`;
+      if (errors.videoLink) msg += `• Current module: ${errors.videoLink}\n`;
+      if (errors.quizData) msg += `• Current module: ${errors.quizData}\n`;
+      alert(msg);
       return;
+    }
+
+    // Show weight warning as a confirmation (non-blocking)
+    if (errors.weightWarning) {
+      if (!window.confirm(`⚠️ ${errors.weightWarning}\n\nProceed anyway?`)) {
+        return;
+      }
     }
 
     const isEditing = !!courseId;
@@ -710,7 +752,8 @@ const CourseEditor = () => {
             updateCourse({ id: courseId, data: payload }),
           );
           if (updateCourse.fulfilled.match(result)) {
-            alert("Course updated successfully!");
+            const ww = result.payload?.weightWarning;
+            alert(`Course updated successfully!${ww ? `\n\n⚠️ ${ww}` : ""}`);
             navigate("/instructor-dashboard");
           } else {
             alert(`Update failed: ${result.payload}`);
@@ -719,6 +762,8 @@ const CourseEditor = () => {
           result = await dispatch(createNewCourse(payload));
           if (createNewCourse.fulfilled.match(result)) {
             localStorage.removeItem(COURSE_DATA_PATH);
+            const ww = result.payload?.weightWarning;
+            if (ww) alert(`Course published!\n\n⚠️ ${ww}`);
             navigate("/instructor-dashboard");
           } else {
             alert(`Publish failed: ${result.payload}`);

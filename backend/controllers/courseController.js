@@ -60,23 +60,36 @@ exports.createCourse = async (req, res) => {
 // Get All Courses (Catalog) - MODIFIED TO USE AGGREGATION LOOKUP
 exports.getAllCourses = async (req, res) => {
   try {
-    const courses = await Course.aggregate([
+    const pipeline = [];
+
+    // Role-aware approval filter:
+    // Teachers see ALL courses (MyCourses filters by teacherId on frontend)
+    // Students/unauthenticated only see approved courses
+    const userRole = req.session?.user?.role;
+    if (userRole !== "teacher" && userRole !== "admin") {
+      pipeline.push({
+        $match: {
+          $or: [
+            { approvalStatus: "approved" },
+            { approvalStatus: { $exists: false } },
+          ],
+        },
+      });
+    }
+
+    pipeline.push(
       {
-        // Join Course documents with the 'teachers' collection
         $lookup: {
-          from: "teachers", // Name of the MongoDB collection for the Teacher model
+          from: "teachers",
           localField: "teacherId",
           foreignField: "_id",
-          as: "teacherDetails", // Temporary field containing an array of matched teachers
+          as: "teacherDetails",
         },
       },
       {
-        // Deconstruct the teacherDetails array field from the input documents to output a document for each element.
-        // Since each course has only one teacher, this effectively flattens the teacher object.
         $unwind: "$teacherDetails",
       },
       {
-        // Select and rename the final fields for the client
         $project: {
           _id: 1,
           title: 1,
@@ -85,13 +98,14 @@ exports.getAllCourses = async (req, res) => {
           imageUrl: 1,
           rating: 1,
           createdAt: 1,
-          teacherId: 1, // Keep the ID
-          // Extract the name and put it at the root level of the document
+          teacherId: 1,
+          approvalStatus: 1,
           instructorName: "$teacherDetails.name",
         },
-      },
-    ]);
+      }
+    );
 
+    const courses = await Course.aggregate(pipeline);
     res.json(courses);
   } catch (err) {
     res.status(500).json({ error: err.message });

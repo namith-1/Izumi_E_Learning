@@ -73,7 +73,7 @@ const InstructorChatPicker = () => {
             <div
               style={{
                 width: 42, height: 42, borderRadius: 10,
-                background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                background: '#3b82f6',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 color: 'white', fontWeight: 700, fontSize: 16, flexShrink: 0,
               }}

@@ -70,6 +70,7 @@ app.use("/api/enrollment", require("./routes/enrollmentRoutes"));
 app.use("/api/admin", require("./routes/adminRoutes"));
 app.use("/api/analytics", require("./routes/analyticsRoutes"));
 app.use("/api/chat", require("./routes/chatRoutes"));
+app.use("/api/review", require("./routes/reviewRoutes"));
 app.use("/uploads", (req, res, next) => {
   res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
   next();
