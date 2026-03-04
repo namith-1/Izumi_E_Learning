@@ -4,8 +4,57 @@ import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import { fetchEnrolledCourses } from "../../store";
-import { Loader2, CheckCircle } from "lucide-react";
+import { Loader2, CheckCircle, XCircle, Clock } from "lucide-react";
 import "../css/MyLearning.css";
+
+// ── PassStatusBadge: renders the pass/fail/in-progress pill ────────────────
+const PassStatusBadge = ({ passStatus, weightedScore, passingPolicy }) => {
+  const mode = passingPolicy?.mode;
+  const minScore = passingPolicy?.minimumWeightedScore;
+
+  if (passStatus === "pass") {
+    return (
+      <span
+        style={{
+          display: "inline-flex", alignItems: "center", gap: 4,
+          background: "#d1fae5", color: "#065f46",
+          padding: "3px 10px", borderRadius: 99, fontSize: 12, fontWeight: 700,
+        }}
+      >
+        <CheckCircle size={12} />
+        Passed{weightedScore !== null && weightedScore !== undefined ? ` — Score: ${weightedScore.toFixed(1)}%` : ""}
+      </span>
+    );
+  }
+  if (passStatus === "fail") {
+    return (
+      <span
+        style={{
+          display: "inline-flex", alignItems: "center", gap: 4,
+          background: "#fee2e2", color: "#991b1b",
+          padding: "3px 10px", borderRadius: 99, fontSize: 12, fontWeight: 700,
+        }}
+      >
+        <XCircle size={12} />
+        Failed{weightedScore !== null && weightedScore !== undefined
+          ? ` — Score: ${weightedScore.toFixed(1)}%${mode === "weighted" && minScore ? ` (need ${minScore}%)` : ""}`
+          : ""}
+      </span>
+    );
+  }
+  // in-progress or legacy undefined
+  return (
+    <span
+      style={{
+        display: "inline-flex", alignItems: "center", gap: 4,
+        background: "#e0f2fe", color: "#0369a1",
+        padding: "3px 10px", borderRadius: 99, fontSize: 12, fontWeight: 600,
+      }}
+    >
+      <Clock size={12} /> In Progress
+    </span>
+  );
+};
 
 const getCourseCompletionPercentage = (course) => {
   const completed =
@@ -17,8 +66,8 @@ const getCourseCompletionPercentage = (course) => {
     typeof course.totalContentModules === "number"
       ? course.totalContentModules
       : course.modules_status?.length ||
-        Object.keys(course.modules || {}).length ||
-        1;
+      Object.keys(course.modules || {}).length ||
+      1;
 
   if (!totalModules || totalModules === 0) return 0;
   return Math.min(100, (completed / totalModules) * 100);
@@ -88,14 +137,18 @@ const MyLearning = () => {
 
               const completionPercent = getCourseCompletionPercentage(course);
 
-              // --- DYNAMIC COMPLETION FIX ---
-              // Ignore course.completionStatus; check if counts actually match.
-              const isActuallyCompleted =
-                completedCount >= totalModulesDisplay &&
-                totalModulesDisplay > 0;
-              const progressBarColor = isActuallyCompleted
-                ? "#10b981"
-                : "#3b82f6";
+              // Determine pass status (new field) or fall back to count-based check
+              const passStatus = course.passStatus || null; // "pass" | "fail" | "in-progress" | null
+              const isActuallyPassed =
+                passStatus === "pass" ||
+                (!passStatus && completedCount >= totalModulesDisplay && totalModulesDisplay > 0);
+              const isActuallyFailed = passStatus === "fail";
+
+              const progressBarColor = isActuallyPassed
+                ? "#10b981"   // green
+                : isActuallyFailed
+                  ? "#ef4444"   // red
+                  : "#3b82f6";  // blue
 
               return (
                 <div
@@ -106,8 +159,7 @@ const MyLearning = () => {
                     className="card-banner-compact"
                     style={{ backgroundImage: `url(${imageUrl})` }}
                   >
-                    {/* Only show green checkmark if count is actually 100% */}
-                    {isActuallyCompleted && (
+                    {isActuallyPassed && (
                       <div className="completed-badge-small">
                         <CheckCircle size={12} />
                       </div>
@@ -125,6 +177,15 @@ const MyLearning = () => {
                     </div>
 
                     <h3 className="card-title-compact">{course.courseTitle}</h3>
+
+                    {/* Pass/Fail/Score badge */}
+                    <div style={{ marginBottom: 6 }}>
+                      <PassStatusBadge
+                        passStatus={passStatus || (isActuallyPassed ? "pass" : "in-progress")}
+                        weightedScore={course.weightedScore}
+                        passingPolicy={course.passingPolicy}
+                      />
+                    </div>
 
                     <p className="progress-stats-text">
                       {completedCount}/{totalModulesDisplay} Modules Completed
@@ -146,8 +207,7 @@ const MyLearning = () => {
                       className="btn-continue-compact"
                       onClick={() => handleViewCourse(course._id)}
                     >
-                      {/* Button text now flips based on real-time count */}
-                      {isActuallyCompleted ? "Review" : "Continue"}
+                      {isActuallyPassed ? "Review" : isActuallyFailed ? "Retry" : "Continue"}
                     </button>
                   </div>
                 </div>

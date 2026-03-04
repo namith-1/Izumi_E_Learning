@@ -1,5 +1,6 @@
 const Student = require('../models/Student');
 const Teacher = require('../models/Teacher');
+const Reviewer = require('../models/Reviewer');
 const Course = require('../models/Course');
 const Enrollment = require('../models/Enrollment');
 const bcrypt = require('bcryptjs');
@@ -8,34 +9,35 @@ const mongoose = require('mongoose');
 // --- Hardcoded Admin Credentials and Mock ID ---
 const ADMIN_EMAIL = 'admin@izumi.com';
 const ADMIN_PASSWORD = 'adminpass';
-const MOCK_ADMIN_ID = '60c728362d294d1f88c88888'; 
+const MOCK_ADMIN_ID = '60c728362d294d1f88c88888';
 
 // Helper to get the correct model based on role
 const getModel = (role) => {
     if (role === 'student') return Student;
+    if (role === 'reviewer') return Reviewer;
     if (role === 'teacher' || role === 'admin') return Teacher;
     return null;
 };
 
 // Login
 exports.login = async (req, res) => {
-    const { email, password, role } = req.body; 
-    
+    const { email, password, role } = req.body;
+
     if (role === 'admin' && email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-        req.session.user = { 
-            id: MOCK_ADMIN_ID, 
-            role: 'admin', 
-            name: 'Izumi Admin', 
-            email: ADMIN_EMAIL 
+        req.session.user = {
+            id: MOCK_ADMIN_ID,
+            role: 'admin',
+            name: 'Izumi Admin',
+            email: ADMIN_EMAIL
         };
         return res.json({ message: 'Logged in successfully', user: req.session.user });
     }
 
-    let actualRole = role; 
+    let actualRole = role;
     try {
         const Model = getModel(actualRole);
         if (!Model) return res.status(400).json({ message: 'Invalid role provided.' });
-        
+
         const user = await Model.findOne({ email });
 
         if (!user || !(await bcrypt.compare(password, user.password))) {
@@ -43,7 +45,7 @@ exports.login = async (req, res) => {
         }
 
         if (actualRole === 'admin') {
-            actualRole = 'admin'; 
+            actualRole = 'admin';
         }
 
         req.session.user = { id: user._id, role: actualRole, name: user.name, email: user.email };
@@ -62,8 +64,8 @@ exports.getAllEnrollments = async (req, res) => {
                 select: 'title subject teacherId',
                 populate: { path: 'teacherId', select: 'name' }
             })
-            .populate('studentId', 'name email'); 
-        
+            .populate('studentId', 'name email');
+
         const formattedEnrollments = enrollments.map(e => ({
             _id: e._id,
             courseTitle: e.courseId?.title || 'N/A',
@@ -84,7 +86,7 @@ exports.getAllEnrollments = async (req, res) => {
 exports.getAllUsers = async (req, res) => {
     try {
         const students = await Student.find().select('-password');
-        
+
         // Complex Aggregation for Teachers to get Student Count
         const teachers = await Teacher.aggregate([
             {
@@ -121,6 +123,36 @@ exports.getAllUsers = async (req, res) => {
     }
 };
 
+// 2b. Create Reviewer Account (Admin-only)
+exports.createReviewer = async (req, res) => {
+    try {
+        const { name, email, password, specialization } = req.body;
+        if (!name || !email || !password) {
+            return res.status(400).json({ message: 'Name, email, and password are required.' });
+        }
+        const existing = await Reviewer.findOne({ email });
+        if (existing) {
+            return res.status(400).json({ message: 'A reviewer with this email already exists.' });
+        }
+        const bcrypt = require('bcryptjs');
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const reviewer = await Reviewer.create({ name, email, password: hashedPassword, specialization: specialization || '' });
+        res.status(201).json({ message: 'Reviewer account created.', reviewer: { _id: reviewer._id, name: reviewer.name, email: reviewer.email } });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// 2c. Get All Reviewers
+exports.getAllReviewers = async (req, res) => {
+    try {
+        const reviewers = await Reviewer.find().select('-password');
+        res.json(reviewers);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
 // 3. User Detail CRUD - Delete (Banning logic)
 exports.deleteUser = async (req, res) => {
     const { role, id } = req.params;
@@ -129,7 +161,7 @@ exports.deleteUser = async (req, res) => {
         if (!Model) return res.status(400).json({ message: 'Invalid role' });
 
         await Model.findByIdAndDelete(id);
-        
+
         // Cascade delete logic (simplified)
         if (role === 'teacher') {
             await Course.deleteMany({ teacherId: id });
@@ -183,6 +215,15 @@ exports.getAllCoursesAdmin = async (req, res) => {
             { $unwind: { path: '$teacherDetails', preserveNullAndEmptyArrays: true } },
             {
                 $lookup: {
+                    from: 'reviewers',
+                    localField: 'reviewerId',
+                    foreignField: '_id',
+                    as: 'reviewerDetails'
+                }
+            },
+            { $unwind: { path: '$reviewerDetails', preserveNullAndEmptyArrays: true } },
+            {
+                $lookup: {
                     from: 'enrollments',
                     localField: '_id',
                     foreignField: 'courseId',
@@ -195,6 +236,9 @@ exports.getAllCoursesAdmin = async (req, res) => {
                     title: 1,
                     subject: 1,
                     rating: { $ifNull: ['$rating', 0] },
+                    approvalStatus: { $ifNull: ['$approvalStatus', 'draft'] },
+                    reviewerName: { $ifNull: ['$reviewerDetails.name', null] },
+                    reviewedAt: 1,
                     instructorName: { $ifNull: ['$teacherDetails.name', 'N/A'] },
                     totalStudentsRegistered: { $size: '$enrollments' },
                     studentsCompleted: {
@@ -221,17 +265,22 @@ exports.getAllCoursesAdmin = async (req, res) => {
                     title: 1,
                     subject: 1,
                     rating: 1,
+                    approvalStatus: 1,
+                    reviewerName: 1,
+                    reviewedAt: 1,
                     instructorName: 1,
                     totalStudentsRegistered: 1,
                     studentsCompleted: 1,
                     averageQuizScore: {
                         $avg: {
                             $map: {
-                                input: { $filter: {
-                                    input: '$allQuizScores',
-                                    as: 'status',
-                                    cond: { $ne: ['$$status.quizScore', null] }
-                                } },
+                                input: {
+                                    $filter: {
+                                        input: '$allQuizScores',
+                                        as: 'status',
+                                        cond: { $ne: ['$$status.quizScore', null] }
+                                    }
+                                },
                                 as: 'quizModule',
                                 in: '$$quizModule.quizScore'
                             }
@@ -279,12 +328,12 @@ exports.getStudentEnrollmentByEmail = async (req, res) => {
             completionStatus: e.completionStatus,
             dateEnrolled: e.createdAt,
             // Calculate simple progress %
-            progress: e.modules_status ? Math.round((e.modules_status.filter(m=>m.completed).length / (e.modules_status.length || 1)) * 100) : 0
+            progress: e.modules_status ? Math.round((e.modules_status.filter(m => m.completed).length / (e.modules_status.length || 1)) * 100) : 0
         }));
 
-        res.json({ 
-            student: { name: student.name, email: student.email, _id: student._id }, 
-            enrollments: formattedEnrollments 
+        res.json({
+            student: { name: student.name, email: student.email, _id: student._id },
+            enrollments: formattedEnrollments
         });
     } catch (err) {
         res.status(500).json({ error: err.message });

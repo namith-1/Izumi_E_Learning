@@ -22,6 +22,7 @@ import {
 import TextModule from "../../components/content/TextModule";
 import VideoModule from "../../components/content/VideoModule";
 import QuizModule from "../../components/content/QuizModule";
+import CourseChat from "../../components/CourseChat";
 
 const CourseLearnPage = () => {
   // --- 1. HOOK CALLS (MUST BE UNCONDITIONAL) ---
@@ -350,6 +351,16 @@ const CourseLearnPage = () => {
         {/* Right Content Area (Active Module) */}
         <main className="module-content-area">{renderModuleContent()}</main>
       </div>
+
+      {/* 1:1 Chat with Instructor */}
+      {course.teacherId && (
+        <CourseChat
+          courseId={courseId}
+          otherUserId={typeof course.teacherId === "object" ? course.teacherId._id : course.teacherId}
+          otherUserName={typeof course.teacherId === "object" ? course.teacherId.name : "Instructor"}
+          otherUserRole="teacher"
+        />
+      )}
     </div>
   );
 };

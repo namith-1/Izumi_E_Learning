@@ -3,20 +3,39 @@ const Course = require("../models/Course");
 const Teacher = require("../models/Teacher");
 const mongoose = require("mongoose"); // Need mongoose for ObjectId conversion
 
+// ─── Helper: validate that graded module weights sum to ~100 ────────────────
+const checkWeightSum = (modules) => {
+  if (!modules) return null;
+  const values =
+    modules instanceof Map
+      ? Array.from(modules.values())
+      : Object.values(modules);
+  const graded = values.filter(
+    (m) => m && m.isGraded !== false && (m.isGraded === true || m.type === "quiz"),
+  );
+  if (graded.length === 0) return null;
+  const total = graded.reduce((s, m) => s + (m.weight ?? 0), 0);
+  if (total === 0) return null; // weights not set at all — skip warning
+  if (Math.abs(total - 100) > 0.01) {
+    return `Graded module weights sum to ${total}, not 100. Scores will be auto-normalised.`;
+  }
+  return null;
+};
+
 // Create Course
 exports.createCourse = async (req, res) => {
   try {
-    // 1. Extract fields from the request body
     const {
       courseTitle,
       courseDescription,
       subject,
       imageUrl,
       rootModule,
+      price,
       modules,
+      passingPolicy,  // NEW: grading policy from instructor
     } = req.body;
 
-    // Basic validation
     if (!subject) {
       return res.status(400).json({ message: "Subject is required" });
     }
@@ -24,14 +43,17 @@ exports.createCourse = async (req, res) => {
     const newCourse = await Course.create({
       title: courseTitle,
       description: courseDescription,
-      subject: subject, // 2. Save it to database
+      subject,
       imageUrl,
       rootModule,
       modules,
+      price,
+      passingPolicy: passingPolicy || undefined, // use schema defaults if not provided
       teacherId: req.session.user.id,
     });
-    console.log(modules);
-    res.status(201).json(newCourse);
+
+    const weightWarning = checkWeightSum(modules);
+    res.status(201).json({ ...newCourse.toObject(), weightWarning });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -40,23 +62,36 @@ exports.createCourse = async (req, res) => {
 // Get All Courses (Catalog) - MODIFIED TO USE AGGREGATION LOOKUP
 exports.getAllCourses = async (req, res) => {
   try {
-    const courses = await Course.aggregate([
+    const pipeline = [];
+
+    // Role-aware approval filter:
+    // Teachers see ALL courses (MyCourses filters by teacherId on frontend)
+    // Students/unauthenticated only see approved courses
+    const userRole = req.session?.user?.role;
+    if (userRole !== "teacher" && userRole !== "admin") {
+      pipeline.push({
+        $match: {
+          $or: [
+            { approvalStatus: "approved" },
+            { approvalStatus: { $exists: false } },
+          ],
+        },
+      });
+    }
+
+    pipeline.push(
       {
-        // Join Course documents with the 'teachers' collection
         $lookup: {
-          from: "teachers", // Name of the MongoDB collection for the Teacher model
+          from: "teachers",
           localField: "teacherId",
           foreignField: "_id",
-          as: "teacherDetails", // Temporary field containing an array of matched teachers
+          as: "teacherDetails",
         },
       },
       {
-        // Deconstruct the teacherDetails array field from the input documents to output a document for each element.
-        // Since each course has only one teacher, this effectively flattens the teacher object.
         $unwind: "$teacherDetails",
       },
       {
-        // Select and rename the final fields for the client
         $project: {
           _id: 1,
           title: 1,
@@ -65,13 +100,14 @@ exports.getAllCourses = async (req, res) => {
           imageUrl: 1,
           rating: 1,
           createdAt: 1,
-          teacherId: 1, // Keep the ID
-          // Extract the name and put it at the root level of the document
+          teacherId: 1,
+          approvalStatus: 1,
           instructorName: "$teacherDetails.name",
         },
-      },
-    ]);
+      }
+    );
 
+    const courses = await Course.aggregate(pipeline);
     res.json(courses);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -105,7 +141,6 @@ exports.uploadCourseImage = async (req, res) => {
 // Update Course
 exports.updateCourse = async (req, res) => {
   try {
-    // 4. Allow updating the subject and imageUrl
     const {
       courseTitle,
       courseDescription,
@@ -113,18 +148,26 @@ exports.updateCourse = async (req, res) => {
       imageUrl,
       rootModule,
       modules,
+      price,
+      passingPolicy,  // NEW: grading policy update
     } = req.body;
+
+    const updatePayload = {
+      title: courseTitle,
+      description: courseDescription,
+      subject,
+      imageUrl,
+      price,
+      rootModule,
+      modules,
+    };
+    if (passingPolicy !== undefined) {
+      updatePayload.passingPolicy = passingPolicy;
+    }
 
     const updatedCourse = await Course.findOneAndUpdate(
       { _id: req.params.id, teacherId: req.session.user.id },
-      {
-        title: courseTitle,
-        description: courseDescription,
-        subject: subject, // Update subject
-        imageUrl,
-        rootModule,
-        modules,
-      },
+      updatePayload,
       { new: true },
     );
 
@@ -132,7 +175,9 @@ exports.updateCourse = async (req, res) => {
       return res
         .status(403)
         .json({ message: "Not authorized or course not found" });
-    res.json(updatedCourse);
+
+    const weightWarning = checkWeightSum(modules);
+    res.json({ ...updatedCourse.toObject(), weightWarning });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

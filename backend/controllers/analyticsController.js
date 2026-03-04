@@ -3,10 +3,124 @@ const Student = require('../models/Student');
 const Teacher = require('../models/Teacher');
 const Course = require('../models/Course');
 const Enrollment = require('../models/Enrollment');
+const EnrollmentAnalytics = require('../models/EnrollmentAnalytics'); // For tracking enrollments with price and date
 
 // ===== ADMIN ANALYTICS =====
 
-// 1. Platform Overview - Enhanced statistics
+// Add this alongside your other controller functions
+exports.getOverallTimeAnalytics = async (req, res) => {
+  try {
+    // 1. Aggregate enrollments by Date AND Course ID (No $lookup here)
+    const overallTimes = await EnrollmentAnalytics.aggregate([
+      {
+        $group: {
+          _id: {
+            date: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
+            courseId: "$courseId",
+          },
+          dayWisePrice: { $sum: "$price" },
+          numberOfEnrollments: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          date: "$_id.date",
+          courseId: "$_id.courseId",
+          dayWisePrice: 1,
+          numberOfEnrollments: 1,
+        },
+      },
+      {
+        $sort: { date: 1 },
+      },
+    ]);
+
+    // If there are no enrollments at all, return empty array early
+    if (overallTimes.length === 0) {
+      return res.json([]);
+    }
+
+    // 2. Extract unique course IDs from the aggregated data
+    const uniqueCourseIds = [...new Set(overallTimes.map(item => item.courseId.toString()))];
+
+    // 3. Fetch the titles for those specific courses using the Course model
+    // Using .select("title") ensures we don't pull heavy module data into memory
+    const courses = await Course.find({ _id: { $in: uniqueCourseIds } }).select("title");
+
+    // 4. Create a dictionary (hash map) for instant O(1) title lookups
+    const courseTitleMap = {};
+    courses.forEach(course => {
+      courseTitleMap[course._id.toString()] = course.title;
+    });
+
+    // 5. Map over the analytics results and inject the courseName
+    const enrichedAnalytics = overallTimes.map(record => ({
+      date: record.date,
+      courseId: record.courseId,
+      courseName: courseTitleMap[record.courseId.toString()] || "Unknown Course",
+      dayWisePrice: record.dayWisePrice,
+      numberOfEnrollments: record.numberOfEnrollments,
+    }));
+
+    // 6. Send the enriched data to the frontend
+    res.json(enrichedAnalytics);
+
+  } catch (err) {
+    console.error("Overall Analytics Error:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+exports.getCourseTimeAnalytics = async (req, res) => {
+  try {
+    const { courseId } = req.body;
+
+    if (!courseId) {
+      return res.status(400).json({ message: "courseId is required" });
+    }
+
+    const courseTimes = await EnrollmentAnalytics.aggregate([
+      // 1. Match only the enrollments for this specific course
+      {
+        $match: {
+          courseId: new mongoose.Types.ObjectId(courseId),
+        },
+      },
+      // 2. Group by the calendar date
+      {
+        $group: {
+          // Format date to YYYY-MM-DD to group by day
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
+          
+          // Calculate total price and count for the day
+          dayWisePrice: { $sum: "$price" },
+          numberOfEnrollments: { $sum: 1 },
+        },
+      },
+      // 3. Reshape the output for a cleaner response
+      {
+        $project: {
+          _id: 0,           // Hide the default _id field
+          date: "$_id",     // Rename _id back to 'date'
+          dayWisePrice: 1,
+          numberOfEnrollments: 1,
+        },
+      },
+      // 4. Sort chronologically by date (oldest to newest)
+      {
+        $sort: { date: 1 },
+      },
+    ]);
+
+    res.json(courseTimes);
+  } catch (err) {
+    console.error("Analytics Aggregation Error:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
 exports.getAdminOverview = async (req, res) => {
     try {
         const totalStudents = await Student.countDocuments();

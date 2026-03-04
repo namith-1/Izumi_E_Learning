@@ -22,4 +22,12 @@ const isAdmin = (req, res, next) => {
     return res.status(403).json({ message: 'Access denied. Admin only.' });
 };
 
-module.exports = { isAuthenticated, isTeacher, isAdmin };
+// NEW: Reviewer Check
+const isReviewer = (req, res, next) => {
+    if (req.session.user && req.session.user.role === 'reviewer') {
+        return next();
+    }
+    return res.status(403).json({ message: 'Access denied. Reviewers only.' });
+};
+
+module.exports = { isAuthenticated, isTeacher, isAdmin, isReviewer };

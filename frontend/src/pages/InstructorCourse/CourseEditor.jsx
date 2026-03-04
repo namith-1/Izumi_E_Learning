@@ -59,13 +59,104 @@ const createNewModule = (type = "text", parentId = null) => ({
   children: [],
 });
 
+const DEFAULT_PASSING_POLICY = {
+  mode: "threshold",
+  passingThreshold: 70,
+  minimumWeightedScore: 60,
+};
+
 const initialCourseStructure = {
   rootModule: createNewModule("intro", null),
   modules: {},
   courseTitle: "Untitled Course",
   courseDescription: "A description for the entire course.",
   subject: "General",
+  price: 0,
+  passingPolicy: { ...DEFAULT_PASSING_POLICY },
   _id: null,
+};
+
+// ─── Helper: compute total weight assigned to graded modules ────────────────
+const computeWeightTotal = (modules) => {
+  return Object.values(modules)
+    .filter((m) => m && m.isGraded !== false && (m.isGraded === true || m.type === "quiz"))
+    .reduce((sum, m) => sum + (Number(m.weight) || 0), 0);
+};
+
+// ─── GradingPolicyPanel subcomponent ──────────────────────────────────────
+const GradingPolicyPanel = ({ policy, onChange, modules }) => {
+  const weightTotal = computeWeightTotal(modules);
+  const weightOk = Math.abs(weightTotal - 100) < 0.01 || weightTotal === 0;
+
+  return (
+    <div className="grading-policy-panel">
+      <h4 style={{ margin: "0 0 10px", fontSize: "13px", fontWeight: 700, color: "#374151" }}>
+        Grading Policy
+      </h4>
+
+      {/* Mode selector */}
+      <div className="input-group" style={{ marginBottom: 8 }}>
+        <label style={{ fontSize: "12px", color: "#6b7280" }}>Grading Mode</label>
+        <select
+          value={policy.mode}
+          onChange={(e) => onChange("mode", e.target.value)}
+          style={{ width: "100%", padding: "6px 8px", borderRadius: 6, border: "1px solid #d1d5db", fontSize: 13 }}
+        >
+          <option value="threshold">Threshold (% of modules done)</option>
+          <option value="weighted">Weighted Score</option>
+          <option value="all-pass">All Must Pass</option>
+        </select>
+      </div>
+
+      {/* Threshold mode fields */}
+      {policy.mode === "threshold" && (
+        <div className="input-group" style={{ marginBottom: 8 }}>
+          <label style={{ fontSize: 12, color: "#6b7280" }}>Min. completion % to pass</label>
+          <input
+            type="number" min={0} max={100}
+            value={policy.passingThreshold}
+            onChange={(e) => onChange("passingThreshold", Number(e.target.value))}
+            style={{ width: "100%", padding: "5px 8px", borderRadius: 6, border: "1px solid #d1d5db", fontSize: 13 }}
+          />
+        </div>
+      )}
+
+      {/* Weighted mode fields */}
+      {policy.mode === "weighted" && (
+        <>
+          <div className="input-group" style={{ marginBottom: 8 }}>
+            <label style={{ fontSize: 12, color: "#6b7280" }}>Min. weighted score to pass (0-100)</label>
+            <input
+              type="number" min={0} max={100}
+              value={policy.minimumWeightedScore}
+              onChange={(e) => onChange("minimumWeightedScore", Number(e.target.value))}
+              style={{ width: "100%", padding: "5px 8px", borderRadius: 6, border: "1px solid #d1d5db", fontSize: 13 }}
+            />
+          </div>
+          {/* Weight total indicator */}
+          <div
+            style={{
+              padding: "6px 10px", borderRadius: 6, fontSize: 12, fontWeight: 600,
+              background: weightOk ? "#d1fae5" : "#fef3c7",
+              color: weightOk ? "#065f46" : "#92400e",
+              marginBottom: 4,
+            }}
+          >
+            {weightOk
+              ? `Module weights: ${weightTotal.toFixed(0)} / 100`
+              : `Weights total ${weightTotal.toFixed(0)} / 100 — will be auto-normalised`}
+          </div>
+        </>
+      )}
+
+      {/* All-pass mode: no extra fields needed */}
+      {policy.mode === "all-pass" && (
+        <div style={{ fontSize: 12, color: "#6b7280", padding: "4px 0" }}>
+          Every graded module must meet its individual passing score.
+        </div>
+      )}
+    </div>
+  );
 };
 
 // ... [renderModuleIcon and deleteModuleFromStructure remain unchanged] ...
@@ -310,6 +401,8 @@ const CourseEditor = () => {
         courseDescription: currentCourse.description,
         subject: currentCourse.subject,
         imageUrl: currentCourse.imageUrl || null,
+        price: currentCourse.price || 0,
+        passingPolicy: currentCourse.passingPolicy || { ...DEFAULT_PASSING_POLICY },
         _id: currentCourse._id,
       });
       setSelectedModuleId(currentCourse.rootModule.id);
@@ -544,42 +637,87 @@ const CourseEditor = () => {
       errors.courseTitle = "Course Title is required.";
     if (!courseStructure.subject.trim())
       errors.subject = "Subject is required.";
+    if(courseStructure.price < 0  
+    || isNaN(courseStructure.price))
+      errors.price = "Price must be a non-negative number.";
 
-    // 2. Validate Currently Open Module (Immediate Feedback)
-    // Note: For a production app, you might want to iterate through ALL modules
-    // to find errors, but here we prioritize global fields + current view.
+    // 2. Validate ALL modules (not just the selected one)
+    const allModulesList = Object.values(allModules);
+    const moduleIssues = [];
+
+    for (const mod of allModulesList) {
+      if (!mod || !mod.id) continue;
+
+      if (!mod.title || !mod.title.trim()) {
+        moduleIssues.push(`Module "${mod.id.substring(0, 8)}..." has no title.`);
+      }
+
+      if (mod.type === "video" && (!mod.videoLink || !URL_REGEX.test(mod.videoLink))) {
+        moduleIssues.push(`"${mod.title || 'Untitled'}" (video) needs a valid URL.`);
+      }
+
+      if (mod.type === "quiz") {
+        if (!mod.quizData?.questions || mod.quizData.questions.length === 0) {
+          moduleIssues.push(`"${mod.title || 'Untitled'}" (quiz) has no questions.`);
+        }
+      }
+    }
+
+    if (moduleIssues.length > 0) {
+      errors.moduleIssues = moduleIssues;
+    }
+
+    // 3. Validate weight sum for weighted grading mode
+    const policy = courseStructure.passingPolicy;
+    if (policy?.mode === "weighted") {
+      const weightTotal = computeWeightTotal(courseStructure.modules);
+      if (weightTotal > 0 && Math.abs(weightTotal - 100) > 0.01) {
+        errors.weightWarning = `Graded module weights sum to ${weightTotal.toFixed(0)}, not 100. Scores will be auto-normalised.`;
+      }
+    }
+
+    // 4. Also validate currently selected module for inline error display
     if (!selectedModule.title.trim()) {
       errors.moduleTitle = "Module Title is required.";
     }
-
-    if (selectedModule.type === "video") {
-      if (
-        !selectedModule.videoLink ||
-        !URL_REGEX.test(selectedModule.videoLink)
-      ) {
-        errors.videoLink = "A valid Video URL is required.";
-      }
+    if (selectedModule.type === "video" && (!selectedModule.videoLink || !URL_REGEX.test(selectedModule.videoLink))) {
+      errors.videoLink = "A valid Video URL is required.";
     }
-
-    if (selectedModule.type === "quiz") {
-      if (
-        !selectedModule.quizData.questions ||
-        selectedModule.quizData.questions.length === 0
-      ) {
-        errors.quizData = "Quiz must have at least one question.";
-      }
+    if (selectedModule.type === "quiz" && (!selectedModule.quizData?.questions || selectedModule.quizData.questions.length === 0)) {
+      errors.quizData = "Quiz must have at least one question.";
     }
 
     setValidationErrors(errors);
-    return Object.keys(errors).length === 0;
+    return errors;
   };
 
   // Publish/Update Course
   const handlePublishCourse = async () => {
-    // RUN VALIDATION
-    if (!validateEntireCourse()) {
-      alert("Please fix the errors highlighted in red before publishing.");
+    // RUN VALIDATION — returns the errors object directly (not from async state)
+    const errors = validateEntireCourse();
+    const blockingKeys = Object.keys(errors).filter(k => k !== "weightWarning");
+
+    if (blockingKeys.length > 0) {
+      // Build a detailed message
+      let msg = "Please fix these issues before publishing:\n\n";
+      if (errors.courseTitle) msg += `• ${errors.courseTitle}\n`;
+      if (errors.subject) msg += `• ${errors.subject}\n`;
+      if (errors.moduleIssues) {
+        msg += "\nModule issues:\n";
+        errors.moduleIssues.forEach(issue => { msg += `• ${issue}\n`; });
+      }
+      if (errors.moduleTitle) msg += `• Current module: ${errors.moduleTitle}\n`;
+      if (errors.videoLink) msg += `• Current module: ${errors.videoLink}\n`;
+      if (errors.quizData) msg += `• Current module: ${errors.quizData}\n`;
+      alert(msg);
       return;
+    }
+
+    // Show weight warning as a confirmation (non-blocking)
+    if (errors.weightWarning) {
+      if (!window.confirm(`⚠️ ${errors.weightWarning}\n\nProceed anyway?`)) {
+        return;
+      }
     }
 
     const isEditing = !!courseId;
@@ -592,9 +730,11 @@ const CourseEditor = () => {
           courseTitle: courseStructure.courseTitle,
           courseDescription: courseStructure.courseDescription,
           subject: courseStructure.subject,
+          price: Number(courseStructure.price) || 0,
           rootModule: courseStructure.rootModule,
           modules: courseStructure.modules,
           imageUrl: courseStructure.imageUrl || null,
+          passingPolicy: courseStructure.passingPolicy || DEFAULT_PASSING_POLICY,
         };
 
         // If a new image file was selected, upload it first and set returned imageUrl
@@ -618,7 +758,8 @@ const CourseEditor = () => {
             updateCourse({ id: courseId, data: payload }),
           );
           if (updateCourse.fulfilled.match(result)) {
-            alert("Course updated successfully!");
+            const ww = result.payload?.weightWarning;
+            alert(`Course updated successfully!${ww ? `\n\n⚠️ ${ww}` : ""}`);
             navigate("/instructor-dashboard");
           } else {
             alert(`Update failed: ${result.payload}`);
@@ -627,6 +768,8 @@ const CourseEditor = () => {
           result = await dispatch(createNewCourse(payload));
           if (createNewCourse.fulfilled.match(result)) {
             localStorage.removeItem(COURSE_DATA_PATH);
+            const ww = result.payload?.weightWarning;
+            if (ww) alert(`Course published!\n\n⚠️ ${ww}`);
             navigate("/instructor-dashboard");
           } else {
             alert(`Publish failed: ${result.payload}`);
@@ -683,6 +826,7 @@ const CourseEditor = () => {
               )}
             </div>
           </div>
+          
           <div className="input-group">
             <input
               type="text"
@@ -699,6 +843,28 @@ const CourseEditor = () => {
               </span>
             )}
           </div>
+
+          {/* --- ADD THE PRICE INPUT HERE --- */}
+          <div className="input-group">
+            <label style={{ fontSize: "12px", color: "#6b7280", marginBottom: "4px", display: "block" }}>
+              Course Price ($)
+            </label>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              className={`sidebar-input ${validationErrors.price ? "input-error" : ""}`}
+              placeholder="0.00 (Free)"
+              value={courseStructure.price}
+              onChange={(e) =>
+                handleCourseMetaChange("price", e.target.value)
+              }
+            />
+            {validationErrors.price && (
+              <span className="error-tooltip">{validationErrors.price}</span>
+            )}
+          </div>
+          {/* -------------------------------- */}
 
           <div className="input-group">
             <input
@@ -722,6 +888,18 @@ const CourseEditor = () => {
           >
             <Save size={16} /> {publishButtonText}
           </button>
+
+          {/* ── Grading Policy Panel ─────────────────────────── */}
+          <GradingPolicyPanel
+            policy={courseStructure.passingPolicy || DEFAULT_PASSING_POLICY}
+            modules={courseStructure.modules}
+            onChange={(field, val) =>
+              setCourseStructure((prev) => ({
+                ...prev,
+                passingPolicy: { ...(prev.passingPolicy || DEFAULT_PASSING_POLICY), [field]: val },
+              }))
+            }
+          />
         </div>
 
         <div className="tree-container">
@@ -780,6 +958,80 @@ const CourseEditor = () => {
 
           {!isIntroModuleForm ? (
             <>
+              {/* ── Per-module grading settings ──────────────────────────── */}
+              {(selectedModule.type === "quiz" || selectedModule.type === "video" || selectedModule.type === "text") && (
+                <div
+                  style={{
+                    background: "#f0fdf4",
+                    border: "1px solid #bbf7d0",
+                    borderRadius: 8,
+                    padding: "12px 14px",
+                    marginBottom: 16,
+                  }}
+                >
+                  <h5 style={{ margin: "0 0 10px", fontSize: 13, color: "#166534", fontWeight: 700 }}>
+                    Module Grading
+                  </h5>
+
+                  {/* isGraded toggle */}
+                  <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, marginBottom: 8, cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedModule.isGraded !== false}
+                      onChange={(e) => handleModuleFormChange("isGraded", e.target.checked)}
+                    />
+                    <span>Count toward course grade</span>
+                  </label>
+
+                  {selectedModule.isGraded !== false && (
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 6 }}>
+                      {/* Weight */}
+                      <div>
+                        <label style={{ fontSize: 12, color: "#6b7280", display: "block", marginBottom: 4 }}>
+                          Weight (%)
+                        </label>
+                        <input
+                          type="number" min={0} max={100}
+                          placeholder="e.g. 25"
+                          value={selectedModule.weight ?? ""}
+                          onChange={(e) => handleModuleFormChange("weight", e.target.value === "" ? null : Number(e.target.value))}
+                          style={{ width: "100%", padding: "5px 8px", borderRadius: 6, border: "1px solid #d1d5db", fontSize: 13 }}
+                        />
+                      </div>
+
+                      {/* Passing Score */}
+                      <div>
+                        <label style={{ fontSize: 12, color: "#6b7280", display: "block", marginBottom: 4 }}>
+                          Passing Score (%)
+                        </label>
+                        <input
+                          type="number" min={0} max={100}
+                          placeholder="e.g. 60"
+                          value={selectedModule.passingScore ?? ""}
+                          onChange={(e) => handleModuleFormChange("passingScore", e.target.value === "" ? null : Number(e.target.value))}
+                          style={{ width: "100%", padding: "5px 8px", borderRadius: 6, border: "1px solid #d1d5db", fontSize: 13 }}
+                        />
+                      </div>
+
+                      {/* Max Attempts (quiz only) */}
+                      {selectedModule.type === "quiz" && (
+                        <div style={{ gridColumn: "span 2" }}>
+                          <label style={{ fontSize: 12, color: "#6b7280", display: "block", marginBottom: 4 }}>
+                            Max Attempts (blank = unlimited)
+                          </label>
+                          <input
+                            type="number" min={1}
+                            placeholder="Unlimited"
+                            value={selectedModule.maxAttempts ?? ""}
+                            onChange={(e) => handleModuleFormChange("maxAttempts", e.target.value === "" ? null : Number(e.target.value))}
+                            style={{ width: "100%", padding: "5px 8px", borderRadius: 6, border: "1px solid #d1d5db", fontSize: 13 }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="form-grid">
                 <div className="form-field">
                   <label>Type</label>

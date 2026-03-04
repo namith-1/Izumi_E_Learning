@@ -10,6 +10,7 @@ import ProtectedRoute from "../components/ProtectedRoute";
 import LandingPage from "../pages/LandingPage";
 import AdminDashboard from "../pages/AdminDashboard"; // NEW IMPORT
 import AdminLogin from "../pages/AdminLogin";
+import ReviewerDashboard from "../pages/ReviewerDashboard";
 
 const AppRoutes = () => {
   return (
@@ -30,6 +31,16 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRole="admin">
             <AdminDashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* REVIEWER ROUTES */}
+      <Route
+        path="/reviewer-dashboard/*"
+        element={
+          <ProtectedRoute allowedRole="reviewer">
+            <ReviewerDashboard />
           </ProtectedRoute>
         }
       />

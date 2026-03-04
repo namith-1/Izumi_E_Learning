@@ -99,6 +99,10 @@ const CourseCatalog = () => {
                   </span>
                 </div>
 
+                <div className="card-price-section">
+                  <span className="card-price">${(course.price || 0).toFixed(2)}</span>
+                </div>
+
                 <button
                   onClick={() =>
                     isEnrolled
