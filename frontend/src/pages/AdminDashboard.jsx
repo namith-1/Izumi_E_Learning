@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import ProfileDropdown from '../components/ProfileDropdown';
 import AnalyticsDashboard from '../components/analytics/AnalyticsDashboard';
+import RevenueAnalytics from '../components/analytics/RevenueAnalytics';
 import './css/ReviewerDashboard.css';
 import './css/AdminDashboard.css';
 import '../components/analytics/AnalyticsDashboard.css';
@@ -466,6 +467,7 @@ const AdminDashboard = () => {
                 <div className="nav-brand text-green-500"><BarChart3 size={24} /> <span>Admin Panel</span></div>
                 <nav className="nav-links">
                     <button onClick={() => setActiveTab('analytics')} className={`nav-link-item ${activeTab === 'analytics' ? 'active' : ''}`}><BarChart3 size={18} /> Analytics</button>
+                    <button onClick={() => setActiveTab('revenue')} className={`nav-link-item ${activeTab === 'revenue' ? 'active' : ''}`}><BarChart3 size={18} /> Revenue</button>
                     <button onClick={() => setActiveTab('instructors')} className={`nav-link-item ${activeTab === 'instructors' ? 'active' : ''}`}><Users size={18} /> Instructors</button>
                     <button onClick={() => setActiveTab('students')} className={`nav-link-item ${activeTab === 'students' ? 'active' : ''}`}><Users size={18} /> Students</button>
                     <button onClick={() => setActiveTab('courses')} className={`nav-link-item ${activeTab === 'courses' ? 'active' : ''}`}><BookOpen size={18} /> Courses</button>
@@ -476,6 +478,7 @@ const AdminDashboard = () => {
 
             <main className="student-main-content">
                 {activeTab === 'analytics' && <AnalyticsDashboard />}
+                {activeTab === 'revenue' && <RevenueAnalytics />}
                 {activeTab === 'instructors' && renderInstructors()}
                 {activeTab === 'students' && renderStudents()}
                 {activeTab === 'courses' && renderCourses()}

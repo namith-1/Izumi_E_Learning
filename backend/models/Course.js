@@ -19,6 +19,7 @@ const courseSchema = new mongoose.Schema(
     // Recursive structure (each module node may carry: weight, passingScore, isGraded, maxAttempts, isMandatory, timeLimitSeconds, failureFeedback)
     rootModule: { type: Object, required: true },
 
+    price: { type: Number, default: 0, min: 0 },
     // Flat map for O(1) lookups
     modules: { type: Map, of: Object, required: true },
 

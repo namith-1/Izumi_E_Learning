@@ -2,7 +2,7 @@
 const Enrollment = require("../models/Enrollment");
 const Course = require("../models/Course");
 const mongoose = require("mongoose");
-
+const EnrollmentAnalytics = require("../models/EnrollmentAnalytics"); // Adjust the path as needed
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPER: Build a flat list of all non-folder, non-root content module nodes
 // ─────────────────────────────────────────────────────────────────────────────
@@ -192,18 +192,60 @@ const computeEnrollmentResult = async (courseId, enrollment) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // Enroll in a course
 // ─────────────────────────────────────────────────────────────────────────────
+// exports.enroll = async (req, res) => {
+//   try {
+//     const { courseId } = req.body;
+//     const enrollment = await Enrollment.create({
+//       courseId,
+//       studentId: req.session.user.id,
+//     });
+//     res.status(201).json(enrollment);
+//   } catch (err) {
+//     if (err.code === 11000)
+//       return res.status(400).json({ message: "Already enrolled" });
+//     res.status(500).json({ error: err.message });
+//   }
+// };
+
+// Make sure to import all three models at the top of your file
+
+
 exports.enroll = async (req, res) => {
   try {
     const { courseId } = req.body;
+    const studentId = req.session.user.id;
+
+    // 1. Fetch the course to get its current price
+    const course = await Course.findById(courseId);
+    
+    if (!course) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    // 2. Create the primary Enrollment record
     const enrollment = await Enrollment.create({
       courseId,
-      studentId: req.session.user.id,
+      studentId,
     });
+
+    // 3. Create the Analytics record, storing the exact price paid at this moment
+    await EnrollmentAnalytics.create({
+      courseId,
+      studentId,
+      price: course.price || 0, // Fallback to 0 if the course price is undefined
+    });
+
+    // 4. Send the successful response
     res.status(201).json(enrollment);
+
   } catch (err) {
-    if (err.code === 11000)
-      return res.status(400).json({ message: "Already enrolled" });
-    res.status(500).json({ error: err.message });
+    // 11000 is the MongoDB duplicate key error code
+    if (err.code === 11000) {
+      return res.status(400).json({ message: "Already enrolled in this course" });
+    }
+    
+    console.error("Enrollment Error:", err);
+    res.status(500).json({ error: "An error occurred during enrollment." });
   }
 };
 

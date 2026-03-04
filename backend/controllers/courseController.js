@@ -31,6 +31,7 @@ exports.createCourse = async (req, res) => {
       subject,
       imageUrl,
       rootModule,
+      price,
       modules,
       passingPolicy,  // NEW: grading policy from instructor
     } = req.body;
@@ -46,6 +47,7 @@ exports.createCourse = async (req, res) => {
       imageUrl,
       rootModule,
       modules,
+      price,
       passingPolicy: passingPolicy || undefined, // use schema defaults if not provided
       teacherId: req.session.user.id,
     });
@@ -146,6 +148,7 @@ exports.updateCourse = async (req, res) => {
       imageUrl,
       rootModule,
       modules,
+      price,
       passingPolicy,  // NEW: grading policy update
     } = req.body;
 
@@ -154,6 +157,7 @@ exports.updateCourse = async (req, res) => {
       description: courseDescription,
       subject,
       imageUrl,
+      price,
       rootModule,
       modules,
     };

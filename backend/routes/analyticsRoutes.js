@@ -15,10 +15,12 @@ router.get('/admin/instructor-leaderboard', isAdmin, analyticsController.getInst
 router.get('/courses/enrollment-trends', isAdmin, analyticsController.getCourseEnrollmentTrends);
 router.get('/courses/completion-analysis', isAdmin, analyticsController.getCompletionAnalysis);
 router.get('/courses/rating-analysis', isAdmin, analyticsController.getRatingAnalysis);
+router.get('/courses/price', isAdmin, analyticsController.getOverallTimeAnalytics);
 
 // ===== INSTRUCTOR ANALYTICS (Protected by isTeacher) =====
 const { isTeacher } = require('../middleware/authMiddleware');
 router.get('/instructor/my-stats', isTeacher, analyticsController.getInstructorAnalytics);
 router.get('/instructor/student-analytics', isTeacher, analyticsController.getInstructorStudentAnalytics);
+router.get('/instructor/revenue-analytics', isTeacher, analyticsController.getInstructorRevenueAnalytics);
 
 module.exports = router;

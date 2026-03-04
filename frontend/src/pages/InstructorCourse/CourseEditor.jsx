@@ -71,6 +71,7 @@ const initialCourseStructure = {
   courseTitle: "Untitled Course",
   courseDescription: "A description for the entire course.",
   subject: "General",
+  price: 0,
   passingPolicy: { ...DEFAULT_PASSING_POLICY },
   _id: null,
 };
@@ -400,6 +401,7 @@ const CourseEditor = () => {
         courseDescription: currentCourse.description,
         subject: currentCourse.subject,
         imageUrl: currentCourse.imageUrl || null,
+        price: currentCourse.price || 0,
         passingPolicy: currentCourse.passingPolicy || { ...DEFAULT_PASSING_POLICY },
         _id: currentCourse._id,
       });
@@ -635,6 +637,9 @@ const CourseEditor = () => {
       errors.courseTitle = "Course Title is required.";
     if (!courseStructure.subject.trim())
       errors.subject = "Subject is required.";
+    if(courseStructure.price < 0  
+    || isNaN(courseStructure.price))
+      errors.price = "Price must be a non-negative number.";
 
     // 2. Validate ALL modules (not just the selected one)
     const allModulesList = Object.values(allModules);
@@ -725,6 +730,7 @@ const CourseEditor = () => {
           courseTitle: courseStructure.courseTitle,
           courseDescription: courseStructure.courseDescription,
           subject: courseStructure.subject,
+          price: Number(courseStructure.price) || 0,
           rootModule: courseStructure.rootModule,
           modules: courseStructure.modules,
           imageUrl: courseStructure.imageUrl || null,
@@ -820,6 +826,7 @@ const CourseEditor = () => {
               )}
             </div>
           </div>
+          
           <div className="input-group">
             <input
               type="text"
@@ -836,6 +843,28 @@ const CourseEditor = () => {
               </span>
             )}
           </div>
+
+          {/* --- ADD THE PRICE INPUT HERE --- */}
+          <div className="input-group">
+            <label style={{ fontSize: "12px", color: "#6b7280", marginBottom: "4px", display: "block" }}>
+              Course Price ($)
+            </label>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              className={`sidebar-input ${validationErrors.price ? "input-error" : ""}`}
+              placeholder="0.00 (Free)"
+              value={courseStructure.price}
+              onChange={(e) =>
+                handleCourseMetaChange("price", e.target.value)
+              }
+            />
+            {validationErrors.price && (
+              <span className="error-tooltip">{validationErrors.price}</span>
+            )}
+          </div>
+          {/* -------------------------------- */}
 
           <div className="input-group">
             <input
