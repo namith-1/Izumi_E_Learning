@@ -147,7 +147,6 @@ const CourseSearch = () => {
             : 'No description provided.'}
         </p>
 
-      
         
         <div className="course-card-footer">
           <button 
