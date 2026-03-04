@@ -113,8 +113,11 @@ const CourseSearch = () => {
           <div className="course-grid student-course-grid">
            {/* ... inside the return statement, mapping filteredCourses ... */}
 {filteredCourses.map(course => {
-  // Use course._id to generate a consistent random image
-  const imageUrl = `https://picsum.photos/seed/${course._id}/400/220`;
+  // Choose image: prefer server-provided `imageUrl`, fall back to seeded picsum.
+  const rawBg = course.imageUrl || `https://picsum.photos/seed/${course._id}/400/220`;
+  const imageUrl = rawBg && rawBg.startsWith("http")
+    ? rawBg
+    : `${import.meta.env.VITE_API_BASE || "http://localhost:5000"}${rawBg}`;
 
   return (
     <div key={course._id} className="course-card"> 
@@ -141,6 +144,13 @@ const CourseSearch = () => {
             ? course.description.substring(0, 80) + '...' 
             : 'No description provided.'}
         </p>
+
+        {/* Price Display */}
+        {course.price && (
+          <div style={{ margin: '12px 0', padding: '8px 12px', background: '#f0fdf4', borderRadius: '6px', borderLeft: '3px solid #10b981' }}>
+            <p style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#10b981' }}>${course.price.toFixed(2)}</p>
+          </div>
+        )}
         
         <div className="course-card-footer">
           <button 

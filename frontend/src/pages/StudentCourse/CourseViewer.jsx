@@ -10,6 +10,7 @@ import {
   resetEnrollment,
 } from "../../store";
 import { BookOpen, Layers, Clock, Loader2, User, Play } from "lucide-react";
+import PaymentModal from "../../components/PaymentModal";
 
 // Placeholder for the actual learning page. This will handle the course structure navigation.
 // NOTE: Must be relative to the CourseViewer component's path in the Route definition.
@@ -34,6 +35,7 @@ const CourseViewer = () => {
   const { entities: teacherEntities } = useSelector((state) => state.teachers);
 
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   const loading = courseLoading || enrollmentLoading || isProcessing;
 
@@ -90,6 +92,12 @@ const CourseViewer = () => {
 
   const handleEnroll = async () => {
     if (isProcessing) return;
+    // Show payment modal instead of directly enrolling
+    setShowPaymentModal(true);
+  };
+
+  const handlePaymentConfirm = async () => {
+    if (isProcessing) return;
     setIsProcessing(true);
 
     try {
@@ -99,12 +107,15 @@ const CourseViewer = () => {
         enrollInCourse.fulfilled.match(result) ||
         (result.payload && result.payload.includes("Already enrolled"))
       ) {
+        setShowPaymentModal(false);
         handleStartLearning();
       } else {
         console.error("Enrollment failed:", result.payload);
+        alert("Enrollment failed. Please try again.");
       }
     } catch (error) {
       console.error("Enrollment error:", error);
+      alert("An error occurred during enrollment. Please try again.");
     } finally {
       setIsProcessing(false);
     }
@@ -197,19 +208,50 @@ const CourseViewer = () => {
                 <Play size={18} /> Start Learning
               </button>
             ) : (
-              <button
-                onClick={handleEnroll}
-                className="btn-enroll-now"
-                disabled={isProcessing || loading}
-              >
-                {isProcessing || loading ? (
-                  <Loader2 className="animate-spin" size={18} />
-                ) : (
-                  <>
-                    <BookOpen size={18} /> Enroll Now
-                  </>
-                )}
-              </button>
+              <>
+                <div 
+  className="price-display" 
+  style={{
+    display: 'flex',
+    flexDirection: 'column', // Labels on top of amount
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#c5e4c6', // Vibrant "Success" Green
+    color: '#41945b',           // White text for high contrast
+    padding: '16px 32px',       // Large padding for "Big Button" feel
+    borderRadius: '12px',       // Rounded corners
+    fontWeight: 'bold',
+    cursor: 'pointer',          // Makes it feel clickable
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+    transition: 'transform 0.2s ease', // Smooth interaction
+    textAlign: 'center',
+    width: 'fit-content',
+    margin: '10px 0'
+  }}
+  onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#16a34a'} // Darker on hover
+  onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#22c55e'}
+>
+  <span className="price-label" style={{ fontSize: '0.8rem', textTransform: 'uppercase', opacity: 0.9 }}>
+    Course Price
+  </span>
+  <span className="price-amount" style={{ fontSize: '1.8rem', lineHeight: '1.2' }}>
+    ${(course.price || 0).toFixed(2)}
+  </span>
+</div>
+                <button
+                  onClick={handleEnroll}
+                  className="btn-enroll-now"
+                  disabled={isProcessing || loading}
+                >
+                  {isProcessing || loading ? (
+                    <Loader2 className="animate-spin" size={18} />
+                  ) : (
+                    <>
+                      <BookOpen size={18} /> Enroll Now
+                    </>
+                  )}
+                </button>
+              </>
             )}
             {enrollmentError && !isEnrolled && (
               <p className="text-red-500 text-xs mt-2 text-center">
@@ -233,6 +275,18 @@ const CourseViewer = () => {
           </div>
         </main>
       </div>
+
+      {/* Payment Modal */}
+      <PaymentModal
+        course={{
+          ...course,
+          instructorName: instructorName,
+        }}
+        isOpen={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        onConfirm={handlePaymentConfirm}
+        isProcessing={isProcessing}
+      />
     </div>
   );
 };

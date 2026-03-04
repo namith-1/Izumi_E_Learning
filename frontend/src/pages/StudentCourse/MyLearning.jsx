@@ -191,6 +191,13 @@ const MyLearning = () => {
                       {completedCount}/{totalModulesDisplay} Modules Completed
                     </p>
 
+                    {/* Price Display */}
+                    {course.price && (
+                      <div style={{ margin: '8px 0 0 0', padding: '6px 8px', background: '#f0fdf4', borderRadius: '4px', fontSize: '12px', fontWeight: 600, color: '#10b981' }}>
+                        ${course.price.toFixed(2)}
+                      </div>
+                    )}
+
                     <div className="progress-section-compact">
                       <div className="progress-bar-bg-slim">
                         <div
