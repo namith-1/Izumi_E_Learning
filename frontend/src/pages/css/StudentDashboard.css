@@ -479,6 +479,7 @@
     height: 300px;
     background-size: cover;
     background-position: center;
+    background-repeat: no-repeat;
     border-radius: 12px;
     margin-bottom: 2rem;
     position: relative;
@@ -633,6 +634,34 @@
     margin-top: 2rem;
     padding-top: 1rem;
     border-top: 1px solid #e2e8f0;
+}
+
+/* Price Display Section */
+.price-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    border-radius: 8px;
+    border: 2px solid #86efac;
+}
+
+.price-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #4b5563;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.price-amount {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #059669;
+    letter-spacing: -1px;
 }
 
 .btn-enroll-now, .btn-start-learning {

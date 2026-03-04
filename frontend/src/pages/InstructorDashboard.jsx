@@ -9,7 +9,6 @@ import { fetchAllCourses } from '../store';
 import MyCourses from './InstructorCourse/MyCourses';
 import InstructorAnalytics from '../components/analytics/InstructorAnalytics';
 import InstructorStudentAnalytics from '../components/analytics/InstructorStudentAnalytics';
-import InstructorRevenueAnalytics from '../components/analytics/InstructorRevenueAnalytics';
 import InstructorProfileSettings from './InstructorCourse/InstructorProfileSettings';
 import InstructorChat from './InstructorCourse/InstructorChat';
 // Import StudentDashboard CSS for shared styling elements (navbar, content layout)
@@ -132,14 +131,6 @@ const InstructorDashboard = () => {
             <BarChart3 size={18} /> Overview
           </Link>
 
-          {/* Revenue Analytics */}
-          <Link
-            to="/instructor-dashboard/revenue"
-            className={`nav-link-item ${isActive('/instructor-dashboard/revenue') ? 'active' : ''}`}
-          >
-            <BarChart3 size={18} /> Revenue
-          </Link>
-
           {/* Student Analytics */}
           <Link
             to="/instructor-dashboard/students"
@@ -180,9 +171,6 @@ const InstructorDashboard = () => {
 
           {/* Instructor Analytics Route (Overview) */}
           <Route path="analytics" element={<InstructorAnalytics />} />
-
-          {/* Instructor Revenue Analytics Route */}
-          <Route path="revenue" element={<InstructorRevenueAnalytics />} />
 
           {/* Student Analytics Route */}
           <Route path="students" element={<InstructorStudentAnalytics />} />

@@ -12,6 +12,7 @@
     width: 100%;
     background-size: cover;
     background-position: center;
+    background-repeat: no-repeat;
     position: relative;
 }
 
@@ -31,4 +32,21 @@
 
 .card-content {
     padding: 25px 20px 20px; /* Top padding extra to clear the icon */
+}
+
+.card-price-section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.75rem;
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    border-radius: 6px;
+    border: 1px solid #86efac;
+    margin: 0.75rem 0;
+}
+
+.card-price {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #059669;
 }

@@ -21,6 +21,5 @@ router.get('/courses/price', isAdmin, analyticsController.getOverallTimeAnalytic
 const { isTeacher } = require('../middleware/authMiddleware');
 router.get('/instructor/my-stats', isTeacher, analyticsController.getInstructorAnalytics);
 router.get('/instructor/student-analytics', isTeacher, analyticsController.getInstructorStudentAnalytics);
-router.get('/instructor/revenue-analytics', isTeacher, analyticsController.getInstructorRevenueAnalytics);
 
 module.exports = router;

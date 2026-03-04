@@ -10,6 +10,7 @@ import {
   resetEnrollment,
 } from "../../store";
 import { BookOpen, Layers, Clock, Loader2, User, Play } from "lucide-react";
+import PaymentModal from "../../components/PaymentModal";
 
 // Placeholder for the actual learning page. This will handle the course structure navigation.
 // NOTE: Must be relative to the CourseViewer component's path in the Route definition.
@@ -34,6 +35,7 @@ const CourseViewer = () => {
   const { entities: teacherEntities } = useSelector((state) => state.teachers);
 
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   const loading = courseLoading || enrollmentLoading || isProcessing;
 
@@ -90,6 +92,12 @@ const CourseViewer = () => {
 
   const handleEnroll = async () => {
     if (isProcessing) return;
+    // Show payment modal instead of directly enrolling
+    setShowPaymentModal(true);
+  };
+
+  const handlePaymentConfirm = async () => {
+    if (isProcessing) return;
     setIsProcessing(true);
 
     try {
@@ -99,12 +107,15 @@ const CourseViewer = () => {
         enrollInCourse.fulfilled.match(result) ||
         (result.payload && result.payload.includes("Already enrolled"))
       ) {
+        setShowPaymentModal(false);
         handleStartLearning();
       } else {
         console.error("Enrollment failed:", result.payload);
+        alert("Enrollment failed. Please try again.");
       }
     } catch (error) {
       console.error("Enrollment error:", error);
+      alert("An error occurred during enrollment. Please try again.");
     } finally {
       setIsProcessing(false);
     }
@@ -197,19 +208,25 @@ const CourseViewer = () => {
                 <Play size={18} /> Start Learning
               </button>
             ) : (
-              <button
-                onClick={handleEnroll}
-                className="btn-enroll-now"
-                disabled={isProcessing || loading}
-              >
-                {isProcessing || loading ? (
-                  <Loader2 className="animate-spin" size={18} />
-                ) : (
-                  <>
-                    <BookOpen size={18} /> Enroll Now
-                  </>
-                )}
-              </button>
+              <>
+                <div className="price-display">
+                  <span className="price-label">Course Price</span>
+                  <span className="price-amount">${(course.price || 0).toFixed(2)}</span>
+                </div>
+                <button
+                  onClick={handleEnroll}
+                  className="btn-enroll-now"
+                  disabled={isProcessing || loading}
+                >
+                  {isProcessing || loading ? (
+                    <Loader2 className="animate-spin" size={18} />
+                  ) : (
+                    <>
+                      <BookOpen size={18} /> Enroll Now
+                    </>
+                  )}
+                </button>
+              </>
             )}
             {enrollmentError && !isEnrolled && (
               <p className="text-red-500 text-xs mt-2 text-center">
@@ -233,6 +250,18 @@ const CourseViewer = () => {
           </div>
         </main>
       </div>
+
+      {/* Payment Modal */}
+      <PaymentModal
+        course={{
+          ...course,
+          instructorName: instructorName,
+        }}
+        isOpen={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        onConfirm={handlePaymentConfirm}
+        isProcessing={isProcessing}
+      />
     </div>
   );
 };

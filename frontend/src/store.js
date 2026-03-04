@@ -749,30 +749,6 @@ export const fetchInstructorStudentAnalytics = createAsyncThunk(
   },
 );
 
-export const fetchRevenueAnalytics = createAsyncThunk(
-  "analytics/fetchRevenueAnalytics",
-  async (_, { rejectWithValue }) => {
-    try {
-      return await apiRequest("/analytics/courses/price", "GET");
-    } catch (err) {
-      return rejectWithValue(err.message);
-    }
-  },
-);
-
-export const fetchInstructorRevenueAnalytics = createAsyncThunk(
-  "analytics/fetchInstructorRevenueAnalytics",
-  async (instructorId = null, { rejectWithValue }) => {
-    try {
-      let query = "/analytics/instructor/revenue-analytics";
-      if (instructorId) query += `?instructorId=${instructorId}`;
-      return await apiRequest(query, "GET");
-    } catch (err) {
-      return rejectWithValue(err.message);
-    }
-  },
-);
-
 const analyticsSlice = createSlice({
   name: "analytics",
   initialState: {
@@ -783,8 +759,6 @@ const analyticsSlice = createSlice({
     instructorLeaderboard: [],
     instructorStats: null,
     studentAnalytics: [],
-    revenueData: [],
-    instructorRevenueData: [],
     loading: false,
     error: null,
   },
@@ -797,8 +771,6 @@ const analyticsSlice = createSlice({
       state.instructorLeaderboard = [];
       state.instructorStats = null;
       state.studentAnalytics = [];
-      state.revenueData = [];
-      state.instructorRevenueData = [];
       state.error = null;
     },
   },
@@ -860,28 +832,6 @@ const analyticsSlice = createSlice({
         state.studentAnalytics = action.payload;
       })
       .addCase(fetchInstructorStudentAnalytics.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
-      .addCase(fetchRevenueAnalytics.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(fetchRevenueAnalytics.fulfilled, (state, action) => {
-        state.loading = false;
-        state.revenueData = action.payload;
-      })
-      .addCase(fetchRevenueAnalytics.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
-      .addCase(fetchInstructorRevenueAnalytics.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(fetchInstructorRevenueAnalytics.fulfilled, (state, action) => {
-        state.loading = false;
-        state.instructorRevenueData = action.payload;
-      })
-      .addCase(fetchInstructorRevenueAnalytics.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });

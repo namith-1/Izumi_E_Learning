@@ -20,6 +20,7 @@
   width: 100%;
   background-size: cover;
   background-position: center;
+  background-repeat: no-repeat;
   position: relative;
 }
 
@@ -64,4 +65,15 @@
   font-size: 0.85rem;
   color: #6b7280;
   margin: 0;
+}
+
+.course-price-display {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #059669;
+  margin: 0.75rem 0;
+  padding: 0.5rem;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border-radius: 6px;
+  text-align: center;
 }
