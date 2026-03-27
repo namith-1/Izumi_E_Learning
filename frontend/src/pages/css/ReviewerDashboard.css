@@ -1,0 +1,50 @@
+/* ReviewerDashboard.css — Minimal additions to existing theme */
+/* Most styles come from AdminDashboard.css and StudentDashboard.css */
+
+/* Approval status badges (extending existing .status-badge) */
+.status-badge.draft {
+    background-color: #f3f4f6;
+    color: #6b7280;
+}
+
+.status-badge.pending {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.status-badge.approved {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.status-badge.rejected {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.status-badge.revision-requested {
+    background-color: #fef3c7;
+    color: #b45309;
+}
+
+/* Pre-check issues box */
+.precheck-issues {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 8px;
+}
+
+.precheck-issues h4 {
+    margin: 0 0 6px;
+    font-size: 0.85rem;
+    color: #991b1b;
+}
+
+.precheck-issues ul {
+    margin: 0;
+    padding-left: 18px;
+    font-size: 0.8rem;
+    color: #b91c1c;
+}
