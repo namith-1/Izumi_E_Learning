@@ -1,0 +1,99 @@
+.magazine-page-container {
+  padding: 2rem;
+  background-color: #f9fafb;
+  min-height: 100vh;
+}
+
+.mag-title {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: #111827;
+  margin-bottom: 0.5rem;
+}
+
+.mag-subtitle {
+  color: #6b7280;
+  margin-bottom: 2.5rem;
+}
+
+/* Instagram Explore Grid */
+.explore-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-auto-rows: 240px;
+  grid-auto-flow: dense; 
+  gap: 16px;
+}
+
+.explore-card {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #e5e7eb;
+  text-decoration: none;
+}
+
+.explore-card.tall {
+  grid-row: span 2;
+}
+
+.explore-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.explore-card:hover .explore-image {
+  transform: scale(1.1);
+}
+
+.explore-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(transparent 40%, rgba(0, 0, 0, 0.9));
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 20px;
+}
+
+.explore-text h3 {
+  color: #ffffff;
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.explore-text p {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.85rem;
+  margin: 6px 0 0 0;
+}
+
+.explore-tag {
+  background: #2563eb;
+  color: #fff;
+  font-size: 0.65rem;
+  padding: 3px 10px;
+  border-radius: 4px;
+  width: fit-content;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+/* Shimmer Loading Effect */
+.explore-placeholder {
+  background: #eee;
+  height: 100%;
+  border-radius: 12px;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .5; }
+}
+.animate-pulse {
+  animation: pulse 2s infinite;
+}
