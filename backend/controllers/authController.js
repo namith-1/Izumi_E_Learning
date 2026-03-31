@@ -5,6 +5,78 @@ const Reviewer = require("../models/Reviewer");
 const bcrypt = require("bcryptjs");
 const attemptStore = require("../services/attemptStore");
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     User:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *         role:
+ *           type: string
+ *           enum: [student, teacher, reviewer, admin]
+ *         name:
+ *           type: string
+ *         email:
+ *           type: string
+ *           format: email
+ *         profilePic:
+ *           type: string
+ *     RegisterRequest:
+ *       type: object
+ *       required:
+ *         - name
+ *         - email
+ *         - password
+ *         - role
+ *       properties:
+ *         name:
+ *           type: string
+ *         email:
+ *           type: string
+ *           format: email
+ *         password:
+ *           type: string
+ *           minLength: 6
+ *         role:
+ *           type: string
+ *           enum: [student, teacher, reviewer]
+ *     LoginRequest:
+ *       type: object
+ *       required:
+ *         - email
+ *         - password
+ *         - role
+ *       properties:
+ *         email:
+ *           type: string
+ *           format: email
+ *         password:
+ *           type: string
+ *         role:
+ *           type: string
+ *           enum: [student, teacher, reviewer, admin]
+ *     UpdateProfileRequest:
+ *       type: object
+ *       properties:
+ *         name:
+ *           type: string
+ *         currentPassword:
+ *           type: string
+ *         newPassword:
+ *           type: string
+ *           minLength: 6
+ *     Error:
+ *       type: object
+ *       properties:
+ *         message:
+ *           type: string
+ *         error:
+ *           type: string
+ */
+
 // --- Hardcoded Admin Credentials and Mock ID ---
 const ADMIN_EMAIL = "admin@izumi.com";
 const ADMIN_PASSWORD = "adminpass";
@@ -21,6 +93,35 @@ const getModel = (role) => {
 };
 
 // Register
+/**
+ * @swagger
+ * /api/auth/register:
+ *   post:
+ *     summary: Register a new user
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/RegisterRequest'
+ *     responses:
+ *       201:
+ *         description: Registration successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Email already exists
+ *       500:
+ *         description: Server error
+ */
 exports.register = async (req, res) => {
   const { name, email, password, role } = req.body;
 
@@ -58,6 +159,37 @@ exports.register = async (req, res) => {
 };
 
 // Login
+/**
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     summary: Login user
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/LoginRequest'
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Invalid credentials
+ *       429:
+ *         description: Too many attempts
+ *       500:
+ *         description: Server error
+ */
 exports.login = async (req, res) => {
   const { email, password, role } = req.body;
 
@@ -154,6 +286,25 @@ exports.login = async (req, res) => {
 };
 
 // Logout
+/**
+ * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     summary: Logout user
+ *     tags: [Authentication]
+ *     responses:
+ *       200:
+ *         description: Logout successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       500:
+ *         description: Logout failed
+ */
 exports.logout = (req, res) => {
   req.session.destroy((err) => {
     if (err) return res.status(500).json({ message: "Logout failed" });
@@ -163,6 +314,29 @@ exports.logout = (req, res) => {
 };
 
 // Check Current Session (Useful for React useEffect on load)
+/**
+ * @swagger
+ * /api/auth/me:
+ *   get:
+ *     summary: Get current user session
+ *     tags: [Authentication]
+ *     responses:
+ *       200:
+ *         description: User session data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Not authenticated
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Server error
+ */
 exports.me = (req, res) => {
   if (req.session.user) {
     // --- NEW LOGIC: Mock Admin Check (Bypasses DB lookup for session restore) ---
@@ -207,70 +381,30 @@ exports.me = (req, res) => {
   }
 };
 
-// NEW: Update Profile
-exports.updateProfile = async (req, res) => {
-  try {
-    const { name, currentPassword, newPassword } = req.body;
-    const userId = req.session.user.id;
-
-    // --- NEW LOGIC: Block profile update for mock Admin account ---
-    if (userId === MOCK_ADMIN_ID && req.session.user.role === "admin") {
-      return res
-        .status(403)
-        .json({ message: "Cannot update profile for administrative account." });
-    }
-    // --- END Block ---
-
-    // Determine model: use 'teacher' model if the session role is 'admin' for lookup
-    const role =
-      req.session.user.role === "admin" ? "teacher" : req.session.user.role;
-    const Model = getModel(role);
-
-    const user = await Model.findById(userId);
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    // 1. Verify current password
-    if (
-      !currentPassword ||
-      !(await bcrypt.compare(currentPassword, user.password))
-    ) {
-      return res.status(401).json({ message: "Invalid current password." });
-    }
-
-    // 2. Update name if provided
-    if (name) {
-      user.name = name;
-      req.session.user.name = name; // Update session
-    }
-
-    // 3. Update password if new one is provided
-    if (newPassword && newPassword.length >= 6) {
-      user.password = await bcrypt.hash(newPassword, 10);
-    } else if (newPassword) {
-      // New password provided but too short
-      return res
-        .status(400)
-        .json({ message: "New password must be at least 6 characters." });
-    }
-
-    await user.save();
-
-    // Return updated session data, maintaining the session role.
-    res.json({
-      message: "Profile updated successfully",
-      user: {
-        id: user._id,
-        role: req.session.user.role,
-        name: user.name,
-        email: user.email,
-      },
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message || "Error updating profile." });
-  }
-};
-
 // Get all teachers (ID and Name)
+/**
+ * @swagger
+ * /api/auth/teachers:
+ *   get:
+ *     summary: Get all teachers
+ *     tags: [Authentication]
+ *     responses:
+ *       200:
+ *         description: List of teachers
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   _id:
+ *                     type: string
+ *                   name:
+ *                     type: string
+ *       500:
+ *         description: Server error
+ */
 exports.getAllTeachers = async (req, res) => {
   try {
     // Find all users in the Teacher collection and only return their _id and name
@@ -281,6 +415,52 @@ exports.getAllTeachers = async (req, res) => {
   }
 };
 
+/**
+ * @swagger
+ * /api/auth/profile:
+ *   put:
+ *     summary: Update user profile
+ *     tags: [Authentication]
+ *     security:
+ *       - sessionAuth: []
+ *     requestBody:
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               currentPassword:
+ *                 type: string
+ *               newPassword:
+ *                 type: string
+ *                 minLength: 6
+ *               profileImage:
+ *                 type: string
+ *                 format: binary
+ *                 description: Profile image file
+ *     responses:
+ *       200:
+ *         description: Profile updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Invalid current password
+ *       403:
+ *         description: Cannot update admin profile
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Server error
+ */
 exports.updateProfile = async (req, res) => {
   try {
     const { name, currentPassword, newPassword } = req.body;

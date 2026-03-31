@@ -3,6 +3,53 @@ const Enrollment = require("../models/Enrollment");
 const Course = require("../models/Course");
 const mongoose = require("mongoose");
 const EnrollmentAnalytics = require("../models/EnrollmentAnalytics"); // Adjust the path as needed
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Enrollment:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *         studentId:
+ *           type: string
+ *         courseId:
+ *           type: string
+ *         progress:
+ *           type: object
+ *         completed:
+ *           type: boolean
+ *         enrolledAt:
+ *           type: string
+ *           format: date-time
+ *         completedAt:
+ *           type: string
+ *           format: date-time
+ *     EnrollRequest:
+ *       type: object
+ *       required:
+ *         - courseId
+ *       properties:
+ *         courseId:
+ *           type: string
+ *     ProgressUpdate:
+ *       type: object
+ *       required:
+ *         - moduleId
+ *         - completed
+ *       properties:
+ *         moduleId:
+ *           type: string
+ *         completed:
+ *           type: boolean
+ *         score:
+ *           type: number
+ *         attempts:
+ *           type: number
+ */
+
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPER: Build a flat list of all non-folder, non-root content module nodes
 // ─────────────────────────────────────────────────────────────────────────────
@@ -210,6 +257,34 @@ const computeEnrollmentResult = async (courseId, enrollment) => {
 // Make sure to import all three models at the top of your file
 
 
+/**
+ * @swagger
+ * /api/enrollment/enroll:
+ *   post:
+ *     summary: Enroll in a course
+ *     tags: [Enrollment]
+ *     security:
+ *       - sessionAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/EnrollRequest'
+ *     responses:
+ *       201:
+ *         description: Enrollment successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Enrollment'
+ *       400:
+ *         description: Already enrolled
+ *       404:
+ *         description: Course not found
+ *       500:
+ *         description: Server error
+ */
 exports.enroll = async (req, res) => {
   try {
     const { courseId } = req.body;
@@ -252,6 +327,33 @@ exports.enroll = async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // Get enrollment / progress for CourseViewer
 // ─────────────────────────────────────────────────────────────────────────────
+/**
+ * @swagger
+ * /api/enrollment/{courseId}:
+ *   get:
+ *     summary: Get enrollment status for a course
+ *     tags: [Enrollment]
+ *     security:
+ *       - sessionAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: courseId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Course ID
+ *     responses:
+ *       200:
+ *         description: Enrollment data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Enrollment'
+ *       404:
+ *         description: Enrollment not found
+ *       500:
+ *         description: Server error
+ */
 exports.getEnrollment = async (req, res) => {
   try {
     const enrollment = await Enrollment.findOne({
@@ -268,6 +370,35 @@ exports.getEnrollment = async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // Get all enrolled courses with details (My Learning page)
 // ─────────────────────────────────────────────────────────────────────────────
+/**
+ * @swagger
+ * /api/enrollment/my-courses:
+ *   get:
+ *     summary: Get my enrolled courses
+ *     tags: [Enrollment]
+ *     security:
+ *       - sessionAuth: []
+ *     responses:
+ *       200:
+ *         description: List of enrolled courses
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   enrollment:
+ *                     $ref: '#/components/schemas/Enrollment'
+ *                   course:
+ *                     $ref: '#/components/schemas/Course'
+ *                   progressPercentage:
+ *                     type: number
+ *                   isCompleted:
+ *                     type: boolean
+ *       500:
+ *         description: Server error
+ */
 exports.getMyEnrolledCourses = async (req, res) => {
   try {
     const enrollments = await Enrollment.find({
@@ -338,6 +469,46 @@ exports.getMyEnrolledCourses = async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // Update Progress — called when video ends, text is marked read, or quiz submitted
 // ─────────────────────────────────────────────────────────────────────────────
+/**
+ * @swagger
+ * /api/enrollment/{courseId}/progress:
+ *   put:
+ *     summary: Update progress for a course
+ *     tags: [Enrollment]
+ *     security:
+ *       - sessionAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: courseId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Course ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ProgressUpdate'
+ *     responses:
+ *       200:
+ *         description: Progress updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 enrollment:
+ *                   $ref: '#/components/schemas/Enrollment'
+ *       400:
+ *         description: Module ID required
+ *       404:
+ *         description: Enrollment not found
+ *       500:
+ *         description: Server error
+ */
 exports.updateProgress = async (req, res) => {
   try {
     const { courseId } = req.params;

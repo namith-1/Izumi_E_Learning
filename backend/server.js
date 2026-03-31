@@ -4,6 +4,8 @@ const http = require("http");
 const { Server: SocketIO } = require("socket.io");
 const connectDB = require("./config/db");
 const path = require("path");
+const swaggerJSDoc = require('swagger-jsdoc');
+const swaggerUi = require('swagger-ui-express');
 
 // Import Custom Middlewares
 const setupLogging = require("./middleware/logger");
@@ -16,6 +18,46 @@ const registerChatHandlers = require("./sockets/chatSocket");
 
 const app = express();
 const server = http.createServer(app);
+
+// Swagger definition
+const swaggerDefinition = {
+  openapi: '3.0.0',
+  info: {
+    title: 'Izumi E-Learning API',
+    version: '1.0.0',
+    description: 'API documentation for the Izumi E-Learning platform',
+  },
+  servers: [
+    {
+      url: `http://localhost:${process.env.PORT || 5000}`,
+      description: 'Development server',
+    },
+  ],
+  components: {
+    securitySchemes: {
+      sessionAuth: {
+        type: 'apiKey',
+        in: 'cookie',
+        name: 'connect.sid',
+      },
+    },
+  },
+  security: [
+    {
+      sessionAuth: [],
+    },
+  ],
+};
+
+const options = {
+  swaggerDefinition,
+  apis: ['./routes/*.js', './controllers/*.js'], // paths to files containing OpenAPI definitions
+};
+
+const swaggerSpec = swaggerJSDoc(options);
+
+// Swagger UI
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Determine frontend base URL (env override or sensible default for Vite)
 const FRONTEND_URL =
@@ -84,8 +126,12 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Frontend Admin Login: ${FRONTEND_URL}/admin-login`);
-  console.log(`Socket.IO ready on port ${PORT}`);
-});
+if (require.main === module) {
+  server.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    console.log(`Frontend Admin Login: ${FRONTEND_URL}/admin-login`);
+    console.log(`Socket.IO ready on port ${PORT}`);
+  });
+}
+
+module.exports = app;

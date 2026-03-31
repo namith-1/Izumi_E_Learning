@@ -3,6 +3,86 @@ const Course = require("../models/Course");
 const Teacher = require("../models/Teacher");
 const mongoose = require("mongoose"); // Need mongoose for ObjectId conversion
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Course:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *         title:
+ *           type: string
+ *         description:
+ *           type: string
+ *         subject:
+ *           type: string
+ *         imageUrl:
+ *           type: string
+ *         rootModule:
+ *           type: string
+ *         modules:
+ *           type: object
+ *         price:
+ *           type: number
+ *         passingPolicy:
+ *           type: object
+ *         teacherId:
+ *           type: string
+ *         approvalStatus:
+ *           type: string
+ *           enum: [pending, approved, rejected]
+ *         teacherDetails:
+ *           type: object
+ *           properties:
+ *             _id:
+ *               type: string
+ *             name:
+ *               type: string
+ *     CreateCourseRequest:
+ *       type: object
+ *       required:
+ *         - courseTitle
+ *         - subject
+ *       properties:
+ *         courseTitle:
+ *           type: string
+ *         courseDescription:
+ *           type: string
+ *         subject:
+ *           type: string
+ *         imageUrl:
+ *           type: string
+ *         rootModule:
+ *           type: string
+ *         price:
+ *           type: number
+ *         modules:
+ *           type: object
+ *         passingPolicy:
+ *           type: object
+ *     UpdateCourseRequest:
+ *       type: object
+ *       properties:
+ *         courseTitle:
+ *           type: string
+ *         courseDescription:
+ *           type: string
+ *         subject:
+ *           type: string
+ *         imageUrl:
+ *           type: string
+ *         rootModule:
+ *           type: string
+ *         modules:
+ *           type: object
+ *         price:
+ *           type: number
+ *         passingPolicy:
+ *           type: object
+ */
+
 // ─── Helper: validate that graded module weights sum to ~100 ────────────────
 const checkWeightSum = (modules) => {
   if (!modules) return null;
@@ -23,6 +103,32 @@ const checkWeightSum = (modules) => {
 };
 
 // Create Course
+/**
+ * @swagger
+ * /api/courses:
+ *   post:
+ *     summary: Create a new course
+ *     tags: [Courses]
+ *     security:
+ *       - sessionAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateCourseRequest'
+ *     responses:
+ *       201:
+ *         description: Course created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Course'
+ *       400:
+ *         description: Subject is required
+ *       500:
+ *         description: Server error
+ */
 exports.createCourse = async (req, res) => {
   try {
     const {
@@ -60,6 +166,24 @@ exports.createCourse = async (req, res) => {
 };
 
 // Get All Courses (Catalog) - MODIFIED TO USE AGGREGATION LOOKUP
+/**
+ * @swagger
+ * /api/courses:
+ *   get:
+ *     summary: Get all courses
+ *     tags: [Courses]
+ *     responses:
+ *       200:
+ *         description: List of courses
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Course'
+ *       500:
+ *         description: Server error
+ */
 exports.getAllCourses = async (req, res) => {
   try {
     const pipeline = [];
@@ -115,6 +239,33 @@ exports.getAllCourses = async (req, res) => {
 };
 
 // Get Single Course
+/**
+ * @swagger
+ * /api/courses/{id}:
+ *   get:
+ *     summary: Get course by ID
+ *     tags: [Courses]
+ *     security:
+ *       - sessionAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Course ID
+ *     responses:
+ *       200:
+ *         description: Course data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Course'
+ *       404:
+ *         description: Course not found
+ *       500:
+ *         description: Server error
+ */
 exports.getCourseById = async (req, res) => {
   try {
     const course = await Course.findById(req.params.id);
@@ -126,6 +277,39 @@ exports.getCourseById = async (req, res) => {
 };
 
 // Upload Course Image
+/**
+ * @swagger
+ * /api/courses/upload-image:
+ *   post:
+ *     summary: Upload course image
+ *     tags: [Courses]
+ *     security:
+ *       - sessionAuth: []
+ *     requestBody:
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               image:
+ *                 type: string
+ *                 format: binary
+ *                 description: Course image file
+ *     responses:
+ *       200:
+ *         description: Image uploaded successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 imageUrl:
+ *                   type: string
+ *       400:
+ *         description: No file uploaded
+ *       500:
+ *         description: Server error
+ */
 exports.uploadCourseImage = async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: "No file uploaded" });
@@ -139,6 +323,40 @@ exports.uploadCourseImage = async (req, res) => {
 };
 
 // Update Course
+/**
+ * @swagger
+ * /api/courses/{id}:
+ *   put:
+ *     summary: Update course
+ *     tags: [Courses]
+ *     security:
+ *       - sessionAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Course ID
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UpdateCourseRequest'
+ *     responses:
+ *       200:
+ *         description: Course updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Course'
+ *       403:
+ *         description: Not authorized
+ *       404:
+ *         description: Course not found
+ *       500:
+ *         description: Server error
+ */
 exports.updateCourse = async (req, res) => {
   try {
     const {
@@ -184,6 +402,44 @@ exports.updateCourse = async (req, res) => {
 };
 
 // NEW: Get Course Analytics for Instructor's Courses
+/**
+ * @swagger
+ * /api/courses/analytics:
+ *   get:
+ *     summary: Get course analytics for instructor
+ *     tags: [Courses]
+ *     security:
+ *       - sessionAuth: []
+ *     responses:
+ *       200:
+ *         description: Course analytics data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 totalCourses:
+ *                   type: integer
+ *                 totalEnrollments:
+ *                   type: integer
+ *                 recentEnrollments:
+ *                   type: integer
+ *                 courses:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       _id:
+ *                         type: string
+ *                       title:
+ *                         type: string
+ *                       enrollments:
+ *                         type: integer
+ *                       recentEnrollments:
+ *                         type: integer
+ *       500:
+ *         description: Server error
+ */
 exports.getCourseAnalytics = async (req, res) => {
   try {
     // Ensure to use the correct ObjectId type for comparison
