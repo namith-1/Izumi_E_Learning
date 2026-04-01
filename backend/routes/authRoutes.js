@@ -24,7 +24,37 @@ const upload = require("../middleware/uploadMiddleware");
  *     responses:
  *       200: { description: Profile updated }
  */
-router.put("/profile", isAuthenticated, upload.single('profileImage'), authController.updateProfile);
+
+// Middleware to handle multer errors for profile uploads
+const handleProfileUploadError = (err, req, res, next) => {
+  if (err) {
+    if (err.code === "LIMIT_FILE_SIZE") {
+      return res.status(400).json({
+        message: "File too large. Maximum size is 5MB.",
+      });
+    }
+    if (err.message === "Only .png, .jpg and .jpeg format allowed!") {
+      return res.status(400).json({
+        message: err.message,
+      });
+    }
+    return res.status(400).json({
+      message: err.message || "File upload failed.",
+    });
+  }
+  next();
+};
+
+router.put(
+  "/profile",
+  isAuthenticated,
+  (req, res, next) => {
+    upload.single("profileImage")(req, res, (err) => {
+      handleProfileUploadError(err, req, res, next);
+    });
+  },
+  authController.updateProfile,
+);
 /**
  * @swagger
  * /api/auth/register:
@@ -101,7 +131,7 @@ router.get("/me", authController.me);
  */
 router.get("/teachers", authController.getAllTeachers);
 
-const passport = require('passport');
+const passport = require("passport");
 
 /**
  * @swagger
@@ -126,23 +156,29 @@ const passport = require('passport');
  */
 
 // Route to start Google Auth
-router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+router.get(
+  "/google",
+  passport.authenticate("google", { scope: ["profile", "email"] }),
+);
 
 // Google Auth Callback
-router.get('/google/callback', 
-  passport.authenticate('google', { failureRedirect: '/login' }),
+router.get(
+  "/google/callback",
+  passport.authenticate("google", { failureRedirect: "/login" }),
   (req, res) => {
     // Successful authentication, set the session user object
     req.session.user = {
       id: req.user._id,
-      role: 'student', // Defaulting to student for Google Sign-in
+      role: "student", // Defaulting to student for Google Sign-in
       name: req.user.name,
       email: req.user.email,
     };
     // Redirect to the frontend dashboard
     // Fallback to localhost if the env variable is missing
-const redirectUrl = (process.env.FRONTEND_URL || 'http://localhost:5173') + '/student-dashboard';
-res.redirect(redirectUrl);
-  }
+    const redirectUrl =
+      (process.env.FRONTEND_URL || "http://localhost:5173") +
+      "/student-dashboard";
+    res.redirect(redirectUrl);
+  },
 );
 module.exports = router;

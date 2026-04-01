@@ -65,11 +65,36 @@ router.get("/:id", isAuthenticated, courseController.getCourseById);
  *     responses:
  *       200: { description: Uploaded image URL }
  */
+
+// Middleware to handle multer errors for course uploads
+const handleCourseUploadError = (err, req, res, next) => {
+  if (err) {
+    if (err.code === "LIMIT_FILE_SIZE") {
+      return res.status(400).json({
+        message: "File too large. Maximum size is 5MB.",
+      });
+    }
+    if (err.message === "Only .png, .jpg and .jpeg format allowed!") {
+      return res.status(400).json({
+        message: err.message,
+      });
+    }
+    return res.status(400).json({
+      message: err.message || "File upload failed.",
+    });
+  }
+  next();
+};
+
 router.post(
   "/upload-image",
   isAuthenticated,
   isTeacher,
-  courseUpload.single("image"),
+  (req, res, next) => {
+    courseUpload.single("image")(req, res, (err) => {
+      handleCourseUploadError(err, req, res, next);
+    });
+  },
   courseController.uploadCourseImage,
 );
 /**
@@ -99,6 +124,6 @@ router.post("/", isAuthenticated, isTeacher, courseController.createCourse);
  *       200: { description: Course updated }
  */
 router.put("/:id", isAuthenticated, isTeacher, courseController.updateCourse);
-router.use('/', require('./mediaUpload')); // Mount media upload routes
+router.use("/", require("./mediaUpload")); // Mount media upload routes
 
 module.exports = router;
