@@ -22,6 +22,91 @@ const checkWeightSum = (modules) => {
   return null;
 };
 
+/**
+ * @swagger
+ * /api/courses:
+ *   post:
+ *     summary: Create a new course
+ *     tags: [Courses]
+ *     security:
+ *       - sessionAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - courseTitle
+ *               - courseDescription
+ *               - subject
+ *             properties:
+ *               courseTitle:
+ *                 type: string
+ *                 example: "Introduction to Programming"
+ *               courseDescription:
+ *                 type: string
+ *                 example: "Learn the basics of programming"
+ *               subject:
+ *                 type: string
+ *                 example: "Computer Science"
+ *               imageUrl:
+ *                 type: string
+ *                 example: "/uploads/courses/image.jpg"
+ *               rootModule:
+ *                 type: string
+ *                 example: "Welcome to the course"
+ *               price:
+ *                 type: number
+ *                 example: 99.99
+ *               modules:
+ *                 type: object
+ *                 example: {"module1": {"type": "text", "title": "Intro", "content": "Content"}}
+ *               passingPolicy:
+ *                 type: object
+ *                 properties:
+ *                   minimumScore:
+ *                     type: number
+ *                     example: 70
+ *                   requiredModules:
+ *                     type: array
+ *                     items:
+ *                       type: string
+ *                     example: ["quiz1", "quiz2"]
+ *     responses:
+ *       201:
+ *         description: Course created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/Course'
+ *                 - type: object
+ *                   properties:
+ *                     weightWarning:
+ *                       type: string
+ *                       example: "Graded module weights sum to 90, not 100. Scores will be auto-normalised."
+ *       400:
+ *         description: Subject is required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Subject is required"
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
+
 // Create Course
 exports.createCourse = async (req, res) => {
   try {
@@ -58,6 +143,64 @@ exports.createCourse = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+/**
+ * @swagger
+ * /api/courses:
+ *   get:
+ *     summary: Get all courses (catalog)
+ *     tags: [Courses]
+ *     responses:
+ *       200:
+ *         description: List of courses
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   _id:
+ *                     type: string
+ *                     example: "60c728362d294d1f88c88888"
+ *                   title:
+ *                     type: string
+ *                     example: "Introduction to Programming"
+ *                   description:
+ *                     type: string
+ *                     example: "Learn the basics of programming"
+ *                   subject:
+ *                     type: string
+ *                     example: "Computer Science"
+ *                   imageUrl:
+ *                     type: string
+ *                     example: "/uploads/courses/image.jpg"
+ *                   rating:
+ *                     type: number
+ *                     example: 4.5
+ *                   createdAt:
+ *                     type: string
+ *                     format: date-time
+ *                     example: "2023-01-01T00:00:00.000Z"
+ *                   teacherId:
+ *                     type: string
+ *                     example: "60c728362d294d1f88c88889"
+ *                   approvalStatus:
+ *                     type: string
+ *                     example: "approved"
+ *                   instructorName:
+ *                     type: string
+ *                     example: "Dr. Smith"
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
 
 // Get All Courses (Catalog) - MODIFIED TO USE AGGREGATION LOOKUP
 exports.getAllCourses = async (req, res) => {
@@ -114,6 +257,49 @@ exports.getAllCourses = async (req, res) => {
   }
 };
 
+/**
+ * @swagger
+ * /api/courses/{id}:
+ *   get:
+ *     summary: Get course by ID
+ *     tags: [Courses]
+ *     security:
+ *       - sessionAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: "60c728362d294d1f88c88888"
+ *     responses:
+ *       200:
+ *         description: Course details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Course'
+ *       404:
+ *         description: Course not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Course not found"
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
+
 // Get Single Course
 exports.getCourseById = async (req, res) => {
   try {
@@ -124,6 +310,57 @@ exports.getCourseById = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+/**
+ * @swagger
+ * /api/courses/upload-image:
+ *   post:
+ *     summary: Upload course image
+ *     tags: [Courses]
+ *     security:
+ *       - sessionAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               image:
+ *                 type: string
+ *                 format: binary
+ *                 description: Course image file
+ *     responses:
+ *       200:
+ *         description: Image uploaded successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 imageUrl:
+ *                   type: string
+ *                   example: "/uploads/courses/image.jpg"
+ *       400:
+ *         description: No file uploaded
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "No file uploaded"
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
 
 // Upload Course Image
 exports.uploadCourseImage = async (req, res) => {
@@ -137,6 +374,94 @@ exports.uploadCourseImage = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+/**
+ * @swagger
+ * /api/courses/{id}:
+ *   put:
+ *     summary: Update course
+ *     tags: [Courses]
+ *     security:
+ *       - sessionAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: "60c728362d294d1f88c88888"
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               courseTitle:
+ *                 type: string
+ *                 example: "Updated Course Title"
+ *               courseDescription:
+ *                 type: string
+ *                 example: "Updated description"
+ *               subject:
+ *                 type: string
+ *                 example: "Computer Science"
+ *               imageUrl:
+ *                 type: string
+ *                 example: "/uploads/courses/image.jpg"
+ *               rootModule:
+ *                 type: string
+ *                 example: "Welcome to the course"
+ *               modules:
+ *                 type: object
+ *                 example: {"module1": {"type": "text", "title": "Intro", "content": "Content"}}
+ *               price:
+ *                 type: number
+ *                 example: 99.99
+ *               passingPolicy:
+ *                 type: object
+ *                 properties:
+ *                   minimumScore:
+ *                     type: number
+ *                     example: 70
+ *                   requiredModules:
+ *                     type: array
+ *                     items:
+ *                       type: string
+ *                     example: ["quiz1", "quiz2"]
+ *     responses:
+ *       200:
+ *         description: Course updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/Course'
+ *                 - type: object
+ *                   properties:
+ *                     weightWarning:
+ *                       type: string
+ *                       example: "Graded module weights sum to 90, not 100. Scores will be auto-normalised."
+ *       403:
+ *         description: Not authorized or course not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Not authorized or course not found"
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
 
 // Update Course
 exports.updateCourse = async (req, res) => {
@@ -182,6 +507,62 @@ exports.updateCourse = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+/**
+ * @swagger
+ * /api/courses/analytics:
+ *   get:
+ *     summary: Get course analytics for instructor
+ *     tags: [Courses]
+ *     security:
+ *       - sessionAuth: []
+ *     responses:
+ *       200:
+ *         description: Course analytics
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   _id:
+ *                     type: string
+ *                     example: "60c728362d294d1f88c88888"
+ *                   title:
+ *                     type: string
+ *                     example: "Introduction to Programming"
+ *                   subject:
+ *                     type: string
+ *                     example: "Computer Science"
+ *                   totalStudentsEnrolled:
+ *                     type: number
+ *                     example: 25
+ *                   averageQuizScore:
+ *                     type: number
+ *                     example: 85.5
+ *                   enrollmentTrend:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *                       properties:
+ *                         date:
+ *                           type: string
+ *                           format: date
+ *                           example: "2023-01-01"
+ *                         count:
+ *                           type: number
+ *                           example: 5
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
 
 // NEW: Get Course Analytics for Instructor's Courses
 exports.getCourseAnalytics = async (req, res) => {

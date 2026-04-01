@@ -3,7 +3,37 @@ const Student = require('../models/Student');
 const Teacher = require('../models/Teacher');
 const Course = require('../models/Course');
 const Enrollment = require('../models/Enrollment');
+const Transaction = require('../models/Transaction');
 const EnrollmentAnalytics = require('../models/EnrollmentAnalytics'); // For tracking enrollments with price and date
+const PLATFORM_FEE_RATE = 0.2;
+
+const getDateMatch = (req) => {
+    const { startDate, endDate, days } = req.query;
+    const match = {};
+
+    if (startDate || endDate) {
+        match.createdAt = {};
+        if (startDate) match.createdAt.$gte = new Date(startDate);
+        if (endDate) {
+            const end = new Date(endDate);
+            end.setHours(23, 59, 59, 999);
+            match.createdAt.$lte = end;
+        }
+        return match;
+    }
+
+    const d = parseInt(days, 10) || 30;
+    const from = new Date();
+    from.setDate(from.getDate() - d);
+    match.createdAt = { $gte: from };
+    return match;
+};
+
+const getGroupDateExpression = (groupBy) => {
+    if (groupBy === 'month') return { $dateToString: { format: '%Y-%m', date: '$createdAt' } };
+    if (groupBy === 'year') return { $dateToString: { format: '%Y', date: '$createdAt' } };
+    return { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } };
+};
 
 // ===== ADMIN ANALYTICS =====
 
@@ -147,11 +177,28 @@ exports.getAdminOverview = async (req, res) => {
         const newInstructors = await Teacher.countDocuments({ createdAt: { $gte: startDate } });
         const newCourses = await Course.countDocuments({ createdAt: { $gte: startDate } });
 
+        const txOverview = await Transaction.aggregate([
+            { $match: { status: { $in: ['paid', 'refunded'] } } },
+            {
+                $group: {
+                    _id: null,
+                    grossRevenue: { $sum: { $cond: [{ $eq: ['$status', 'paid'] }, '$amount', 0] } },
+                    refundedAmount: { $sum: { $cond: [{ $eq: ['$status', 'refunded'] }, '$amount', 0] } },
+                    totalTransactions: { $sum: 1 },
+                }
+            }
+        ]);
+        const tx = txOverview[0] || { grossRevenue: 0, refundedAmount: 0, totalTransactions: 0 };
+
         res.json({
             totalStudents,
             totalInstructors,
             totalCourses,
             totalEnrollments,
+            totalTransactions: tx.totalTransactions,
+            grossRevenue: parseFloat((tx.grossRevenue || 0).toFixed(2)),
+            refundedAmount: parseFloat((tx.refundedAmount || 0).toFixed(2)),
+            netRevenue: parseFloat(((tx.grossRevenue || 0) - (tx.refundedAmount || 0)).toFixed(2)),
             completionRate: parseFloat(completionRate),
             averageRating: parseFloat(avgRating),
             growth: {
@@ -167,6 +214,242 @@ exports.getAdminOverview = async (req, res) => {
                 courses: newCourses
             }
         });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// 11. Revenue/Transaction overview for admin
+exports.getRevenueOverview = async (req, res) => {
+    try {
+        const matchStage = getDateMatch(req);
+        const overview = await Transaction.aggregate([
+            { $match: matchStage },
+            {
+                $group: {
+                    _id: null,
+                    totalTransactions: { $sum: 1 },
+                    paidTransactions: { $sum: { $cond: [{ $eq: ['$status', 'paid'] }, 1, 0] } },
+                    refundedTransactions: { $sum: { $cond: [{ $eq: ['$status', 'refunded'] }, 1, 0] } },
+                    failedTransactions: { $sum: { $cond: [{ $eq: ['$status', 'failed'] }, 1, 0] } },
+                    grossRevenue: { $sum: { $cond: [{ $eq: ['$status', 'paid'] }, '$amount', 0] } },
+                    refundedAmount: { $sum: { $cond: [{ $eq: ['$status', 'refunded'] }, '$amount', 0] } },
+                }
+            }
+        ]);
+
+        const data = overview[0] || {
+            totalTransactions: 0,
+            paidTransactions: 0,
+            refundedTransactions: 0,
+            failedTransactions: 0,
+            grossRevenue: 0,
+            refundedAmount: 0
+        };
+
+        res.json({
+            ...data,
+            platformProfit: parseFloat(((data.grossRevenue - data.refundedAmount) * PLATFORM_FEE_RATE).toFixed(2)),
+            netRevenue: parseFloat((data.grossRevenue - data.refundedAmount).toFixed(2)),
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// 12. Revenue trend by day
+exports.getRevenueTrend = async (req, res) => {
+    try {
+        const matchStage = getDateMatch(req);
+        const groupBy = req.query.groupBy || 'day';
+        const dateExpr = getGroupDateExpression(groupBy);
+
+        const trend = await Transaction.aggregate([
+            { $match: matchStage },
+            {
+                $group: {
+                    _id: dateExpr,
+                    grossRevenue: { $sum: { $cond: [{ $eq: ['$status', 'paid'] }, '$amount', 0] } },
+                    refundedAmount: { $sum: { $cond: [{ $eq: ['$status', 'refunded'] }, '$amount', 0] } },
+                    count: { $sum: 1 },
+                }
+            },
+            { $sort: { _id: 1 } }
+        ]);
+
+        res.json(trend.map((t) => ({
+            date: t._id,
+            transactionCount: t.count,
+            grossRevenue: parseFloat((t.grossRevenue || 0).toFixed(2)),
+            refundedAmount: parseFloat((t.refundedAmount || 0).toFixed(2)),
+            netRevenue: parseFloat(((t.grossRevenue || 0) - (t.refundedAmount || 0)).toFixed(2)),
+            platformProfit: parseFloat((((t.grossRevenue || 0) - (t.refundedAmount || 0)) * PLATFORM_FEE_RATE).toFixed(2)),
+        })));
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// 13. Transaction status distribution
+exports.getTransactionStatusDistribution = async (req, res) => {
+    try {
+        const stats = await Transaction.aggregate([
+            {
+                $group: {
+                    _id: '$status',
+                    count: { $sum: 1 },
+                    amount: { $sum: '$amount' },
+                }
+            },
+            { $sort: { count: -1 } }
+        ]);
+        res.json(stats.map((s) => ({
+            status: s._id || 'unknown',
+            count: s.count,
+            amount: parseFloat((s.amount || 0).toFixed(2)),
+        })));
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// 14. Revenue by teacher leaderboard
+exports.getRevenueByTeacher = async (req, res) => {
+    try {
+        const limit = parseInt(req.query.limit) || 10;
+        const matchStage = getDateMatch(req);
+        const leaderboard = await Transaction.aggregate([
+            { $match: matchStage },
+            {
+                $lookup: {
+                    from: 'teachers',
+                    localField: 'teacherId',
+                    foreignField: '_id',
+                    as: 'teacher'
+                }
+            },
+            { $unwind: { path: '$teacher', preserveNullAndEmptyArrays: true } },
+            {
+                $group: {
+                    _id: '$teacherId',
+                    teacherName: { $first: '$teacher.name' },
+                    teacherEmail: { $first: '$teacher.email' },
+                    totalTransactions: { $sum: 1 },
+                    paidRevenue: { $sum: { $cond: [{ $eq: ['$status', 'paid'] }, '$amount', 0] } },
+                    refundedAmount: { $sum: { $cond: [{ $eq: ['$status', 'refunded'] }, '$amount', 0] } },
+                }
+            },
+            {
+                $addFields: {
+                    netRevenue: { $subtract: ['$paidRevenue', '$refundedAmount'] },
+                }
+            },
+            { $sort: { netRevenue: -1 } },
+            { $limit: limit }
+        ]);
+
+        res.json(leaderboard.map((t) => ({
+            teacherId: t._id,
+            teacherName: t.teacherName || 'N/A',
+            teacherEmail: t.teacherEmail || 'N/A',
+            totalTransactions: t.totalTransactions,
+            paidRevenue: parseFloat((t.paidRevenue || 0).toFixed(2)),
+            refundedAmount: parseFloat((t.refundedAmount || 0).toFixed(2)),
+            netRevenue: parseFloat((t.netRevenue || 0).toFixed(2)),
+            platformProfit: parseFloat(((t.netRevenue || 0) * PLATFORM_FEE_RATE).toFixed(2)),
+        })));
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// 15. Revenue/profit by student
+exports.getRevenueByStudent = async (req, res) => {
+    try {
+        const limit = parseInt(req.query.limit) || 10;
+        const matchStage = getDateMatch(req);
+        const data = await Transaction.aggregate([
+            { $match: matchStage },
+            {
+                $lookup: {
+                    from: 'students',
+                    localField: 'studentId',
+                    foreignField: '_id',
+                    as: 'student'
+                }
+            },
+            { $unwind: { path: '$student', preserveNullAndEmptyArrays: true } },
+            {
+                $group: {
+                    _id: '$studentId',
+                    studentName: { $first: '$student.name' },
+                    studentEmail: { $first: '$student.email' },
+                    totalTransactions: { $sum: 1 },
+                    paidRevenue: { $sum: { $cond: [{ $eq: ['$status', 'paid'] }, '$amount', 0] } },
+                    refundedAmount: { $sum: { $cond: [{ $eq: ['$status', 'refunded'] }, '$amount', 0] } },
+                }
+            },
+            { $addFields: { netRevenue: { $subtract: ['$paidRevenue', '$refundedAmount'] } } },
+            { $sort: { netRevenue: -1 } },
+            { $limit: limit }
+        ]);
+
+        res.json(data.map((s) => ({
+            studentId: s._id,
+            studentName: s.studentName || 'N/A',
+            studentEmail: s.studentEmail || 'N/A',
+            totalTransactions: s.totalTransactions,
+            paidRevenue: parseFloat((s.paidRevenue || 0).toFixed(2)),
+            refundedAmount: parseFloat((s.refundedAmount || 0).toFixed(2)),
+            netRevenue: parseFloat((s.netRevenue || 0).toFixed(2)),
+            platformProfit: parseFloat(((s.netRevenue || 0) * PLATFORM_FEE_RATE).toFixed(2)),
+        })));
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// 16. Revenue/profit by course
+exports.getRevenueByCourse = async (req, res) => {
+    try {
+        const limit = parseInt(req.query.limit) || 10;
+        const matchStage = getDateMatch(req);
+        const data = await Transaction.aggregate([
+            { $match: matchStage },
+            {
+                $lookup: {
+                    from: 'courses',
+                    localField: 'courseId',
+                    foreignField: '_id',
+                    as: 'course'
+                }
+            },
+            { $unwind: { path: '$course', preserveNullAndEmptyArrays: true } },
+            {
+                $group: {
+                    _id: '$courseId',
+                    courseTitle: { $first: '$course.title' },
+                    subject: { $first: '$course.subject' },
+                    totalTransactions: { $sum: 1 },
+                    paidRevenue: { $sum: { $cond: [{ $eq: ['$status', 'paid'] }, '$amount', 0] } },
+                    refundedAmount: { $sum: { $cond: [{ $eq: ['$status', 'refunded'] }, '$amount', 0] } },
+                }
+            },
+            { $addFields: { netRevenue: { $subtract: ['$paidRevenue', '$refundedAmount'] } } },
+            { $sort: { netRevenue: -1 } },
+            { $limit: limit }
+        ]);
+
+        res.json(data.map((c) => ({
+            courseId: c._id,
+            courseTitle: c.courseTitle || 'N/A',
+            subject: c.subject || 'N/A',
+            totalTransactions: c.totalTransactions,
+            paidRevenue: parseFloat((c.paidRevenue || 0).toFixed(2)),
+            refundedAmount: parseFloat((c.refundedAmount || 0).toFixed(2)),
+            netRevenue: parseFloat((c.netRevenue || 0).toFixed(2)),
+            platformProfit: parseFloat(((c.netRevenue || 0) * PLATFORM_FEE_RATE).toFixed(2)),
+        })));
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

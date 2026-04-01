@@ -1,7 +1,7 @@
 // v2/frontend/src/components/UnauthenticatedNavbar.jsx
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { BookOpen, LogIn, UserPlus } from 'lucide-react';
+import { BookOpen, LogIn, UserPlus, FileText } from 'lucide-react';
 import '../pages/css/StudentDashboard.css'; // Reuse existing CSS for basic structure
 
 const UnauthenticatedNavbar = () => {
@@ -23,6 +23,12 @@ const UnauthenticatedNavbar = () => {
           className={`nav-link-item ${isActive('/') ? 'active' : ''}`}
         >
           Home
+        </Link>
+        <Link 
+          to="/api-docs" 
+          className={`nav-link-item ${isActive('/api-docs') ? 'active' : ''}`}
+        >
+          <FileText size={18} /> API Docs
         </Link>
         <Link 
           to="/login" 

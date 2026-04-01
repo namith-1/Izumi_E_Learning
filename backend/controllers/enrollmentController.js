@@ -210,6 +210,64 @@ const computeEnrollmentResult = async (courseId, enrollment) => {
 // Make sure to import all three models at the top of your file
 
 
+/**
+ * @swagger
+ * /api/enrollment/enroll:
+ *   post:
+ *     summary: Enroll in a course
+ *     tags: [Enrollment]
+ *     security:
+ *       - sessionAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - courseId
+ *             properties:
+ *               courseId:
+ *                 type: string
+ *                 example: "60c728362d294d1f88c88888"
+ *     responses:
+ *       201:
+ *         description: Enrollment successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Enrollment'
+ *       400:
+ *         description: Already enrolled or invalid input
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Already enrolled in this course"
+ *       404:
+ *         description: Course not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Course not found"
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
+
 exports.enroll = async (req, res) => {
   try {
     const { courseId } = req.body;
@@ -249,6 +307,49 @@ exports.enroll = async (req, res) => {
   }
 };
 
+/**
+ * @swagger
+ * /api/enrollment/{courseId}:
+ *   get:
+ *     summary: Get enrollment status for a course
+ *     tags: [Enrollment]
+ *     security:
+ *       - sessionAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: courseId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: "60c728362d294d1f88c88888"
+ *     responses:
+ *       200:
+ *         description: Enrollment details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Enrollment'
+ *       404:
+ *         description: Not enrolled
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Not enrolled"
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Get enrollment / progress for CourseViewer
 // ─────────────────────────────────────────────────────────────────────────────
@@ -264,6 +365,91 @@ exports.getEnrollment = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+/**
+ * @swagger
+ * /api/enrollment/my-courses:
+ *   get:
+ *     summary: Get my enrolled courses
+ *     tags: [Enrollment]
+ *     security:
+ *       - sessionAuth: []
+ *     responses:
+ *       200:
+ *         description: List of enrolled courses
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   _id:
+ *                     type: string
+ *                     example: "60c728362d294d1f88c88888"
+ *                   courseTitle:
+ *                     type: string
+ *                     example: "Introduction to Programming"
+ *                   description:
+ *                     type: string
+ *                     example: "Learn the basics of programming"
+ *                   subject:
+ *                     type: string
+ *                     example: "Computer Science"
+ *                   imageUrl:
+ *                     type: string
+ *                     example: "/uploads/courses/image.jpg"
+ *                   rating:
+ *                     type: number
+ *                     example: 4.5
+ *                   instructorName:
+ *                     type: string
+ *                     example: "Dr. Smith"
+ *                   teacherId:
+ *                     type: string
+ *                     example: "60c728362d294d1f88c88889"
+ *                   completionStatus:
+ *                     type: string
+ *                     example: "completed"
+ *                   passStatus:
+ *                     type: string
+ *                     example: "passed"
+ *                   weightedScore:
+ *                     type: number
+ *                     example: 85.5
+ *                   passingPolicy:
+ *                     type: object
+ *                     example: {"mode": "threshold", "passingThreshold": 70}
+ *                   modules_status:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *                       properties:
+ *                         moduleId:
+ *                           type: string
+ *                           example: "module1"
+ *                         completed:
+ *                           type: boolean
+ *                           example: true
+ *                         quizScore:
+ *                           type: number
+ *                           example: 90
+ *                   totalContentModules:
+ *                     type: number
+ *                     example: 10
+ *                   completedContentModules:
+ *                     type: number
+ *                     example: 8
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Get all enrolled courses with details (My Learning page)
@@ -334,6 +520,98 @@ exports.getMyEnrolledCourses = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+/**
+ * @swagger
+ * /api/enrollment/{courseId}/progress:
+ *   put:
+ *     summary: Update progress in enrolled course
+ *     tags: [Enrollment]
+ *     security:
+ *       - sessionAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: courseId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: "60c728362d294d1f88c88888"
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - moduleId
+ *             properties:
+ *               moduleId:
+ *                 type: string
+ *                 example: "module1"
+ *               timeSpent:
+ *                 type: number
+ *                 example: 300
+ *               completed:
+ *                 type: boolean
+ *                 example: true
+ *               quizScore:
+ *                 type: number
+ *                 minimum: 0
+ *                 maximum: 100
+ *                 example: 85
+ *     responses:
+ *       200:
+ *         description: Progress updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Enrollment'
+ *       400:
+ *         description: Module ID is required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Module ID is required to update progress."
+ *       403:
+ *         description: Maximum attempts reached
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Maximum attempts (3) reached for this module."
+ *                 attemptsUsed:
+ *                   type: number
+ *                   example: 3
+ *                 maxAttempts:
+ *                   type: number
+ *                   example: 3
+ *       404:
+ *         description: Enrollment not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Enrollment not found"
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Update Progress — called when video ends, text is marked read, or quiz submitted

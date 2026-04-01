@@ -27,7 +27,9 @@ const CourseCatalog = () => {
     if (!user) return alert("Please log in to enroll.");
 
     try {
-      const resultAction = await dispatch(enrollInCourse(courseId));
+      const resultAction = await dispatch(
+        enrollInCourse({ courseId, paymentMethod: "card" }),
+      );
 
       if (enrollInCourse.fulfilled.match(resultAction)) {
         alert(`Successfully enrolled in the course!`);

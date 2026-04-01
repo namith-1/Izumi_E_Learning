@@ -299,12 +299,14 @@ export const { clearCurrentCourse } = courseSlice.actions;
 
 export const enrollInCourse = createAsyncThunk(
   "enrollment/enroll",
-  async (courseId, { rejectWithValue }) => {
+  async ({ courseId, paymentMethod = "card", notes = "" }, { rejectWithValue }) => {
     try {
-      const result = await apiRequest("/enrollment/enroll", "POST", {
+      const result = await apiRequest("/payments/student/checkout", "POST", {
         courseId,
+        paymentMethod,
+        notes,
       });
-      return result;
+      return result.enrollment || result;
     } catch (err) {
       return rejectWithValue(err.message);
     }
@@ -428,7 +430,100 @@ const enrollmentSlice = createSlice({
 export const { resetEnrollment } = enrollmentSlice.actions;
 
 // ==========================================
-// 5. TEACHERS (Thunks & Slice)
+// 5. PAYMENTS (Thunks & Slice)
+// ==========================================
+export const fetchStudentTransactions = createAsyncThunk(
+  "payments/fetchStudentTransactions",
+  async (_, { rejectWithValue }) => {
+    try {
+      return await apiRequest("/payments/student/transactions", "GET");
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  },
+);
+
+export const fetchStudentPaymentSummary = createAsyncThunk(
+  "payments/fetchStudentSummary",
+  async (_, { rejectWithValue }) => {
+    try {
+      return await apiRequest("/payments/student/summary", "GET");
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  },
+);
+
+export const fetchTeacherTransactions = createAsyncThunk(
+  "payments/fetchTeacherTransactions",
+  async (_, { rejectWithValue }) => {
+    try {
+      return await apiRequest("/payments/teacher/transactions", "GET");
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  },
+);
+
+export const fetchTeacherPaymentSummary = createAsyncThunk(
+  "payments/fetchTeacherSummary",
+  async (_, { rejectWithValue }) => {
+    try {
+      return await apiRequest("/payments/teacher/summary", "GET");
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  },
+);
+
+const paymentSlice = createSlice({
+  name: "payments",
+  initialState: {
+    studentTransactions: [],
+    teacherTransactions: [],
+    studentSummary: null,
+    teacherSummary: null,
+    loading: false,
+    error: null,
+  },
+  reducers: {},
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchStudentTransactions.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchStudentTransactions.fulfilled, (state, action) => {
+        state.loading = false;
+        state.studentTransactions = action.payload;
+      })
+      .addCase(fetchStudentTransactions.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(fetchStudentPaymentSummary.fulfilled, (state, action) => {
+        state.studentSummary = action.payload;
+      })
+      .addCase(fetchTeacherTransactions.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchTeacherTransactions.fulfilled, (state, action) => {
+        state.loading = false;
+        state.teacherTransactions = action.payload;
+      })
+      .addCase(fetchTeacherTransactions.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(fetchTeacherPaymentSummary.fulfilled, (state, action) => {
+        state.teacherSummary = action.payload;
+      });
+  },
+});
+
+// ==========================================
+// 6. TEACHERS (Thunks & Slice)
 // ==========================================
 
 export const fetchAllTeachers = createAsyncThunk(
@@ -436,7 +531,7 @@ export const fetchAllTeachers = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       return await apiRequest("/auth/teachers", "GET");
-    } catch (err) {
+    } catch {
       return rejectWithValue(null);
     }
   },
@@ -471,7 +566,7 @@ const teachersSlice = createSlice({
 });
 
 // ==========================================
-// 6. ADMIN (Thunks & Slice)
+// 7. ADMIN (Thunks & Slice)
 // ==========================================
 
 export const fetchAllAdminData = createAsyncThunk(
@@ -651,7 +746,7 @@ const adminSlice = createSlice({
 export const { clearLookup } = adminSlice.actions;
 
 // ==========================================
-// 7. ANALYTICS (Thunks & Slice)
+// 8. ANALYTICS (Thunks & Slice)
 // ==========================================
 
 export const fetchAdminAnalytics = createAsyncThunk(
@@ -722,6 +817,96 @@ export const fetchInstructorLeaderboard = createAsyncThunk(
   },
 );
 
+export const fetchRevenueOverview = createAsyncThunk(
+  "analytics/fetchRevenueOverview",
+  async (params = {}, { rejectWithValue }) => {
+    try {
+      const search = new URLSearchParams();
+      if (params.days) search.set("days", params.days);
+      if (params.startDate) search.set("startDate", params.startDate);
+      if (params.endDate) search.set("endDate", params.endDate);
+      return await apiRequest(`/analytics/admin/revenue-overview?${search.toString()}`, "GET");
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  },
+);
+
+export const fetchRevenueTrend = createAsyncThunk(
+  "analytics/fetchRevenueTrend",
+  async (params = {}, { rejectWithValue }) => {
+    try {
+      const search = new URLSearchParams();
+      if (params.days) search.set("days", params.days);
+      if (params.startDate) search.set("startDate", params.startDate);
+      if (params.endDate) search.set("endDate", params.endDate);
+      if (params.groupBy) search.set("groupBy", params.groupBy);
+      return await apiRequest(`/analytics/admin/revenue-trend?${search.toString()}`, "GET");
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  },
+);
+
+export const fetchTransactionStatusDistribution = createAsyncThunk(
+  "analytics/fetchTransactionStatusDistribution",
+  async (_, { rejectWithValue }) => {
+    try {
+      return await apiRequest("/analytics/admin/transactions/status-distribution", "GET");
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  },
+);
+
+export const fetchRevenueByTeacher = createAsyncThunk(
+  "analytics/fetchRevenueByTeacher",
+  async (params = {}, { rejectWithValue }) => {
+    try {
+      const search = new URLSearchParams();
+      search.set("limit", params.limit || 10);
+      if (params.days) search.set("days", params.days);
+      if (params.startDate) search.set("startDate", params.startDate);
+      if (params.endDate) search.set("endDate", params.endDate);
+      return await apiRequest(`/analytics/admin/revenue-by-teacher?${search.toString()}`, "GET");
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  },
+);
+
+export const fetchRevenueByStudent = createAsyncThunk(
+  "analytics/fetchRevenueByStudent",
+  async (params = {}, { rejectWithValue }) => {
+    try {
+      const search = new URLSearchParams();
+      search.set("limit", params.limit || 10);
+      if (params.days) search.set("days", params.days);
+      if (params.startDate) search.set("startDate", params.startDate);
+      if (params.endDate) search.set("endDate", params.endDate);
+      return await apiRequest(`/analytics/admin/revenue-by-student?${search.toString()}`, "GET");
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  },
+);
+
+export const fetchRevenueByCourse = createAsyncThunk(
+  "analytics/fetchRevenueByCourse",
+  async (params = {}, { rejectWithValue }) => {
+    try {
+      const search = new URLSearchParams();
+      search.set("limit", params.limit || 10);
+      if (params.days) search.set("days", params.days);
+      if (params.startDate) search.set("startDate", params.startDate);
+      if (params.endDate) search.set("endDate", params.endDate);
+      return await apiRequest(`/analytics/admin/revenue-by-course?${search.toString()}`, "GET");
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  },
+);
+
 export const fetchInstructorAnalytics = createAsyncThunk(
   "analytics/fetchInstructorAnalytics",
   async (params = 30, { rejectWithValue }) => {
@@ -757,6 +942,12 @@ const analyticsSlice = createSlice({
     subjectDistribution: [],
     topCourses: [],
     instructorLeaderboard: [],
+    revenueOverview: null,
+    revenueTrend: [],
+    transactionStatusDistribution: [],
+    revenueByTeacher: [],
+    revenueByStudent: [],
+    revenueByCourse: [],
     instructorStats: null,
     studentAnalytics: [],
     loading: false,
@@ -809,6 +1000,24 @@ const analyticsSlice = createSlice({
       .addCase(fetchInstructorLeaderboard.fulfilled, (state, action) => {
         state.instructorLeaderboard = action.payload;
       })
+      .addCase(fetchRevenueOverview.fulfilled, (state, action) => {
+        state.revenueOverview = action.payload;
+      })
+      .addCase(fetchRevenueTrend.fulfilled, (state, action) => {
+        state.revenueTrend = action.payload;
+      })
+      .addCase(fetchTransactionStatusDistribution.fulfilled, (state, action) => {
+        state.transactionStatusDistribution = action.payload;
+      })
+      .addCase(fetchRevenueByTeacher.fulfilled, (state, action) => {
+        state.revenueByTeacher = action.payload;
+      })
+      .addCase(fetchRevenueByStudent.fulfilled, (state, action) => {
+        state.revenueByStudent = action.payload;
+      })
+      .addCase(fetchRevenueByCourse.fulfilled, (state, action) => {
+        state.revenueByCourse = action.payload;
+      })
       // Instructor Analytics
       .addCase(fetchInstructorAnalytics.pending, (state) => {
         state.loading = true;
@@ -841,13 +1050,14 @@ const analyticsSlice = createSlice({
 export const { clearAnalytics } = analyticsSlice.actions;
 
 // ==========================================
-// 8. STORE CONFIGURATION
+// 9. STORE CONFIGURATION
 // ==========================================
 export const store = configureStore({
   reducer: {
     auth: authSlice.reducer,
     courses: courseSlice.reducer,
     enrollment: enrollmentSlice.reducer,
+    payments: paymentSlice.reducer,
     teachers: teachersSlice.reducer,
     admin: adminSlice.reducer,
     analytics: analyticsSlice.reducer,

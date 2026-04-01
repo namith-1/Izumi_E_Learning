@@ -18,6 +18,28 @@ router.get("/teachers", authController.getAllTeachers);
 
 const passport = require('passport');
 
+/**
+ * @swagger
+ * /api/auth/google:
+ *   get:
+ *     summary: Start Google OAuth authentication
+ *     tags: [Authentication]
+ *     responses:
+ *       302:
+ *         description: Redirect to Google OAuth
+ */
+
+/**
+ * @swagger
+ * /api/auth/google/callback:
+ *   get:
+ *     summary: Google OAuth callback
+ *     tags: [Authentication]
+ *     responses:
+ *       302:
+ *         description: Redirect to frontend dashboard on success or login on failure
+ */
+
 // Route to start Google Auth
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 

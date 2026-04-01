@@ -10,6 +10,12 @@ router.get('/admin/growth-trends', isAdmin, analyticsController.getGrowthTrends)
 router.get('/admin/subject-distribution', isAdmin, analyticsController.getSubjectDistribution);
 router.get('/admin/top-courses', isAdmin, analyticsController.getTopCourses);
 router.get('/admin/instructor-leaderboard', isAdmin, analyticsController.getInstructorLeaderboard);
+router.get('/admin/revenue-overview', isAdmin, analyticsController.getRevenueOverview);
+router.get('/admin/revenue-trend', isAdmin, analyticsController.getRevenueTrend);
+router.get('/admin/transactions/status-distribution', isAdmin, analyticsController.getTransactionStatusDistribution);
+router.get('/admin/revenue-by-teacher', isAdmin, analyticsController.getRevenueByTeacher);
+router.get('/admin/revenue-by-student', isAdmin, analyticsController.getRevenueByStudent);
+router.get('/admin/revenue-by-course', isAdmin, analyticsController.getRevenueByCourse);
 
 // ===== COURSE ANALYTICS (Protected by isAdmin, but could be open to teachers if needed later) =====
 router.get('/courses/enrollment-trends', isAdmin, analyticsController.getCourseEnrollmentTrends);

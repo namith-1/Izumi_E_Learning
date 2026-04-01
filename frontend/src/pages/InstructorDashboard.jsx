@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Routes, Route, Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { BarChart3, PlusCircle, Layers, Settings, Users, BookOpen, MessageCircle, ChevronRight } from 'lucide-react';
+import { BarChart3, PlusCircle, Layers, Settings, Users, BookOpen, MessageCircle, ChevronRight, Wallet } from 'lucide-react';
 import ProfileDropdown from '../components/ProfileDropdown';
 import { fetchAllCourses } from '../store';
 // Import new components for nested routes
@@ -11,6 +11,7 @@ import InstructorAnalytics from '../components/analytics/InstructorAnalytics';
 import InstructorStudentAnalytics from '../components/analytics/InstructorStudentAnalytics';
 import InstructorProfileSettings from './InstructorCourse/InstructorProfileSettings';
 import InstructorChat from './InstructorCourse/InstructorChat';
+import TeacherTransactions from './InstructorCourse/TeacherTransactions';
 // Import StudentDashboard CSS for shared styling elements (navbar, content layout)
 import '../pages/css/StudentDashboard.css';
 
@@ -155,6 +156,12 @@ const InstructorDashboard = () => {
           >
             <PlusCircle size={18} /> Create New
           </Link>
+          <Link
+            to="/instructor-dashboard/transactions"
+            className={`nav-link-item ${isActive('/instructor-dashboard/transactions') ? 'active' : ''}`}
+          >
+            <Wallet size={18} /> Transactions
+          </Link>
         </nav>
 
         <div className="nav-user-info">
@@ -178,6 +185,7 @@ const InstructorDashboard = () => {
           {/* Chat Routes */}
           <Route path="messages" element={<InstructorChatPicker />} />
           <Route path="chat/:courseId" element={<InstructorChat />} />
+          <Route path="transactions" element={<TeacherTransactions />} />
 
           {/* Profile Settings Route */}
           <Route path="settings" element={<InstructorProfileSettings />} />

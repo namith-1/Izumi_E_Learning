@@ -82,6 +82,70 @@ exports.getAllEnrollments = async (req, res) => {
     }
 };
 
+/**
+ * @swagger
+ * /api/admin/users:
+ *   get:
+ *     summary: Get all users (admin)
+ *     tags: [Admin]
+ *     security:
+ *       - sessionAuth: []
+ *     responses:
+ *       200:
+ *         description: List of all users
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 students:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       _id:
+ *                         type: string
+ *                         example: "60c728362d294d1f88c88888"
+ *                       name:
+ *                         type: string
+ *                         example: "John Doe"
+ *                       email:
+ *                         type: string
+ *                         example: "john.doe@example.com"
+ *                 teachers:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       _id:
+ *                         type: string
+ *                         example: "60c728362d294d1f88c88888"
+ *                       name:
+ *                         type: string
+ *                         example: "Dr. Smith"
+ *                       email:
+ *                         type: string
+ *                         example: "dr.smith@example.com"
+ *                       specialization:
+ *                         type: string
+ *                         example: "Computer Science"
+ *                       totalStudents:
+ *                         type: number
+ *                         example: 150
+ *                       courseCount:
+ *                         type: number
+ *                         example: 5
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
+
 // 2. Get All Users (Split by role + Analytics for Teachers)
 exports.getAllUsers = async (req, res) => {
     try {

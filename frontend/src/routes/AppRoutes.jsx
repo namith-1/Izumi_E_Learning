@@ -11,6 +11,7 @@ import LandingPage from "../pages/LandingPage";
 import AdminDashboard from "../pages/AdminDashboard"; // NEW IMPORT
 import AdminLogin from "../pages/AdminLogin";
 import ReviewerDashboard from "../pages/ReviewerDashboard";
+import ApiDocs from "../pages/ApiDocs";
 
 const AppRoutes = () => {
   return (
@@ -84,6 +85,9 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+
+      {/* API DOCUMENTATION - Public Access */}
+      <Route path="/api-docs" element={<ApiDocs />} />
 
       <Route path="*" element={<div>404 Not Found</div>} />
     </Routes>

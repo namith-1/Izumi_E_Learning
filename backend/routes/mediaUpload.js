@@ -19,6 +19,78 @@ const { v2: cloudinary } = require("cloudinary");
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
 const multer = require("multer");
 
+/**
+ * @swagger
+ * /api/courses/upload-video:
+ *   post:
+ *     summary: Upload course video to Cloudinary
+ *     tags: [Courses]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               video:
+ *                 type: string
+ *                 format: binary
+ *                 description: Video file (mp4, mov, avi, mkv, webm)
+ *     responses:
+ *       200:
+ *         description: Video uploaded successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Video uploaded successfully."
+ *                 videoUrl:
+ *                   type: string
+ *                   example: "https://res.cloudinary.com/.../course_videos/video.mp4"
+ *                 publicId:
+ *                   type: string
+ *                   example: "course_videos/video"
+ *       400:
+ *         description: No video file received or unsupported file type
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "No video file received."
+ *       413:
+ *         description: File exceeds size limit
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "File exceeds the 500 MB limit."
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
+
+// ── Cloudinary config (reads from .env automatically) ────────────────────────
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key:    process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
 // ── Cloudinary config (reads from .env automatically) ────────────────────────
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,

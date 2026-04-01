@@ -6,7 +6,11 @@ import {
     fetchGrowthTrends,
     fetchSubjectDistribution,
     fetchTopCourses,
-    fetchInstructorLeaderboard
+    fetchInstructorLeaderboard,
+    fetchRevenueOverview,
+    fetchRevenueTrend,
+    fetchTransactionStatusDistribution,
+    fetchRevenueByTeacher
 } from '../../store';
 import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import InstructorAnalytics from './InstructorAnalytics';
@@ -17,7 +21,19 @@ const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'
 
 const AnalyticsDashboard = () => {
     const dispatch = useDispatch();
-    const { overview, growthTrends, subjectDistribution, topCourses, instructorLeaderboard, loading, error } = useSelector(state => state.analytics);
+    const {
+        overview,
+        growthTrends,
+        subjectDistribution,
+        topCourses,
+        instructorLeaderboard,
+        revenueOverview,
+        revenueTrend,
+        transactionStatusDistribution,
+        revenueByTeacher,
+        loading,
+        error
+    } = useSelector(state => state.analytics);
 
     const [timeRange, setTimeRange] = useState(30);
     const [selectedSubject, setSelectedSubject] = useState('All');
@@ -29,6 +45,10 @@ const AnalyticsDashboard = () => {
         dispatch(fetchSubjectDistribution());
         dispatch(fetchTopCourses({ limit: 10, sortBy: 'enrollments', subject: selectedSubject }));
         dispatch(fetchInstructorLeaderboard());
+        dispatch(fetchRevenueOverview());
+        dispatch(fetchRevenueTrend(timeRange));
+        dispatch(fetchTransactionStatusDistribution());
+        dispatch(fetchRevenueByTeacher(10));
     }, [dispatch, timeRange, selectedSubject]);
 
     // Derived lists for dropdowns
@@ -250,6 +270,80 @@ const AnalyticsDashboard = () => {
                 </div>
             </div>
 
+            {revenueOverview && (
+                <div className="analytics-section">
+                    <h2 className="section-title">Revenue and Transactions</h2>
+                    <div className="metrics-grid">
+                        <div className="stat-card green">
+                            <div className="stat-icon"><TrendingUp size={24} /></div>
+                            <div className="stat-content">
+                                <h3>Gross Revenue</h3>
+                                <p className="stat-value">${(revenueOverview.grossRevenue || 0).toFixed(2)}</p>
+                            </div>
+                        </div>
+                        <div className="stat-card blue">
+                            <div className="stat-icon"><Award size={24} /></div>
+                            <div className="stat-content">
+                                <h3>Net Revenue</h3>
+                                <p className="stat-value">${(revenueOverview.netRevenue || 0).toFixed(2)}</p>
+                            </div>
+                        </div>
+                        <div className="stat-card orange">
+                            <div className="stat-icon"><BookOpen size={24} /></div>
+                            <div className="stat-content">
+                                <h3>Total Transactions</h3>
+                                <p className="stat-value">{revenueOverview.totalTransactions || 0}</p>
+                            </div>
+                        </div>
+                        <div className="stat-card purple">
+                            <div className="stat-icon"><TrendingDown size={24} /></div>
+                            <div className="stat-content">
+                                <h3>Refunded Amount</h3>
+                                <p className="stat-value">${(revenueOverview.refundedAmount || 0).toFixed(2)}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="chart-grid">
+                        <div className="chart-card">
+                            <h3>Revenue Trend (Last {timeRange} Days)</h3>
+                            <ResponsiveContainer width="100%" height={280}>
+                                <AreaChart data={revenueTrend || []}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                                    <XAxis dataKey="date" tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                                    <YAxis tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                                    <Tooltip />
+                                    <Legend />
+                                    <Area type="monotone" dataKey="grossRevenue" stroke="#10b981" fill="#d1fae5" name="Gross Revenue" />
+                                    <Area type="monotone" dataKey="netRevenue" stroke="#3b82f6" fill="#dbeafe" name="Net Revenue" />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        </div>
+                        <div className="chart-card">
+                            <h3>Transaction Status Mix</h3>
+                            <ResponsiveContainer width="100%" height={280}>
+                                <PieChart>
+                                    <Pie
+                                        data={transactionStatusDistribution || []}
+                                        dataKey="count"
+                                        nameKey="status"
+                                        cx="50%"
+                                        cy="50%"
+                                        outerRadius={95}
+                                        label={(entry) => `${entry.status} (${entry.count})`}
+                                    >
+                                        {(transactionStatusDistribution || []).map((entry, index) => (
+                                            <Cell key={`tx-cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Instructor Leaderboard */}
             {instructorLeaderboard && instructorLeaderboard.length > 0 && (
                 <div className="analytics-section">
@@ -302,6 +396,38 @@ const AnalyticsDashboard = () => {
                                                 <Eye size={18} />
                                             </button>
                                         </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
+
+            {revenueByTeacher && revenueByTeacher.length > 0 && (
+                <div className="analytics-section">
+                    <h2 className="section-title">Revenue by Instructor</h2>
+                    <div className="table-card">
+                        <table className="analytics-table">
+                            <thead>
+                                <tr>
+                                    <th>Instructor</th>
+                                    <th>Email</th>
+                                    <th>Transactions</th>
+                                    <th>Paid Revenue</th>
+                                    <th>Refunded</th>
+                                    <th>Net Revenue</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {revenueByTeacher.map((row) => (
+                                    <tr key={row.teacherId}>
+                                        <td><strong>{row.teacherName}</strong></td>
+                                        <td>{row.teacherEmail}</td>
+                                        <td>{row.totalTransactions}</td>
+                                        <td>${(row.paidRevenue || 0).toFixed(2)}</td>
+                                        <td>${(row.refundedAmount || 0).toFixed(2)}</td>
+                                        <td><strong className="highlight-blue">${(row.netRevenue || 0).toFixed(2)}</strong></td>
                                     </tr>
                                 ))}
                             </tbody>

@@ -101,7 +101,12 @@ const CourseViewer = () => {
     setIsProcessing(true);
 
     try {
-      const result = await dispatch(enrollInCourse(courseId));
+      const result = await dispatch(
+        enrollInCourse({
+          courseId,
+          paymentMethod: "card",
+        }),
+      );
 
       if (
         enrollInCourse.fulfilled.match(result) ||

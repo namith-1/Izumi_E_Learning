@@ -1,7 +1,7 @@
 import React from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
-import { BookOpen, Search, Layers, Gamepad2, Compass } from 'lucide-react'; // Added Compass icon
+import { BookOpen, Search, Layers, Gamepad2, Compass, CreditCard } from 'lucide-react';
 import ProfileDropdown from '../components/ProfileDropdown'; 
 
 // Nested Route Imports
@@ -11,6 +11,7 @@ import ProfileSettings from './StudentCourse/ProfileSettings';
 import CourseViewer from './StudentCourse/CourseViewer';
 import CourseLearnPage from './StudentCourse/CourseLearnPage'; 
 import EducationalGames from './StudentCourse/EducationalGames'; 
+import StudentPayments from './StudentCourse/StudentPayments';
 import Magazine from './Extra/magazine'; // The new Magazine page
 import './css/StudentDashboard.css';
 
@@ -60,6 +61,12 @@ const StudentDashboard = () => {
           >
             <Gamepad2 size={18} /> Games
           </Link>
+          <Link
+            to="/student-dashboard/payments"
+            className={`nav-link-item ${location.pathname.startsWith('/student-dashboard/payments') ? 'active' : ''}`}
+          >
+            <CreditCard size={18} /> Payments
+          </Link>
         </nav>
 
         <div className="nav-user-info">
@@ -74,6 +81,7 @@ const StudentDashboard = () => {
           <Route path="catalog" element={<CourseSearch />} />
           <Route path="explore" element={<Magazine />} /> {/* NEW ROUTE */}
           <Route path="games" element={<EducationalGames />} />
+          <Route path="payments" element={<StudentPayments />} />
           <Route path="courses/:courseId" element={<CourseViewer />} />
           <Route path="courses/:courseId/learn/module/:moduleId" element={<CourseLearnPage />} />
           <Route path="settings" element={<ProfileSettings />} />
