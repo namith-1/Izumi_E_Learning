@@ -28,29 +28,43 @@ const apiRequest = async (endpoint, method = "GET", body = null) => {
     config.body = JSON.stringify(body);
   }
 
-  const response = await fetch(`${BASE_URL}${endpoint}`, config);
-  const contentType = response.headers.get("content-type") || "";
+  try {
+    const response = await fetch(`${BASE_URL}${endpoint}`, config);
+    const contentType = response.headers.get("content-type") || "";
 
-  let data;
-  if (contentType.includes("application/json")) {
-    data = await response.json();
-  } else {
-    const text = await response.text();
-    data = {
-      message: text?.trim().startsWith("<!DOCTYPE")
-        ? "Server returned HTML instead of JSON. Please restart backend server and retry."
-        : text || "Server returned a non-JSON response.",
+    let data;
+    if (contentType.includes("application/json")) {
+      data = await response.json();
+    } else {
+      const text = await response.text();
+      data = {
+        message: text?.trim().startsWith("<!DOCTYPE")
+          ? "Server returned HTML instead of JSON. Please restart backend server and retry."
+          : text || "Server returned a non-JSON response.",
+      };
+    }
+
+    if (!response.ok) {
+      // Throw the parsed response object so callers can inspect fields like blockedUntil
+      const err = data || { message: "Something went wrong" };
+      err.status = response.status;
+      throw err;
+    }
+
+    return data;
+  } catch (error) {
+    // Handle network errors (backend not running, CORS issues, timeout, etc.)
+    if (error.status) {
+      // This is an error we threw (HTTP error)
+      throw error;
+    }
+    // Network error or other fetch failure
+    const networkError = {
+      message: `Network error: ${error.message || "Unable to connect to server"}. Make sure the backend server is running at ${BASE_URL}.`,
+      status: 0,
     };
+    throw networkError;
   }
-
-  if (!response.ok) {
-    // Throw the parsed response object so callers can inspect fields like blockedUntil
-    const err = data || { message: "Something went wrong" };
-    err.status = response.status;
-    throw err;
-  }
-
-  return data;
 };
 
 // ==========================================

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { User, Mail, Key, Camera, X } from "lucide-react";
 import { updateStudentProfile } from "../../store";
@@ -11,12 +11,15 @@ const ProfileSettings = () => {
     import.meta.env.VITE_API_BASE || "http://localhost:5000"
   ).replace(/\/$/, "");
 
-  const buildProfileImageUrl = (profilePic) => {
-    if (!profilePic) return null;
-    if (profilePic.startsWith("http://") || profilePic.startsWith("https://"))
-      return profilePic;
-    return `${apiBase}${profilePic.startsWith("/") ? "" : "/"}${profilePic}`;
-  };
+  const buildProfileImageUrl = useCallback(
+    (profilePic) => {
+      if (!profilePic) return null;
+      if (profilePic.startsWith("http://") || profilePic.startsWith("https://"))
+        return profilePic;
+      return `${apiBase}${profilePic.startsWith("/") ? "" : "/"}${profilePic}`;
+    },
+    [apiBase],
+  );
 
   const [formData, setFormData] = useState({
     name: user?.name || "",
@@ -42,7 +45,7 @@ const ProfileSettings = () => {
     if (!selectedFile) {
       setPreviewUrl(buildProfileImageUrl(user?.profilePic));
     }
-  }, [user, selectedFile]);
+  }, [user, selectedFile, buildProfileImageUrl]);
 
   useEffect(() => {
     if (message) {
@@ -84,7 +87,10 @@ const ProfileSettings = () => {
         setMessage({ type: "error", text: result.payload || "Update failed." });
       }
     } catch (error) {
-      setMessage({ type: "error", text: "An error occurred." });
+      setMessage({
+        type: "error",
+        text: error?.message || "An error occurred.",
+      });
     } finally {
       setLoading(false);
     }
