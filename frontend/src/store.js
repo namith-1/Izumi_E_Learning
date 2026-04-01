@@ -29,7 +29,19 @@ const apiRequest = async (endpoint, method = "GET", body = null) => {
   }
 
   const response = await fetch(`${BASE_URL}${endpoint}`, config);
-  const data = await response.json();
+  const contentType = response.headers.get("content-type") || "";
+
+  let data;
+  if (contentType.includes("application/json")) {
+    data = await response.json();
+  } else {
+    const text = await response.text();
+    data = {
+      message: text?.trim().startsWith("<!DOCTYPE")
+        ? "Server returned HTML instead of JSON. Please restart backend server and retry."
+        : text || "Server returned a non-JSON response.",
+    };
+  }
 
   if (!response.ok) {
     // Throw the parsed response object so callers can inspect fields like blockedUntil
@@ -299,7 +311,10 @@ export const { clearCurrentCourse } = courseSlice.actions;
 
 export const enrollInCourse = createAsyncThunk(
   "enrollment/enroll",
-  async ({ courseId, paymentMethod = "card", notes = "" }, { rejectWithValue }) => {
+  async (
+    { courseId, paymentMethod = "card", notes = "" },
+    { rejectWithValue },
+  ) => {
     try {
       const result = await apiRequest("/payments/student/checkout", "POST", {
         courseId,
@@ -358,6 +373,30 @@ export const fetchEnrolledCourses = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       return await apiRequest("/enrollment/my-courses", "GET");
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  },
+);
+
+export const submitCourseRating = createAsyncThunk(
+  "enrollment/submitCourseRating",
+  async ({ courseId, rating, review = "" }, { rejectWithValue, dispatch }) => {
+    try {
+      const response = await apiRequest(
+        `/enrollment/${courseId}/rating`,
+        "PUT",
+        {
+          rating,
+          review,
+        },
+      );
+
+      // Keep dashboards and lists in sync with latest average rating and enrollment data
+      dispatch(fetchEnrolledCourses());
+      dispatch(fetchAllCourses());
+
+      return response;
     } catch (err) {
       return rejectWithValue(err.message);
     }
@@ -423,6 +462,20 @@ const enrollmentSlice = createSlice({
       })
       .addCase(updateProgress.fulfilled, (state, action) => {
         state.currentEnrollment = action.payload;
+      })
+      .addCase(submitCourseRating.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(submitCourseRating.fulfilled, (state, action) => {
+        state.loading = false;
+        if (action.payload?.enrollment) {
+          state.currentEnrollment = action.payload.enrollment;
+        }
+      })
+      .addCase(submitCourseRating.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
   },
 });
@@ -825,7 +878,10 @@ export const fetchRevenueOverview = createAsyncThunk(
       if (params.days) search.set("days", params.days);
       if (params.startDate) search.set("startDate", params.startDate);
       if (params.endDate) search.set("endDate", params.endDate);
-      return await apiRequest(`/analytics/admin/revenue-overview?${search.toString()}`, "GET");
+      return await apiRequest(
+        `/analytics/admin/revenue-overview?${search.toString()}`,
+        "GET",
+      );
     } catch (err) {
       return rejectWithValue(err.message);
     }
@@ -841,7 +897,10 @@ export const fetchRevenueTrend = createAsyncThunk(
       if (params.startDate) search.set("startDate", params.startDate);
       if (params.endDate) search.set("endDate", params.endDate);
       if (params.groupBy) search.set("groupBy", params.groupBy);
-      return await apiRequest(`/analytics/admin/revenue-trend?${search.toString()}`, "GET");
+      return await apiRequest(
+        `/analytics/admin/revenue-trend?${search.toString()}`,
+        "GET",
+      );
     } catch (err) {
       return rejectWithValue(err.message);
     }
@@ -852,7 +911,10 @@ export const fetchTransactionStatusDistribution = createAsyncThunk(
   "analytics/fetchTransactionStatusDistribution",
   async (_, { rejectWithValue }) => {
     try {
-      return await apiRequest("/analytics/admin/transactions/status-distribution", "GET");
+      return await apiRequest(
+        "/analytics/admin/transactions/status-distribution",
+        "GET",
+      );
     } catch (err) {
       return rejectWithValue(err.message);
     }
@@ -868,7 +930,10 @@ export const fetchRevenueByTeacher = createAsyncThunk(
       if (params.days) search.set("days", params.days);
       if (params.startDate) search.set("startDate", params.startDate);
       if (params.endDate) search.set("endDate", params.endDate);
-      return await apiRequest(`/analytics/admin/revenue-by-teacher?${search.toString()}`, "GET");
+      return await apiRequest(
+        `/analytics/admin/revenue-by-teacher?${search.toString()}`,
+        "GET",
+      );
     } catch (err) {
       return rejectWithValue(err.message);
     }
@@ -884,7 +949,10 @@ export const fetchRevenueByStudent = createAsyncThunk(
       if (params.days) search.set("days", params.days);
       if (params.startDate) search.set("startDate", params.startDate);
       if (params.endDate) search.set("endDate", params.endDate);
-      return await apiRequest(`/analytics/admin/revenue-by-student?${search.toString()}`, "GET");
+      return await apiRequest(
+        `/analytics/admin/revenue-by-student?${search.toString()}`,
+        "GET",
+      );
     } catch (err) {
       return rejectWithValue(err.message);
     }
@@ -900,7 +968,10 @@ export const fetchRevenueByCourse = createAsyncThunk(
       if (params.days) search.set("days", params.days);
       if (params.startDate) search.set("startDate", params.startDate);
       if (params.endDate) search.set("endDate", params.endDate);
-      return await apiRequest(`/analytics/admin/revenue-by-course?${search.toString()}`, "GET");
+      return await apiRequest(
+        `/analytics/admin/revenue-by-course?${search.toString()}`,
+        "GET",
+      );
     } catch (err) {
       return rejectWithValue(err.message);
     }
@@ -1006,9 +1077,12 @@ const analyticsSlice = createSlice({
       .addCase(fetchRevenueTrend.fulfilled, (state, action) => {
         state.revenueTrend = action.payload;
       })
-      .addCase(fetchTransactionStatusDistribution.fulfilled, (state, action) => {
-        state.transactionStatusDistribution = action.payload;
-      })
+      .addCase(
+        fetchTransactionStatusDistribution.fulfilled,
+        (state, action) => {
+          state.transactionStatusDistribution = action.payload;
+        },
+      )
       .addCase(fetchRevenueByTeacher.fulfilled, (state, action) => {
         state.revenueByTeacher = action.payload;
       })

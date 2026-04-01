@@ -17,7 +17,7 @@ const { isAuthenticated } = require("../middleware/authMiddleware");
 router.get(
   "/my-courses",
   isAuthenticated,
-  enrollmentController.getMyEnrolledCourses
+  enrollmentController.getMyEnrolledCourses,
 );
 
 /**
@@ -87,7 +87,38 @@ router.get("/:courseId", isAuthenticated, enrollmentController.getEnrollment);
 router.put(
   "/:courseId/progress",
   isAuthenticated,
-  enrollmentController.updateProgress
+  enrollmentController.updateProgress,
+);
+
+/**
+ * @swagger
+ * /api/enrollment/{courseId}/rating:
+ *   put:
+ *     summary: Submit/update rating for an enrolled course
+ *     tags: [Enrollment]
+ *     security: [{ sessionAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: courseId
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [rating]
+ *             properties:
+ *               rating: { type: number, minimum: 1, maximum: 5 }
+ *               review: { type: string }
+ *     responses:
+ *       200: { description: Rating submitted }
+ */
+router.put(
+  "/:courseId/rating",
+  isAuthenticated,
+  enrollmentController.submitCourseRating,
 );
 
 module.exports = router;

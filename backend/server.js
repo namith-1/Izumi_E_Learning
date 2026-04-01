@@ -4,178 +4,178 @@ const http = require("http");
 const { Server: SocketIO } = require("socket.io");
 const connectDB = require("./config/db");
 const path = require("path");
-const passport = require('./config/passport');
+const passport = require("./config/passport");
 
 // Swagger setup
-const swaggerJSDoc = require('swagger-jsdoc');
-const swaggerUi = require('swagger-ui-express');
+const swaggerJSDoc = require("swagger-jsdoc");
+const swaggerUi = require("swagger-ui-express");
 
 // Swagger definition
 const swaggerDefinition = {
-  openapi: '3.0.0',
+  openapi: "3.0.0",
   info: {
-    title: 'Izumi E-Learning Platform API',
-    version: '1.0.0',
-    description: 'API documentation for the Izumi E-Learning platform',
+    title: "Izumi E-Learning Platform API",
+    version: "1.0.0",
+    description: "API documentation for the Izumi E-Learning platform",
   },
   servers: [
     {
       url: `http://localhost:${process.env.PORT || 5000}`,
-      description: 'Development server',
+      description: "Development server",
     },
   ],
   tags: [
     {
-      name: 'Authentication',
-      description: 'Authentication endpoints',
+      name: "Authentication",
+      description: "Authentication endpoints",
     },
     {
-      name: 'Courses',
-      description: 'Course management endpoints',
+      name: "Courses",
+      description: "Course management endpoints",
     },
     {
-      name: 'Enrollment',
-      description: 'Enrollment and progress endpoints',
+      name: "Enrollment",
+      description: "Enrollment and progress endpoints",
     },
     {
-      name: 'Admin',
-      description: 'Admin management endpoints',
+      name: "Admin",
+      description: "Admin management endpoints",
     },
     {
-      name: 'Analytics',
-      description: 'Analytics and reporting endpoints',
+      name: "Analytics",
+      description: "Analytics and reporting endpoints",
     },
     {
-      name: 'Chat',
-      description: 'Chat and messaging endpoints',
+      name: "Chat",
+      description: "Chat and messaging endpoints",
     },
     {
-      name: 'Review',
-      description: 'Course review and approval endpoints',
+      name: "Review",
+      description: "Course review and approval endpoints",
     },
     {
-      name: 'Payments',
-      description: 'Student and teacher payment transaction endpoints',
+      name: "Payments",
+      description: "Student and teacher payment transaction endpoints",
     },
   ],
   components: {
     securitySchemes: {
       sessionAuth: {
-        type: 'apiKey',
-        in: 'cookie',
-        name: 'connect.sid',
+        type: "apiKey",
+        in: "cookie",
+        name: "connect.sid",
       },
     },
     schemas: {
       User: {
-        type: 'object',
+        type: "object",
         properties: {
           id: {
-            type: 'string',
-            example: '60c728362d294d1f88c88888',
+            type: "string",
+            example: "60c728362d294d1f88c88888",
           },
           role: {
-            type: 'string',
-            enum: ['student', 'teacher', 'reviewer', 'admin'],
-            example: 'student',
+            type: "string",
+            enum: ["student", "teacher", "reviewer", "admin"],
+            example: "student",
           },
           name: {
-            type: 'string',
-            example: 'John Doe',
+            type: "string",
+            example: "John Doe",
           },
           email: {
-            type: 'string',
-            format: 'email',
-            example: 'john.doe@example.com',
+            type: "string",
+            format: "email",
+            example: "john.doe@example.com",
           },
           profilePic: {
-            type: 'string',
-            example: '/uploads/profiles/image.jpg',
+            type: "string",
+            example: "/uploads/profiles/image.jpg",
           },
         },
       },
       Course: {
-        type: 'object',
+        type: "object",
         properties: {
           _id: {
-            type: 'string',
-            example: '60c728362d294d1f88c88888',
+            type: "string",
+            example: "60c728362d294d1f88c88888",
           },
           title: {
-            type: 'string',
-            example: 'Introduction to Programming',
+            type: "string",
+            example: "Introduction to Programming",
           },
           description: {
-            type: 'string',
-            example: 'Learn the basics of programming',
+            type: "string",
+            example: "Learn the basics of programming",
           },
           subject: {
-            type: 'string',
-            example: 'Computer Science',
+            type: "string",
+            example: "Computer Science",
           },
           price: {
-            type: 'number',
+            type: "number",
             example: 99.99,
           },
           teacher: {
-            type: 'string',
-            example: '60c728362d294d1f88c88889',
+            type: "string",
+            example: "60c728362d294d1f88c88889",
           },
           modules: {
-            type: 'array',
+            type: "array",
             items: {
-              $ref: '#/components/schemas/Module',
+              $ref: "#/components/schemas/Module",
             },
           },
           status: {
-            type: 'string',
-            enum: ['draft', 'pending', 'approved', 'rejected'],
-            example: 'approved',
+            type: "string",
+            enum: ["draft", "pending", "approved", "rejected"],
+            example: "approved",
           },
         },
       },
       Module: {
-        type: 'object',
+        type: "object",
         properties: {
           type: {
-            type: 'string',
-            enum: ['text', 'video', 'quiz'],
-            example: 'video',
+            type: "string",
+            enum: ["text", "video", "quiz"],
+            example: "video",
           },
           title: {
-            type: 'string',
-            example: 'Introduction Video',
+            type: "string",
+            example: "Introduction Video",
           },
           content: {
-            type: 'string',
-            example: 'Video content URL or text',
+            type: "string",
+            example: "Video content URL or text",
           },
           quiz: {
-            $ref: '#/components/schemas/Quiz',
+            $ref: "#/components/schemas/Quiz",
           },
         },
       },
       Quiz: {
-        type: 'object',
+        type: "object",
         properties: {
           questions: {
-            type: 'array',
+            type: "array",
             items: {
-              type: 'object',
+              type: "object",
               properties: {
                 question: {
-                  type: 'string',
-                  example: 'What is 2+2?',
+                  type: "string",
+                  example: "What is 2+2?",
                 },
                 options: {
-                  type: 'array',
+                  type: "array",
                   items: {
-                    type: 'string',
+                    type: "string",
                   },
-                  example: ['3', '4', '5', '6'],
+                  example: ["3", "4", "5", "6"],
                 },
                 correctAnswer: {
-                  type: 'number',
+                  type: "number",
                   example: 1,
                 },
               },
@@ -184,40 +184,40 @@ const swaggerDefinition = {
         },
       },
       Enrollment: {
-        type: 'object',
+        type: "object",
         properties: {
           _id: {
-            type: 'string',
-            example: '60c728362d294d1f88c88888',
+            type: "string",
+            example: "60c728362d294d1f88c88888",
           },
           student: {
-            type: 'string',
-            example: '60c728362d294d1f88c88889',
+            type: "string",
+            example: "60c728362d294d1f88c88889",
           },
           course: {
-            type: 'string',
-            example: '60c728362d294d1f88c88890',
+            type: "string",
+            example: "60c728362d294d1f88c88890",
           },
           progress: {
-            type: 'object',
+            type: "object",
             properties: {
               completedModules: {
-                type: 'array',
+                type: "array",
                 items: {
-                  type: 'string',
+                  type: "string",
                 },
-                example: ['module1', 'module2'],
+                example: ["module1", "module2"],
               },
               percentage: {
-                type: 'number',
+                type: "number",
                 example: 50,
               },
             },
           },
           enrolledAt: {
-            type: 'string',
-            format: 'date-time',
-            example: '2023-01-01T00:00:00.000Z',
+            type: "string",
+            format: "date-time",
+            example: "2023-01-01T00:00:00.000Z",
           },
         },
       },
@@ -232,7 +232,7 @@ const swaggerDefinition = {
 
 const options = {
   swaggerDefinition,
-  apis: ['./routes/*.js', './controllers/*.js'], // Paths to files containing OpenAPI definitions
+  apis: ["./routes/*.js", "./controllers/*.js"], // Paths to files containing OpenAPI definitions
 };
 
 const swaggerSpec = swaggerJSDoc(options);
@@ -299,7 +299,7 @@ app.use(authAttemptInfo);
 setupLogging(app);
 
 // Swagger UI
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // 4. Routes
 app.use("/api/auth", require("./routes/authRoutes"));
@@ -317,6 +317,14 @@ app.use("/uploads", (req, res, next) => {
 
 // Your existing static line
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+// Return JSON for unknown API routes (prevents HTML responses for missing endpoints)
+app.use("/api", (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: `API route not found: ${req.method} ${req.originalUrl}`,
+  });
+});
 
 // 5. Error Handling
 app.use(errorHandler);

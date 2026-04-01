@@ -5,6 +5,7 @@ import {
   fetchCourseById,
   fetchEnrollmentStatus,
   updateProgress,
+  submitCourseRating,
   clearCurrentCourse,
   resetEnrollment,
 } from "../../store";
@@ -16,6 +17,7 @@ import {
   ChevronDown,
   CheckCircle,
   Clock,
+  Star,
 } from "lucide-react";
 
 // Content Components
@@ -42,6 +44,9 @@ const CourseLearnPage = () => {
   // Initialize activeModuleId state from the URL's moduleId
   const [activeModuleId, setActiveModuleId] = useState(moduleId);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [selectedRating, setSelectedRating] = useState(0);
+  const [ratingFeedback, setRatingFeedback] = useState("");
+  const [ratingError, setRatingError] = useState("");
 
   // Initialize expandedModules state (can be optimized if tree is large, but functional)
   const [expandedModules, setExpandedModules] = useState({ [moduleId]: true });
@@ -101,6 +106,12 @@ const CourseLearnPage = () => {
     moduleId,
   ]);
 
+  useEffect(() => {
+    if (currentEnrollment?.rating) {
+      setSelectedRating(Number(currentEnrollment.rating));
+    }
+  }, [currentEnrollment?.rating]);
+
   // --- 3. CALLBACKS ---
   const handleProgressUpdate = useCallback(
     async (moduleIdToUpdate, updates) => {
@@ -154,6 +165,33 @@ const CourseLearnPage = () => {
       [moduleId]: !prev[moduleId],
     }));
   }, []);
+
+  const handleSubmitRating = useCallback(async () => {
+    if (!selectedRating) {
+      setRatingError("Please select a star rating first.");
+      return;
+    }
+
+    setRatingError("");
+    setRatingFeedback("");
+
+    try {
+      const result = await dispatch(
+        submitCourseRating({
+          courseId,
+          rating: selectedRating,
+        }),
+      );
+
+      if (submitCourseRating.fulfilled.match(result)) {
+        setRatingFeedback("Thanks! Your rating was saved.");
+      } else {
+        setRatingError(result.payload || "Failed to submit rating.");
+      }
+    } catch (e) {
+      setRatingError("Failed to submit rating.");
+    }
+  }, [dispatch, courseId, selectedRating]);
 
   // --- 4. CONDITIONAL RENDERING ---
 
@@ -332,6 +370,76 @@ const CourseLearnPage = () => {
         >
           <Home size={16} /> Dashboard
         </button>
+
+        <div
+          style={{
+            marginTop: 10,
+            padding: "10px 12px",
+            border: "1px solid #e5e7eb",
+            borderRadius: 10,
+            background: "#ffffff",
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            flexWrap: "wrap",
+          }}
+        >
+          <span style={{ fontSize: 13, color: "#374151", fontWeight: 600 }}>
+            Rate this course:
+          </span>
+          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            {[1, 2, 3, 4, 5].map((value) => {
+              const active = value <= selectedRating;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setSelectedRating(value)}
+                  title={`${value} star${value > 1 ? "s" : ""}`}
+                  style={{
+                    border: "none",
+                    background: "transparent",
+                    padding: 0,
+                    cursor: "pointer",
+                    lineHeight: 0,
+                  }}
+                >
+                  <Star
+                    size={18}
+                    fill={active ? "#f59e0b" : "none"}
+                    color={active ? "#f59e0b" : "#9ca3af"}
+                  />
+                </button>
+              );
+            })}
+          </div>
+          <button
+            type="button"
+            onClick={handleSubmitRating}
+            style={{
+              border: "none",
+              borderRadius: 8,
+              background: "#2563eb",
+              color: "#fff",
+              fontSize: 12,
+              fontWeight: 600,
+              padding: "6px 10px",
+              cursor: "pointer",
+            }}
+          >
+            {currentEnrollment?.rating ? "Update Rating" : "Submit Rating"}
+          </button>
+          {ratingFeedback && (
+            <span style={{ fontSize: 12, color: "#047857", fontWeight: 600 }}>
+              {ratingFeedback}
+            </span>
+          )}
+          {ratingError && (
+            <span style={{ fontSize: 12, color: "#b91c1c", fontWeight: 600 }}>
+              {ratingError}
+            </span>
+          )}
+        </div>
       </header>
 
       <div className="course-viewer-grid">
@@ -356,8 +464,16 @@ const CourseLearnPage = () => {
       {course.teacherId && (
         <CourseChat
           courseId={courseId}
-          otherUserId={typeof course.teacherId === "object" ? course.teacherId._id : course.teacherId}
-          otherUserName={typeof course.teacherId === "object" ? course.teacherId.name : "Instructor"}
+          otherUserId={
+            typeof course.teacherId === "object"
+              ? course.teacherId._id
+              : course.teacherId
+          }
+          otherUserName={
+            typeof course.teacherId === "object"
+              ? course.teacherId.name
+              : "Instructor"
+          }
           otherUserRole="teacher"
         />
       )}

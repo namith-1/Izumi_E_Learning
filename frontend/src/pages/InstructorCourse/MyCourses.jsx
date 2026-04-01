@@ -41,17 +41,22 @@ const MyCourses = () => {
 
   // Calculate metrics
   const totalCourses = myCourses.length;
-  
+
   // Calculate total students from all courses
   const fallbackStudentCount = myCourses.reduce((sum, course) => {
     return sum + (course.enrollmentCount || course.students?.length || 0);
   }, 0);
-  const totalStudents = instructorStats?.overview?.totalStudents ?? fallbackStudentCount;
+  const totalStudents =
+    instructorStats?.overview?.totalStudents ?? fallbackStudentCount;
 
   // Calculate average rating from all courses
-  const avgRating = myCourses.length > 0
-    ? (myCourses.reduce((sum, course) => sum + (course.rating || 0), 0) / myCourses.length).toFixed(1)
-    : 0;
+  const avgRating =
+    myCourses.length > 0
+      ? (
+          myCourses.reduce((sum, course) => sum + (course.rating || 0), 0) /
+          myCourses.length
+        ).toFixed(1)
+      : 0;
 
   const handleCreateClick = () => {
     // Navigate to the absolute route for course creation
@@ -75,11 +80,14 @@ const MyCourses = () => {
     setSubmitting(courseId);
     setSubmitError({});
     try {
-      const res = await fetch(`http://localhost:5000/api/review/submit/${courseId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-      });
+      const res = await fetch(
+        `http://localhost:5000/api/review/submit/${courseId}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+        },
+      );
       const data = await res.json();
       if (res.ok) {
         dispatch(fetchAllCourses()); // Refresh
@@ -159,10 +167,22 @@ const MyCourses = () => {
                     ? course.description.substring(0, 80) + "..."
                     : "No description provided."}
                 </p>
-                <div className="course-card-footer" style={{ flexDirection: "column", gap: 8 }}>
+                <div
+                  className="course-card-footer"
+                  style={{ flexDirection: "column", gap: 8 }}
+                >
                   {/* Approval Status Badge */}
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
-                    <span className={`status-badge ${course.approvalStatus || "draft"}`}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      width: "100%",
+                    }}
+                  >
+                    <span
+                      className={`status-badge ${course.approvalStatus || "draft"}`}
+                    >
                       {course.approvalStatus || "draft"}
                     </span>
 
@@ -170,14 +190,22 @@ const MyCourses = () => {
                       <button
                         className="btn-browse"
                         onClick={() => handleEditClick(course._id)}
-                        style={{ backgroundColor: "#2563eb", fontSize: 12, padding: "6px 12px" }}
+                        style={{
+                          backgroundColor: "#2563eb",
+                          fontSize: 12,
+                          padding: "6px 12px",
+                        }}
                       >
                         Edit
                       </button>
                       <button
                         className="btn-browse"
                         onClick={() => handleViewClick(course._id)}
-                        style={{ backgroundColor: "#10b981", fontSize: 12, padding: "6px 12px" }}
+                        style={{
+                          backgroundColor: "#10b981",
+                          fontSize: 12,
+                          padding: "6px 12px",
+                        }}
                       >
                         Preview
                       </button>
@@ -185,7 +213,12 @@ const MyCourses = () => {
                   </div>
 
                   {/* Submit for Review button (only for draft/rejected/revision-requested) */}
-                  {["draft", "rejected", "revision-requested", undefined].includes(course.approvalStatus) && (
+                  {[
+                    "draft",
+                    "rejected",
+                    "revision-requested",
+                    undefined,
+                  ].includes(course.approvalStatus) && (
                     <button
                       className="btn-browse"
                       onClick={() => handleSubmitForReview(course._id)}
@@ -202,14 +235,22 @@ const MyCourses = () => {
                       }}
                     >
                       <Send size={13} />
-                      {submitting === course._id ? "Submitting..." : "Submit for Review"}
+                      {submitting === course._id
+                        ? "Submitting..."
+                        : "Submit for Review"}
                     </button>
                   )}
 
                   {/* Pre-check errors */}
                   {submitError[course._id] && (
                     <div className="precheck-issues">
-                      <h4 style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                      <h4
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 4,
+                        }}
+                      >
                         <AlertCircle size={14} /> Pre-check failed
                       </h4>
                       <ul>
