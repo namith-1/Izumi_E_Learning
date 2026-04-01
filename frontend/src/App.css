@@ -1,0 +1,64 @@
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+}
+
+html {
+  /* Flips the colors of the entire page */
+  filter: invert(1) hue-rotate(180deg) brightness(0.8);
+  background-color: #fff; /* Inverted, this becomes your dark grey */
+}
+
+/* Re-invert images and your YouTube frames so they aren't 'X-rayed' */
+img,
+iframe,
+video {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+/* Exclude course card images and previews from the filter effect */
+.card-banner,
+.course-image-preview-banner,
+.image-preview-small,
+.course-card-banner,
+.card-banner-compact {
+  filter: invert(1) hue-rotate(180deg) brightness(1.18) !important;
+}
