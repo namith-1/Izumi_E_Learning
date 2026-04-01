@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const Transaction = require("../models/Transaction");
 const Course = require("../models/Course");
 const Enrollment = require("../models/Enrollment");
@@ -6,6 +7,13 @@ const EnrollmentAnalytics = require("../models/EnrollmentAnalytics");
 const REF_PREFIX = "TXN";
 const buildReference = () =>
   `${REF_PREFIX}-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+const toObjectId = (value) => {
+  if (!mongoose.Types.ObjectId.isValid(value)) {
+    return null;
+  }
+  return new mongoose.Types.ObjectId(value);
+};
 
 const deny = (res, message = "Access denied") =>
   res.status(403).json({ message });
@@ -116,8 +124,12 @@ exports.getStudentPaymentSummary = async (req, res) => {
   try {
     if (req.session?.user?.role !== "student") return deny(res, "Students only.");
     const studentId = req.session.user.id;
+    const studentObjectId = toObjectId(studentId);
+    if (!studentObjectId) {
+      return res.status(400).json({ message: "Invalid student id." });
+    }
     const [summary] = await Transaction.aggregate([
-      { $match: { studentId: req.session.user.id } },
+      { $match: { studentId: studentObjectId } },
       {
         $group: {
           _id: null,
@@ -185,8 +197,12 @@ exports.updateTeacherTransactionStatus = async (req, res) => {
 exports.getTeacherPaymentSummary = async (req, res) => {
   try {
     if (req.session?.user?.role !== "teacher") return deny(res, "Teachers only.");
+    const teacherObjectId = toObjectId(req.session.user.id);
+    if (!teacherObjectId) {
+      return res.status(400).json({ message: "Invalid teacher id." });
+    }
     const [summary] = await Transaction.aggregate([
-      { $match: { teacherId: req.session.user.id } },
+      { $match: { teacherId: teacherObjectId } },
       {
         $group: {
           _id: null,
