@@ -77,8 +77,20 @@ html {
 }
 
 /* 2. Re-invert media so images and YouTube videos look normal */
-img, iframe, video, .logo {
+img,
+iframe,
+video,
+.logo {
   filter: invert(1) hue-rotate(180deg) !important;
+}
+
+/* Exclude course card images and previews from the filter effect */
+.card-banner,
+.course-image-preview-banner,
+.image-preview-small,
+.course-card-banner,
+.card-banner-compact {
+  filter: invert(1) hue-rotate(180deg) brightness(1.18) !important;
 }
 
 /* Your existing styles below */
