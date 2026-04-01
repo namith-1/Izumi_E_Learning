@@ -88,6 +88,18 @@
     border-color: #cbd5e1;
 }
 
+.profile-avatar-sm {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid #cbd5e1;
+}
+
+.profile-avatar-fallback {
+    color: #475569;
+}
+
 .chevron {
     transition: transform 0.2s;
 }
@@ -117,6 +129,15 @@
     border-bottom: 1px solid #f1f5f9;
     gap: 0.25rem;
     color: #0f172a;
+}
+
+.profile-avatar-lg {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid #dbeafe;
+    margin-bottom: 0.25rem;
 }
 
 .menu-item {

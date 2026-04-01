@@ -38,13 +38,24 @@ const ProfileDropdown = ({ user, currentPath }) => {
     // Check if the link to Profile Settings is the current active route
     const isSettingsActive = currentPath.includes('/settings');
 
+    const apiBase = (import.meta.env.VITE_API_BASE || 'http://localhost:5000').replace(/\/$/, '');
+    const profileImageUrl = user?.profilePic
+        ? (user.profilePic.startsWith('http://') || user.profilePic.startsWith('https://')
+            ? user.profilePic
+            : `${apiBase}${user.profilePic.startsWith('/') ? '' : '/'}${user.profilePic}`)
+        : null;
+
     return (
         <div className="profile-dropdown-wrapper" ref={dropdownRef}>
             <button 
                 onClick={() => setIsOpen(!isOpen)} 
                 className={`profile-toggle-btn ${isOpen || isSettingsActive ? 'active' : ''}`}
             >
-                <User size={18} />
+                {profileImageUrl ? (
+                    <img src={profileImageUrl} alt="Profile" className="profile-avatar-sm" />
+                ) : (
+                    <User size={18} className="profile-avatar-fallback" />
+                )}
                 <span>{user?.name}</span>
                 <ChevronDown size={14} className={`chevron ${isOpen ? 'rotate-up' : ''}`} />
             </button>
@@ -52,7 +63,11 @@ const ProfileDropdown = ({ user, currentPath }) => {
             {isOpen && (
                 <div className="profile-dropdown-menu">
                     <div className="menu-header">
-                        <User size={20} className="text-blue-500" />
+                        {profileImageUrl ? (
+                            <img src={profileImageUrl} alt="Profile" className="profile-avatar-lg" />
+                        ) : (
+                            <User size={20} className="text-blue-500" />
+                        )}
                         <span className="font-semibold">{user?.name}</span>
                         <span className="text-xs text-gray-500 capitalize">({user?.role})</span>
                     </div>
