@@ -89,7 +89,8 @@ video,
 .course-image-preview-banner,
 .image-preview-small,
 .course-card-banner,
-.card-banner-compact {
+.card-banner-compact,
+.course-header-banner {
   filter: invert(1) hue-rotate(180deg) brightness(1.18) !important;
 }
 
