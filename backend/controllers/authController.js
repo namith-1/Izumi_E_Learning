@@ -113,6 +113,7 @@ exports.register = async (req, res) => {
       role: role,
       name: newUser.name,
       email: newUser.email,
+      profilePic: newUser.profilePic || "",
     };
 
     res
@@ -269,6 +270,7 @@ exports.login = async (req, res) => {
       role: actualRole,
       name: user.name,
       email: user.email,
+      profilePic: user.profilePic || "",
     };
 
     // Successful login — clear any recorded attempts for this user (students/teachers)
@@ -401,11 +403,13 @@ exports.me = (req, res) => {
     }
 
     Model.findById(req.session.user.id)
-      .select("name email")
+      .select("name email profilePic")
       .then((userDoc) => {
         if (userDoc) {
           // Ensure the session user object is complete
           req.session.user.email = userDoc.email;
+          req.session.user.name = userDoc.name;
+          req.session.user.profilePic = userDoc.profilePic || "";
           res.json({ user: req.session.user });
         } else {
           res.status(404).json({ user: null });
@@ -426,6 +430,9 @@ exports.updateProfile = async (req, res) => {
   try {
     const { name, currentPassword, newPassword } = req.body;
     const userId = req.session.user.id;
+    const profilePicPath = req.file
+      ? `/uploads/profiles/${req.file.filename}`
+      : null;
 
     // --- NEW LOGIC: Block profile update for mock Admin account ---
     if (userId === MOCK_ADMIN_ID && req.session.user.role === "admin") {
@@ -457,6 +464,11 @@ exports.updateProfile = async (req, res) => {
       req.session.user.name = name; // Update session
     }
 
+    if (profilePicPath) {
+      user.profilePic = profilePicPath;
+      req.session.user.profilePic = profilePicPath;
+    }
+
     // 3. Update password if new one is provided
     if (newPassword && newPassword.length >= 6) {
       user.password = await bcrypt.hash(newPassword, 10);
@@ -477,6 +489,7 @@ exports.updateProfile = async (req, res) => {
         role: req.session.user.role,
         name: user.name,
         email: user.email,
+        profilePic: user.profilePic || "",
       },
     });
   } catch (err) {

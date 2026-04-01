@@ -25,12 +25,12 @@ const enrollmentSchema = new mongoose.Schema(
       {
         moduleId: { type: String, required: true }, // String (frontend uses Date.now() + random)
         completed: { type: Boolean, default: false },
-        timeSpent: { type: Number, default: 0 },          // seconds
-        quizScore: { type: Number, default: null },        // raw score 0-100 (null = not attempted)
+        timeSpent: { type: Number, default: 0 }, // seconds
+        quizScore: { type: Number, default: null }, // raw score 0-100 (null = not attempted)
         // ── New grading fields ──
-        passed: { type: Boolean, default: null },          // null = not yet graded, true/false after grading
+        passed: { type: Boolean, default: null }, // null = not yet graded, true/false after grading
         weightedContribution: { type: Number, default: 0 }, // (weight/100) × quizScore
-        attemptsUsed: { type: Number, default: 0 },        // number of quiz attempts so far
+        attemptsUsed: { type: Number, default: 0 }, // number of quiz attempts so far
       },
     ],
     // ────────────────────────────────────────────────────────────────────────
@@ -47,6 +47,23 @@ const enrollmentSchema = new mongoose.Schema(
       type: String,
       enum: ["in-progress", "pass", "fail"],
       default: "in-progress",
+    },
+    // Student rating for this enrolled course (one rating per student per course)
+    rating: {
+      type: Number,
+      min: 1,
+      max: 5,
+      default: null,
+    },
+    ratingReview: {
+      type: String,
+      trim: true,
+      maxlength: 500,
+      default: "",
+    },
+    ratedAt: {
+      type: Date,
+      default: null,
     },
     // ────────────────────────────────────────────────────────────────────────
   },

@@ -40,7 +40,7 @@ const COURSE_DATA_PATH = "local_course_draft";
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 
 const URL_REGEX =
-  /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
+  /^(https?:\/\/)?([\\da-z.-]+)\.([a-z.]{2,6})(\/[\\w .-]*)*\/?$/;
 
 const generateId = () => Date.now() + Math.random().toString(36).substr(2, 9);
 
@@ -79,7 +79,10 @@ const initialCourseStructure = {
 // ─── Helper: compute total weight assigned to graded modules ─────────────────
 const computeWeightTotal = (modules) => {
   return Object.values(modules)
-    .filter((m) => m && m.isGraded !== false && (m.isGraded === true || m.type === "quiz"))
+    .filter(
+      (m) =>
+        m && m.isGraded !== false && (m.isGraded === true || m.type === "quiz"),
+    )
     .reduce((sum, m) => sum + (Number(m.weight) || 0), 0);
 };
 
@@ -90,15 +93,30 @@ const GradingPolicyPanel = ({ policy, onChange, modules }) => {
 
   return (
     <div className="grading-policy-panel">
-      <h4 style={{ margin: "0 0 10px", fontSize: "13px", fontWeight: 700, color: "#374151" }}>
+      <h4
+        style={{
+          margin: "0 0 10px",
+          fontSize: "13px",
+          fontWeight: 700,
+          color: "#374151",
+        }}
+      >
         Grading Policy
       </h4>
       <div className="input-group" style={{ marginBottom: 8 }}>
-        <label style={{ fontSize: "12px", color: "#6b7280" }}>Grading Mode</label>
+        <label style={{ fontSize: "12px", color: "#6b7280" }}>
+          Grading Mode
+        </label>
         <select
           value={policy.mode}
           onChange={(e) => onChange("mode", e.target.value)}
-          style={{ width: "100%", padding: "6px 8px", borderRadius: 6, border: "1px solid #d1d5db", fontSize: 13 }}
+          style={{
+            width: "100%",
+            padding: "6px 8px",
+            borderRadius: 6,
+            border: "1px solid #d1d5db",
+            fontSize: 13,
+          }}
         >
           <option value="threshold">Threshold (% of modules done)</option>
           <option value="weighted">Weighted Score</option>
@@ -107,32 +125,61 @@ const GradingPolicyPanel = ({ policy, onChange, modules }) => {
       </div>
       {policy.mode === "threshold" && (
         <div className="input-group" style={{ marginBottom: 8 }}>
-          <label style={{ fontSize: 12, color: "#6b7280" }}>Min. completion % to pass</label>
+          <label style={{ fontSize: 12, color: "#6b7280" }}>
+            Min. completion % to pass
+          </label>
           <input
-            type="number" min={0} max={100}
+            type="number"
+            min={0}
+            max={100}
             value={policy.passingThreshold}
-            onChange={(e) => onChange("passingThreshold", Number(e.target.value))}
-            style={{ width: "100%", padding: "5px 8px", borderRadius: 6, border: "1px solid #d1d5db", fontSize: 13 }}
+            onChange={(e) =>
+              onChange("passingThreshold", Number(e.target.value))
+            }
+            style={{
+              width: "100%",
+              padding: "5px 8px",
+              borderRadius: 6,
+              border: "1px solid #d1d5db",
+              fontSize: 13,
+            }}
           />
         </div>
       )}
       {policy.mode === "weighted" && (
         <>
           <div className="input-group" style={{ marginBottom: 8 }}>
-            <label style={{ fontSize: 12, color: "#6b7280" }}>Min. weighted score to pass (0-100)</label>
+            <label style={{ fontSize: 12, color: "#6b7280" }}>
+              Min. weighted score to pass (0-100)
+            </label>
             <input
-              type="number" min={0} max={100}
+              type="number"
+              min={0}
+              max={100}
               value={policy.minimumWeightedScore}
-              onChange={(e) => onChange("minimumWeightedScore", Number(e.target.value))}
-              style={{ width: "100%", padding: "5px 8px", borderRadius: 6, border: "1px solid #d1d5db", fontSize: 13 }}
+              onChange={(e) =>
+                onChange("minimumWeightedScore", Number(e.target.value))
+              }
+              style={{
+                width: "100%",
+                padding: "5px 8px",
+                borderRadius: 6,
+                border: "1px solid #d1d5db",
+                fontSize: 13,
+              }}
             />
           </div>
-          <div style={{
-            padding: "6px 10px", borderRadius: 6, fontSize: 12, fontWeight: 600,
-            background: weightOk ? "#d1fae5" : "#fef3c7",
-            color: weightOk ? "#065f46" : "#92400e",
-            marginBottom: 4,
-          }}>
+          <div
+            style={{
+              padding: "6px 10px",
+              borderRadius: 6,
+              fontSize: 12,
+              fontWeight: 600,
+              background: weightOk ? "#d1fae5" : "#fef3c7",
+              color: weightOk ? "#065f46" : "#92400e",
+              marginBottom: 4,
+            }}
+          >
             {weightOk
               ? `Module weights: ${weightTotal.toFixed(0)} / 100`
               : `Weights total ${weightTotal.toFixed(0)} / 100 — will be auto-normalised`}
@@ -152,36 +199,42 @@ const GradingPolicyPanel = ({ policy, onChange, modules }) => {
 // Renders inside the video module editor. Handles both "paste URL" and
 // "upload file" modes. Calls onVideoReady(url) when a URL is confirmed.
 const VideoUploader = ({ currentUrl, onVideoReady, onError }) => {
-  const [mode, setMode] = useState(
-    // If the saved URL looks like a Cloudinary URL start in upload mode; else URL mode
-    currentUrl && currentUrl.includes("cloudinary") ? "upload" : "url"
-  );
+  const isCloudinaryUrl = currentUrl && currentUrl.includes("cloudinary");
+  const [mode, setMode] = useState(isCloudinaryUrl ? "upload" : "url");
   const [urlInput, setUrlInput] = useState(
-    mode === "url" ? currentUrl || "" : ""
+    isCloudinaryUrl ? "" : currentUrl || "",
   );
   const [uploadState, setUploadState] = useState({
-    progress: 0,       // 0-100
+    progress: 0, // 0-100
     isUploading: false,
-    uploadedUrl: mode === "upload" ? currentUrl || "" : "",
+    uploadedUrl: isCloudinaryUrl ? currentUrl || "" : "",
     error: null,
     fileName: null,
   });
   const fileInputRef = useRef(null);
-  const xhrRef = useRef(null);           // so we can abort mid-upload
+  const xhrRef = useRef(null); // so we can abort mid-upload
 
   // Keep url input in sync if parent changes currentUrl (e.g. switching modules)
   useEffect(() => {
     const isCloudinary = currentUrl && currentUrl.includes("cloudinary");
-    setMode(isCloudinary ? "upload" : "url");
-    setUrlInput(isCloudinary ? "" : currentUrl || "");
-    setUploadState((prev) => ({
-      ...prev,
-      uploadedUrl: isCloudinary ? currentUrl : "",
-      progress: 0,
-      isUploading: false,
-      error: null,
-      fileName: null,
-    }));
+    const newMode = isCloudinary ? "upload" : "url";
+    const newUrlInput = isCloudinary ? "" : currentUrl || "";
+
+    // Defer state updates to avoid triggering cascading renders in strict mode
+    const timeoutId = setTimeout(() => {
+      setMode(newMode);
+      setUrlInput(newUrlInput);
+      setUploadState((prev) => ({
+        ...prev,
+        uploadedUrl: isCloudinary ? currentUrl : "",
+        progress: 0,
+        isUploading: false,
+        error: null,
+        fileName: null,
+      }));
+    }, 0);
+
+    return () => clearTimeout(timeoutId);
   }, [currentUrl]);
 
   const handleFileSelect = (file) => {
@@ -189,7 +242,10 @@ const VideoUploader = ({ currentUrl, onVideoReady, onError }) => {
 
     // Basic validation
     if (!file.type.startsWith("video/")) {
-      setUploadState((prev) => ({ ...prev, error: "Please select a valid video file." }));
+      setUploadState((prev) => ({
+        ...prev,
+        error: "Please select a valid video file.",
+      }));
       return;
     }
     const MAX_SIZE_MB = 500;
@@ -201,7 +257,13 @@ const VideoUploader = ({ currentUrl, onVideoReady, onError }) => {
       return;
     }
 
-    setUploadState({ progress: 0, isUploading: true, uploadedUrl: "", error: null, fileName: file.name });
+    setUploadState({
+      progress: 0,
+      isUploading: true,
+      uploadedUrl: "",
+      error: null,
+      fileName: file.name,
+    });
 
     const formData = new FormData();
     formData.append("video", file);
@@ -231,7 +293,11 @@ const VideoUploader = ({ currentUrl, onVideoReady, onError }) => {
           onVideoReady(data.videoUrl);
         } else {
           const msg = data.message || "Upload failed. Please try again.";
-          setUploadState((prev) => ({ ...prev, isUploading: false, error: msg }));
+          setUploadState((prev) => ({
+            ...prev,
+            isUploading: false,
+            error: msg,
+          }));
           onError && onError(msg);
         }
       } catch {
@@ -248,7 +314,13 @@ const VideoUploader = ({ currentUrl, onVideoReady, onError }) => {
     });
 
     xhr.addEventListener("abort", () => {
-      setUploadState({ progress: 0, isUploading: false, uploadedUrl: "", error: null, fileName: null });
+      setUploadState({
+        progress: 0,
+        isUploading: false,
+        uploadedUrl: "",
+        error: null,
+        fileName: null,
+      });
     });
 
     xhr.open("POST", `${API_BASE}/api/courses/upload-video`);
@@ -261,7 +333,13 @@ const VideoUploader = ({ currentUrl, onVideoReady, onError }) => {
   };
 
   const handleRemoveUpload = () => {
-    setUploadState({ progress: 0, isUploading: false, uploadedUrl: "", error: null, fileName: null });
+    setUploadState({
+      progress: 0,
+      isUploading: false,
+      uploadedUrl: "",
+      error: null,
+      fileName: null,
+    });
     onVideoReady("");
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
@@ -274,16 +352,22 @@ const VideoUploader = ({ currentUrl, onVideoReady, onError }) => {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       {/* Mode toggle */}
-      <div style={{
-        display: "inline-flex",
-        border: "1px solid #d1d5db",
-        borderRadius: 8,
-        overflow: "hidden",
-        width: "fit-content",
-      }}>
+      <div
+        style={{
+          display: "inline-flex",
+          border: "1px solid #d1d5db",
+          borderRadius: 8,
+          overflow: "hidden",
+          width: "fit-content",
+        }}
+      >
         {[
           { key: "url", icon: <Link size={13} />, label: "Paste URL" },
-          { key: "upload", icon: <UploadCloud size={13} />, label: "Upload File" },
+          {
+            key: "upload",
+            icon: <UploadCloud size={13} />,
+            label: "Upload File",
+          },
         ].map(({ key, icon, label }) => (
           <button
             key={key}
@@ -352,11 +436,26 @@ const VideoUploader = ({ currentUrl, onVideoReady, onError }) => {
                 background: "#eef2ff",
                 transition: "border-color 0.15s",
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#818cf8")}
-              onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#c7d2fe")}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.borderColor = "#818cf8")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.borderColor = "#c7d2fe")
+              }
             >
-              <UploadCloud size={28} color="#818cf8" style={{ marginBottom: 8 }} />
-              <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "#4f46e5" }}>
+              <UploadCloud
+                size={28}
+                color="#818cf8"
+                style={{ marginBottom: 8 }}
+              />
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: "#4f46e5",
+                }}
+              >
                 Click to browse or drag & drop
               </p>
               <p style={{ margin: "4px 0 0", fontSize: 11, color: "#9ca3af" }}>
@@ -374,17 +473,33 @@ const VideoUploader = ({ currentUrl, onVideoReady, onError }) => {
 
           {/* Progress bar while uploading */}
           {uploadState.isUploading && (
-            <div style={{
-              border: "1px solid #e0e7ff",
-              borderRadius: 10,
-              padding: "16px 18px",
-              background: "#f5f3ff",
-            }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+            <div
+              style={{
+                border: "1px solid #e0e7ff",
+                borderRadius: 10,
+                padding: "16px 18px",
+                background: "#f5f3ff",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 8,
+                }}
+              >
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <Loader2 size={15} color="#6366f1" style={{ animation: "spin 1s linear infinite" }} />
-                  <span style={{ fontSize: 12, fontWeight: 600, color: "#4f46e5" }}>
-                    Uploading{uploadState.fileName ? ` "${uploadState.fileName}"` : ""}…
+                  <Loader2
+                    size={15}
+                    color="#6366f1"
+                    style={{ animation: "spin 1s linear infinite" }}
+                  />
+                  <span
+                    style={{ fontSize: 12, fontWeight: 600, color: "#4f46e5" }}
+                  >
+                    Uploading
+                    {uploadState.fileName ? ` "${uploadState.fileName}"` : ""}…
                   </span>
                 </div>
                 <button
@@ -403,21 +518,32 @@ const VideoUploader = ({ currentUrl, onVideoReady, onError }) => {
                 </button>
               </div>
               {/* Track */}
-              <div style={{
-                height: 6,
-                background: "#e0e7ff",
-                borderRadius: 99,
-                overflow: "hidden",
-              }}>
-                <div style={{
-                  height: "100%",
-                  width: `${uploadState.progress}%`,
-                  background: "linear-gradient(90deg, #6366f1, #818cf8)",
+              <div
+                style={{
+                  height: 6,
+                  background: "#e0e7ff",
                   borderRadius: 99,
-                  transition: "width 0.3s ease",
-                }} />
+                  overflow: "hidden",
+                }}
+              >
+                <div
+                  style={{
+                    height: "100%",
+                    width: `${uploadState.progress}%`,
+                    background: "linear-gradient(90deg, #6366f1, #818cf8)",
+                    borderRadius: 99,
+                    transition: "width 0.3s ease",
+                  }}
+                />
               </div>
-              <div style={{ fontSize: 11, color: "#6366f1", marginTop: 4, textAlign: "right" }}>
+              <div
+                style={{
+                  fontSize: 11,
+                  color: "#6366f1",
+                  marginTop: 4,
+                  textAlign: "right",
+                }}
+              >
                 {uploadState.progress}%
               </div>
             </div>
@@ -425,24 +551,41 @@ const VideoUploader = ({ currentUrl, onVideoReady, onError }) => {
 
           {/* Success state — video is uploaded */}
           {!uploadState.isUploading && uploadState.uploadedUrl && (
-            <div style={{
-              border: "1px solid #bbf7d0",
-              borderRadius: 10,
-              padding: "12px 16px",
-              background: "#f0fdf4",
-            }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+            <div
+              style={{
+                border: "1px solid #bbf7d0",
+                borderRadius: 10,
+                padding: "12px 16px",
+                background: "#f0fdf4",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                }}
+              >
                 <div>
-                  <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "#15803d" }}>
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: "#15803d",
+                    }}
+                  >
                     ✓ Video uploaded successfully
                   </p>
-                  <p style={{
-                    margin: "4px 0 0",
-                    fontSize: 11,
-                    color: "#6b7280",
-                    wordBreak: "break-all",
-                    maxWidth: 380,
-                  }}>
+                  <p
+                    style={{
+                      margin: "4px 0 0",
+                      fontSize: 11,
+                      color: "#6b7280",
+                      wordBreak: "break-all",
+                      maxWidth: 380,
+                    }}
+                  >
                     {uploadState.uploadedUrl}
                   </p>
                 </div>
@@ -514,18 +657,20 @@ const VideoUploader = ({ currentUrl, onVideoReady, onError }) => {
 
           {/* Error */}
           {uploadState.error && (
-            <div style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              fontSize: 12,
-              color: "#b91c1c",
-              background: "#fef2f2",
-              border: "1px solid #fecaca",
-              borderRadius: 6,
-              padding: "6px 10px",
-              marginTop: 6,
-            }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                fontSize: 12,
+                color: "#b91c1c",
+                background: "#fef2f2",
+                border: "1px solid #fecaca",
+                borderRadius: 6,
+                padding: "6px 10px",
+                marginTop: 6,
+              }}
+            >
               <AlertCircle size={13} /> {uploadState.error}
             </div>
           )}
@@ -542,11 +687,16 @@ const VideoUploader = ({ currentUrl, onVideoReady, onError }) => {
 const renderModuleIcon = (type) => {
   const props = { size: 16, className: "module-icon-type" };
   switch (type) {
-    case "intro": return <BookOpen {...props} />;
-    case "text":  return <FileText {...props} />;
-    case "video": return <Video {...props} />;
-    case "quiz":  return <CheckSquare {...props} />;
-    default:      return <Layers {...props} />;
+    case "intro":
+      return <BookOpen {...props} />;
+    case "text":
+      return <FileText {...props} />;
+    case "video":
+      return <Video {...props} />;
+    case "quiz":
+      return <CheckSquare {...props} />;
+    default:
+      return <Layers {...props} />;
   }
 };
 
@@ -596,18 +746,33 @@ const ModuleActions = ({ module, onAction, isRoot }) => {
     <div className="module-actions-wrapper">
       <button
         className="module-actions-btn"
-        onClick={(e) => { e.stopPropagation(); setIsMenuOpen(!isMenuOpen); }}
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsMenuOpen(!isMenuOpen);
+        }}
         title="Options"
       >
         <MoreVertical size={16} />
       </button>
       {isMenuOpen && (
         <div ref={menuRef} className="module-actions-menu">
-          <button onClick={(e) => { e.stopPropagation(); onAction("add", module.id); setIsMenuOpen(false); }}>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onAction("add", module.id);
+              setIsMenuOpen(false);
+            }}
+          >
             <Plus size={14} className="text-green-600" /> Add Sub-Module
           </button>
           {!isRoot && (
-            <button onClick={(e) => { e.stopPropagation(); onAction("delete", module.id); setIsMenuOpen(false); }}>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onAction("delete", module.id);
+                setIsMenuOpen(false);
+              }}
+            >
               <Trash2 size={14} className="text-red-600" /> Delete Module
             </button>
           )}
@@ -618,7 +783,15 @@ const ModuleActions = ({ module, onAction, isRoot }) => {
 };
 
 // ─── ModuleTreeItem ───────────────────────────────────────────────────────────
-const ModuleTreeItem = ({ modules, moduleId, onSelect, onAction, selectedId, rootId, depth = 0 }) => {
+const ModuleTreeItem = ({
+  modules,
+  moduleId,
+  onSelect,
+  onAction,
+  selectedId,
+  rootId,
+  depth = 0,
+}) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const module = modules[moduleId];
 
@@ -638,9 +811,20 @@ const ModuleTreeItem = ({ modules, moduleId, onSelect, onAction, selectedId, roo
         <div className="module-title-wrapper">
           <div
             className={`expand-icon ${hasChildren ? "visible" : "hidden"}`}
-            onClick={hasChildren ? (e) => { e.stopPropagation(); setIsExpanded(!isExpanded); } : undefined}
+            onClick={
+              hasChildren
+                ? (e) => {
+                    e.stopPropagation();
+                    setIsExpanded(!isExpanded);
+                  }
+                : undefined
+            }
           >
-            {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+            {isExpanded ? (
+              <ChevronDown size={14} />
+            ) : (
+              <ChevronRight size={14} />
+            )}
           </div>
           {renderModuleIcon(module.type)}
           <span className="module-title-text">{module.title}</span>
@@ -680,8 +864,12 @@ const CourseEditor = () => {
 
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState(null);
-  const [courseStructure, setCourseStructure] = useState(initialCourseStructure);
-  const [selectedModuleId, setSelectedModuleId] = useState(initialCourseStructure.rootModule.id);
+  const [courseStructure, setCourseStructure] = useState(
+    initialCourseStructure,
+  );
+  const [selectedModuleId, setSelectedModuleId] = useState(
+    initialCourseStructure.rootModule.id,
+  );
   const [isIntroModuleForm, setIsIntroModuleForm] = useState(true);
   const [isLoadingCourse, setIsLoadingCourse] = useState(!!courseId);
   const [validationErrors, setValidationErrors] = useState({});
@@ -689,11 +877,15 @@ const CourseEditor = () => {
   const [imagePreviewUrl, setImagePreviewUrl] = useState(null);
 
   const allModules = useMemo(
-    () => ({ [courseStructure.rootModule.id]: courseStructure.rootModule, ...courseStructure.modules }),
+    () => ({
+      [courseStructure.rootModule.id]: courseStructure.rootModule,
+      ...courseStructure.modules,
+    }),
     [courseStructure],
   );
 
-  const selectedModule = allModules[selectedModuleId] || courseStructure.rootModule;
+  const selectedModule =
+    allModules[selectedModuleId] || courseStructure.rootModule;
 
   // ─── Effects ────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -718,7 +910,12 @@ const CourseEditor = () => {
   }, [dispatch, courseId]);
 
   useEffect(() => {
-    if (courseId && currentCourse && currentCourse._id === courseId && isLoadingCourse) {
+    if (
+      courseId &&
+      currentCourse &&
+      currentCourse._id === courseId &&
+      isLoadingCourse
+    ) {
       setCourseStructure({
         rootModule: currentCourse.rootModule,
         modules: currentCourse.modules,
@@ -727,7 +924,9 @@ const CourseEditor = () => {
         subject: currentCourse.subject,
         imageUrl: currentCourse.imageUrl || null,
         price: currentCourse.price || 0,
-        passingPolicy: currentCourse.passingPolicy || { ...DEFAULT_PASSING_POLICY },
+        passingPolicy: currentCourse.passingPolicy || {
+          ...DEFAULT_PASSING_POLICY,
+        },
         _id: currentCourse._id,
       });
       setSelectedModuleId(currentCourse.rootModule.id);
@@ -739,15 +938,21 @@ const CourseEditor = () => {
   }, [courseId, currentCourse, isLoadingCourse]);
 
   // ─── Draft save ──────────────────────────────────────────────────────────────
-  const saveDraft = useCallback((structure) => {
-    if (!courseId) {
-      setIsSaving(true);
-      localStorage.setItem(COURSE_DATA_PATH, JSON.stringify(structure));
-      localStorage.setItem(COURSE_DATA_PATH + "_time", new Date().toISOString());
-      setTimeout(() => setIsSaving(false), 500);
-      setLastSaved(new Date().toISOString());
-    }
-  }, [courseId]);
+  const saveDraft = useCallback(
+    (structure) => {
+      if (!courseId) {
+        setIsSaving(true);
+        localStorage.setItem(COURSE_DATA_PATH, JSON.stringify(structure));
+        localStorage.setItem(
+          COURSE_DATA_PATH + "_time",
+          new Date().toISOString(),
+        );
+        setTimeout(() => setIsSaving(false), 500);
+        setLastSaved(new Date().toISOString());
+      }
+    },
+    [courseId],
+  );
 
   useEffect(() => {
     const timer = setTimeout(() => saveDraft(courseStructure), 60000);
@@ -766,66 +971,87 @@ const CourseEditor = () => {
     });
   };
 
-  const handleAddModule = useCallback((parentId) => {
-    const parentModule = allModules[parentId];
-    if (!parentModule) return;
+  const handleAddModule = useCallback(
+    (parentId) => {
+      const parentModule = allModules[parentId];
+      if (!parentModule) return;
 
-    const newModule = createNewModule("text", parentId);
-    const updatedParent = { ...parentModule, children: [...parentModule.children, newModule.id] };
+      const newModule = createNewModule("text", parentId);
+      const updatedParent = {
+        ...parentModule,
+        children: [...parentModule.children, newModule.id],
+      };
 
-    setCourseStructure((prev) => {
-      const newModulesMap = { ...prev.modules };
-      newModulesMap[newModule.id] = newModule;
+      setCourseStructure((prev) => {
+        const newModulesMap = { ...prev.modules };
+        newModulesMap[newModule.id] = newModule;
 
-      let nextState;
-      if (parentId === prev.rootModule.id) {
-        nextState = { ...prev, rootModule: updatedParent, modules: newModulesMap };
-      } else {
-        newModulesMap[parentId] = updatedParent;
-        nextState = { ...prev, modules: newModulesMap };
+        let nextState;
+        if (parentId === prev.rootModule.id) {
+          nextState = {
+            ...prev,
+            rootModule: updatedParent,
+            modules: newModulesMap,
+          };
+        } else {
+          newModulesMap[parentId] = updatedParent;
+          nextState = { ...prev, modules: newModulesMap };
+        }
+        saveDraft(nextState);
+        return nextState;
+      });
+
+      setSelectedModuleId(newModule.id);
+      setIsIntroModuleForm(false);
+    },
+    [allModules, saveDraft],
+  );
+
+  const handleDeleteModule = useCallback(
+    (moduleId) => {
+      if (moduleId === courseStructure.rootModule.id) {
+        alert("Cannot delete the root module.");
+        return;
       }
-      saveDraft(nextState);
-      return nextState;
-    });
+      if (window.confirm("Delete this module and ALL sub-modules?")) {
+        const updatedModules = deleteModuleFromStructure(allModules, moduleId);
+        const moduleToDelete = allModules[moduleId];
+        const parentId = moduleToDelete.parentId;
 
-    setSelectedModuleId(newModule.id);
-    setIsIntroModuleForm(false);
-  }, [allModules, saveDraft]);
+        let updatedRoot = { ...courseStructure.rootModule };
 
-  const handleDeleteModule = useCallback((moduleId) => {
-    if (moduleId === courseStructure.rootModule.id) {
-      alert("Cannot delete the root module.");
-      return;
-    }
-    if (window.confirm("Delete this module and ALL sub-modules?")) {
-      const updatedModules = deleteModuleFromStructure(allModules, moduleId);
-      const moduleToDelete = allModules[moduleId];
-      const parentId = moduleToDelete.parentId;
+        if (parentId === courseStructure.rootModule.id) {
+          updatedRoot.children = updatedRoot.children.filter(
+            (id) => id !== moduleId,
+          );
+        } else if (updatedModules[parentId]) {
+          updatedModules[parentId] = {
+            ...updatedModules[parentId],
+            children: updatedModules[parentId].children.filter(
+              (id) => id !== moduleId,
+            ),
+          };
+        }
+        delete updatedModules[courseStructure.rootModule.id];
 
-      let updatedRoot = { ...courseStructure.rootModule };
+        const newModulesMap = Object.keys(updatedModules).reduce((acc, key) => {
+          if (key !== updatedRoot.id) acc[key] = updatedModules[key];
+          return acc;
+        }, {});
 
-      if (parentId === courseStructure.rootModule.id) {
-        updatedRoot.children = updatedRoot.children.filter((id) => id !== moduleId);
-      } else if (updatedModules[parentId]) {
-        updatedModules[parentId] = {
-          ...updatedModules[parentId],
-          children: updatedModules[parentId].children.filter((id) => id !== moduleId),
+        const newStructure = {
+          ...courseStructure,
+          modules: newModulesMap,
+          rootModule: updatedRoot,
         };
+        setCourseStructure(newStructure);
+        saveDraft(newStructure);
+        setSelectedModuleId(courseStructure.rootModule.id);
+        setIsIntroModuleForm(true);
       }
-      delete updatedModules[courseStructure.rootModule.id];
-
-      const newModulesMap = Object.keys(updatedModules).reduce((acc, key) => {
-        if (key !== updatedRoot.id) acc[key] = updatedModules[key];
-        return acc;
-      }, {});
-
-      const newStructure = { ...courseStructure, modules: newModulesMap, rootModule: updatedRoot };
-      setCourseStructure(newStructure);
-      saveDraft(newStructure);
-      setSelectedModuleId(courseStructure.rootModule.id);
-      setIsIntroModuleForm(true);
-    }
-  }, [allModules, courseStructure, saveDraft]);
+    },
+    [allModules, courseStructure, saveDraft],
+  );
 
   const handleModuleAction = (action, moduleId) => {
     if (action === "add") handleAddModule(moduleId);
@@ -834,10 +1060,18 @@ const CourseEditor = () => {
 
   const handleModuleFormChange = (field, value) => {
     if (validationErrors[field]) {
-      setValidationErrors((prev) => { const n = { ...prev }; delete n[field]; return n; });
+      setValidationErrors((prev) => {
+        const n = { ...prev };
+        delete n[field];
+        return n;
+      });
     }
     if (field === "title" && validationErrors.moduleTitle) {
-      setValidationErrors((prev) => { const n = { ...prev }; delete n.moduleTitle; return n; });
+      setValidationErrors((prev) => {
+        const n = { ...prev };
+        delete n.moduleTitle;
+        return n;
+      });
     }
 
     setCourseStructure((prev) => {
@@ -851,7 +1085,10 @@ const CourseEditor = () => {
       if (isRoot) {
         nextState = { ...prev, rootModule: newModuleData };
       } else {
-        nextState = { ...prev, modules: { ...prev.modules, [targetId]: newModuleData } };
+        nextState = {
+          ...prev,
+          modules: { ...prev.modules, [targetId]: newModuleData },
+        };
       }
       saveDraft(nextState);
       return nextState;
@@ -860,7 +1097,11 @@ const CourseEditor = () => {
 
   const handleCourseMetaChange = (field, value) => {
     if (validationErrors[field]) {
-      setValidationErrors((prev) => { const n = { ...prev }; delete n[field]; return n; });
+      setValidationErrors((prev) => {
+        const n = { ...prev };
+        delete n[field];
+        return n;
+      });
     }
     setCourseStructure((prev) => {
       const nextState = { ...prev, [field]: value };
@@ -886,7 +1127,9 @@ const CourseEditor = () => {
     const data = await res.json();
     if (!res.ok) {
       if (res.status === 401 || res.status === 403)
-        throw new Error("Authentication required. Please log in as an instructor.");
+        throw new Error(
+          "Authentication required. Please log in as an instructor.",
+        );
       throw new Error(data.message || "Upload failed");
     }
     return data.imageUrl;
@@ -896,8 +1139,10 @@ const CourseEditor = () => {
   const validateEntireCourse = () => {
     const errors = {};
 
-    if (!courseStructure.courseTitle.trim()) errors.courseTitle = "Course Title is required.";
-    if (!courseStructure.subject.trim()) errors.subject = "Subject is required.";
+    if (!courseStructure.courseTitle.trim())
+      errors.courseTitle = "Course Title is required.";
+    if (!courseStructure.subject.trim())
+      errors.subject = "Subject is required.";
     if (courseStructure.price < 0 || isNaN(courseStructure.price))
       errors.price = "Price must be a non-negative number.";
 
@@ -907,11 +1152,23 @@ const CourseEditor = () => {
     for (const mod of allModulesList) {
       if (!mod || !mod.id) continue;
       if (!mod.title || !mod.title.trim())
-        moduleIssues.push(`Module "${mod.id.substring(0, 8)}..." has no title.`);
-      if (mod.type === "video" && (!mod.videoLink || !URL_REGEX.test(mod.videoLink)))
-        moduleIssues.push(`"${mod.title || "Untitled"}" (video) needs a valid URL.`);
-      if (mod.type === "quiz" && (!mod.quizData?.questions || mod.quizData.questions.length === 0))
-        moduleIssues.push(`"${mod.title || "Untitled"}" (quiz) has no questions.`);
+        moduleIssues.push(
+          `Module "${mod.id.substring(0, 8)}..." has no title.`,
+        );
+      if (
+        mod.type === "video" &&
+        (!mod.videoLink || !URL_REGEX.test(mod.videoLink))
+      )
+        moduleIssues.push(
+          `"${mod.title || "Untitled"}" (video) needs a valid URL.`,
+        );
+      if (
+        mod.type === "quiz" &&
+        (!mod.quizData?.questions || mod.quizData.questions.length === 0)
+      )
+        moduleIssues.push(
+          `"${mod.title || "Untitled"}" (quiz) has no questions.`,
+        );
     }
     if (moduleIssues.length > 0) errors.moduleIssues = moduleIssues;
 
@@ -922,10 +1179,18 @@ const CourseEditor = () => {
         errors.weightWarning = `Graded module weights sum to ${weightTotal.toFixed(0)}, not 100. Scores will be auto-normalised.`;
     }
 
-    if (!selectedModule.title.trim()) errors.moduleTitle = "Module Title is required.";
-    if (selectedModule.type === "video" && (!selectedModule.videoLink || !URL_REGEX.test(selectedModule.videoLink)))
+    if (!selectedModule.title.trim())
+      errors.moduleTitle = "Module Title is required.";
+    if (
+      selectedModule.type === "video" &&
+      (!selectedModule.videoLink || !URL_REGEX.test(selectedModule.videoLink))
+    )
       errors.videoLink = "A valid Video URL is required.";
-    if (selectedModule.type === "quiz" && (!selectedModule.quizData?.questions || selectedModule.quizData.questions.length === 0))
+    if (
+      selectedModule.type === "quiz" &&
+      (!selectedModule.quizData?.questions ||
+        selectedModule.quizData.questions.length === 0)
+    )
       errors.quizData = "Quiz must have at least one question.";
 
     setValidationErrors(errors);
@@ -935,7 +1200,9 @@ const CourseEditor = () => {
   // ─── Publish / Update ────────────────────────────────────────────────────────
   const handlePublishCourse = async () => {
     const errors = validateEntireCourse();
-    const blockingKeys = Object.keys(errors).filter((k) => k !== "weightWarning");
+    const blockingKeys = Object.keys(errors).filter(
+      (k) => k !== "weightWarning",
+    );
 
     if (blockingKeys.length > 0) {
       let msg = "Please fix these issues before publishing:\n\n";
@@ -943,9 +1210,12 @@ const CourseEditor = () => {
       if (errors.subject) msg += `• ${errors.subject}\n`;
       if (errors.moduleIssues) {
         msg += "\nModule issues:\n";
-        errors.moduleIssues.forEach((issue) => { msg += `• ${issue}\n`; });
+        errors.moduleIssues.forEach((issue) => {
+          msg += `• ${issue}\n`;
+        });
       }
-      if (errors.moduleTitle) msg += `• Current module: ${errors.moduleTitle}\n`;
+      if (errors.moduleTitle)
+        msg += `• Current module: ${errors.moduleTitle}\n`;
       if (errors.videoLink) msg += `• Current module: ${errors.videoLink}\n`;
       if (errors.quizData) msg += `• Current module: ${errors.quizData}\n`;
       alert(msg);
@@ -953,7 +1223,8 @@ const CourseEditor = () => {
     }
 
     if (errors.weightWarning) {
-      if (!window.confirm(`⚠️ ${errors.weightWarning}\n\nProceed anyway?`)) return;
+      if (!window.confirm(`⚠️ ${errors.weightWarning}\n\nProceed anyway?`))
+        return;
     }
 
     const isEditing = !!courseId;
@@ -970,14 +1241,15 @@ const CourseEditor = () => {
           rootModule: courseStructure.rootModule,
           modules: courseStructure.modules,
           imageUrl: courseStructure.imageUrl || null,
-          passingPolicy: courseStructure.passingPolicy || DEFAULT_PASSING_POLICY,
+          passingPolicy:
+            courseStructure.passingPolicy || DEFAULT_PASSING_POLICY,
         };
 
         if (selectedImageFile) {
           try {
             payload.imageUrl = await uploadImageToServer(selectedImageFile);
             setImagePreviewUrl(payload.imageUrl);
-          } catch (upErr) {
+          } catch {
             alert("Image upload failed. Please try again.");
             setIsSaving(false);
             return;
@@ -990,7 +1262,9 @@ const CourseEditor = () => {
 
         let result;
         if (isEditing) {
-          result = await dispatch(updateCourse({ id: courseId, data: payload }));
+          result = await dispatch(
+            updateCourse({ id: courseId, data: payload }),
+          );
           if (updateCourse.fulfilled.match(result)) {
             const ww = result.payload?.weightWarning;
             alert(`Course updated successfully!${ww ? `\n\n⚠️ ${ww}` : ""}`);
@@ -1022,7 +1296,8 @@ const CourseEditor = () => {
   if (courseId && isLoadingCourse) {
     return (
       <div className="loading-state-full">
-        <Loader2 className="animate-spin" size={32} /> Loading course for editing...
+        <Loader2 className="animate-spin" size={32} /> Loading course for
+        editing...
       </div>
     );
   }
@@ -1047,8 +1322,18 @@ const CourseEditor = () => {
           <div className="input-group">
             <label className="image-upload-label">Course Image</label>
             <div className="image-upload-row">
-              <input type="file" accept="image/*" onChange={(e) => handleImageSelect(e.target.files[0])} />
-              {imagePreviewUrl && <img src={imagePreviewUrl} alt="preview" className="image-preview-small" />}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleImageSelect(e.target.files[0])}
+              />
+              {imagePreviewUrl && (
+                <img
+                  src={imagePreviewUrl}
+                  alt="preview"
+                  className="image-preview-small"
+                />
+              )}
             </div>
           </div>
 
@@ -1058,23 +1343,40 @@ const CourseEditor = () => {
               className={`sidebar-input ${validationErrors.courseTitle ? "input-error" : ""}`}
               placeholder="Course Title *"
               value={courseStructure.courseTitle}
-              onChange={(e) => handleCourseMetaChange("courseTitle", e.target.value)}
+              onChange={(e) =>
+                handleCourseMetaChange("courseTitle", e.target.value)
+              }
             />
-            {validationErrors.courseTitle && <span className="error-tooltip">{validationErrors.courseTitle}</span>}
+            {validationErrors.courseTitle && (
+              <span className="error-tooltip">
+                {validationErrors.courseTitle}
+              </span>
+            )}
           </div>
 
           <div className="input-group">
-            <label style={{ fontSize: "12px", color: "#6b7280", marginBottom: "4px", display: "block" }}>
+            <label
+              style={{
+                fontSize: "12px",
+                color: "#6b7280",
+                marginBottom: "4px",
+                display: "block",
+              }}
+            >
               Course Price ($)
             </label>
             <input
-              type="number" min="0" step="0.01"
+              type="number"
+              min="0"
+              step="0.01"
               className={`sidebar-input ${validationErrors.price ? "input-error" : ""}`}
               placeholder="0.00 (Free)"
               value={courseStructure.price}
               onChange={(e) => handleCourseMetaChange("price", e.target.value)}
             />
-            {validationErrors.price && <span className="error-tooltip">{validationErrors.price}</span>}
+            {validationErrors.price && (
+              <span className="error-tooltip">{validationErrors.price}</span>
+            )}
           </div>
 
           <div className="input-group">
@@ -1083,12 +1385,20 @@ const CourseEditor = () => {
               className={`sidebar-input ${validationErrors.subject ? "input-error" : ""}`}
               placeholder="Subject *"
               value={courseStructure.subject}
-              onChange={(e) => handleCourseMetaChange("subject", e.target.value)}
+              onChange={(e) =>
+                handleCourseMetaChange("subject", e.target.value)
+              }
             />
-            {validationErrors.subject && <span className="error-tooltip">{validationErrors.subject}</span>}
+            {validationErrors.subject && (
+              <span className="error-tooltip">{validationErrors.subject}</span>
+            )}
           </div>
 
-          <button onClick={handlePublishCourse} disabled={isSaving} className="btn-publish-course">
+          <button
+            onClick={handlePublishCourse}
+            disabled={isSaving}
+            className="btn-publish-course"
+          >
             <Save size={16} /> {publishButtonText}
           </button>
 
@@ -1098,7 +1408,10 @@ const CourseEditor = () => {
             onChange={(field, val) =>
               setCourseStructure((prev) => ({
                 ...prev,
-                passingPolicy: { ...(prev.passingPolicy || DEFAULT_PASSING_POLICY), [field]: val },
+                passingPolicy: {
+                  ...(prev.passingPolicy || DEFAULT_PASSING_POLICY),
+                  [field]: val,
+                },
               }))
             }
           />
@@ -1141,7 +1454,9 @@ const CourseEditor = () => {
           </div>
 
           <div className="form-field">
-            <label>Title <span className="required-star">*</span></label>
+            <label>
+              Title <span className="required-star">*</span>
+            </label>
             <input
               type="text"
               className={validationErrors.moduleTitle ? "input-error" : ""}
@@ -1149,56 +1464,165 @@ const CourseEditor = () => {
               onChange={(e) => handleModuleFormChange("title", e.target.value)}
             />
             {validationErrors.moduleTitle && (
-              <span className="error-text"><AlertCircle size={12} /> {validationErrors.moduleTitle}</span>
+              <span className="error-text">
+                <AlertCircle size={12} /> {validationErrors.moduleTitle}
+              </span>
             )}
           </div>
 
           {!isIntroModuleForm ? (
             <>
               {/* Per-module grading settings */}
-              {(selectedModule.type === "quiz" || selectedModule.type === "video" || selectedModule.type === "text") && (
-                <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, padding: "12px 14px", marginBottom: 16 }}>
-                  <h5 style={{ margin: "0 0 10px", fontSize: 13, color: "#166534", fontWeight: 700 }}>
+              {(selectedModule.type === "quiz" ||
+                selectedModule.type === "video" ||
+                selectedModule.type === "text") && (
+                <div
+                  style={{
+                    background: "#f0fdf4",
+                    border: "1px solid #bbf7d0",
+                    borderRadius: 8,
+                    padding: "12px 14px",
+                    marginBottom: 16,
+                  }}
+                >
+                  <h5
+                    style={{
+                      margin: "0 0 10px",
+                      fontSize: 13,
+                      color: "#166534",
+                      fontWeight: 700,
+                    }}
+                  >
                     Module Grading
                   </h5>
-                  <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, marginBottom: 8, cursor: "pointer" }}>
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      fontSize: 13,
+                      marginBottom: 8,
+                      cursor: "pointer",
+                    }}
+                  >
                     <input
                       type="checkbox"
                       checked={selectedModule.isGraded !== false}
-                      onChange={(e) => handleModuleFormChange("isGraded", e.target.checked)}
+                      onChange={(e) =>
+                        handleModuleFormChange("isGraded", e.target.checked)
+                      }
                     />
                     <span>Count toward course grade</span>
                   </label>
                   {selectedModule.isGraded !== false && (
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 6 }}>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: 10,
+                        marginTop: 6,
+                      }}
+                    >
                       <div>
-                        <label style={{ fontSize: 12, color: "#6b7280", display: "block", marginBottom: 4 }}>Weight (%)</label>
+                        <label
+                          style={{
+                            fontSize: 12,
+                            color: "#6b7280",
+                            display: "block",
+                            marginBottom: 4,
+                          }}
+                        >
+                          Weight (%)
+                        </label>
                         <input
-                          type="number" min={0} max={100} placeholder="e.g. 25"
+                          type="number"
+                          min={0}
+                          max={100}
+                          placeholder="e.g. 25"
                           value={selectedModule.weight ?? ""}
-                          onChange={(e) => handleModuleFormChange("weight", e.target.value === "" ? null : Number(e.target.value))}
-                          style={{ width: "100%", padding: "5px 8px", borderRadius: 6, border: "1px solid #d1d5db", fontSize: 13 }}
+                          onChange={(e) =>
+                            handleModuleFormChange(
+                              "weight",
+                              e.target.value === ""
+                                ? null
+                                : Number(e.target.value),
+                            )
+                          }
+                          style={{
+                            width: "100%",
+                            padding: "5px 8px",
+                            borderRadius: 6,
+                            border: "1px solid #d1d5db",
+                            fontSize: 13,
+                          }}
                         />
                       </div>
                       <div>
-                        <label style={{ fontSize: 12, color: "#6b7280", display: "block", marginBottom: 4 }}>Passing Score (%)</label>
+                        <label
+                          style={{
+                            fontSize: 12,
+                            color: "#6b7280",
+                            display: "block",
+                            marginBottom: 4,
+                          }}
+                        >
+                          Passing Score (%)
+                        </label>
                         <input
-                          type="number" min={0} max={100} placeholder="e.g. 60"
+                          type="number"
+                          min={0}
+                          max={100}
+                          placeholder="e.g. 60"
                           value={selectedModule.passingScore ?? ""}
-                          onChange={(e) => handleModuleFormChange("passingScore", e.target.value === "" ? null : Number(e.target.value))}
-                          style={{ width: "100%", padding: "5px 8px", borderRadius: 6, border: "1px solid #d1d5db", fontSize: 13 }}
+                          onChange={(e) =>
+                            handleModuleFormChange(
+                              "passingScore",
+                              e.target.value === ""
+                                ? null
+                                : Number(e.target.value),
+                            )
+                          }
+                          style={{
+                            width: "100%",
+                            padding: "5px 8px",
+                            borderRadius: 6,
+                            border: "1px solid #d1d5db",
+                            fontSize: 13,
+                          }}
                         />
                       </div>
                       {selectedModule.type === "quiz" && (
                         <div style={{ gridColumn: "span 2" }}>
-                          <label style={{ fontSize: 12, color: "#6b7280", display: "block", marginBottom: 4 }}>
+                          <label
+                            style={{
+                              fontSize: 12,
+                              color: "#6b7280",
+                              display: "block",
+                              marginBottom: 4,
+                            }}
+                          >
                             Max Attempts (blank = unlimited)
                           </label>
                           <input
-                            type="number" min={1} placeholder="Unlimited"
+                            type="number"
+                            min={1}
+                            placeholder="Unlimited"
                             value={selectedModule.maxAttempts ?? ""}
-                            onChange={(e) => handleModuleFormChange("maxAttempts", e.target.value === "" ? null : Number(e.target.value))}
-                            style={{ width: "100%", padding: "5px 8px", borderRadius: 6, border: "1px solid #d1d5db", fontSize: 13 }}
+                            onChange={(e) =>
+                              handleModuleFormChange(
+                                "maxAttempts",
+                                e.target.value === ""
+                                  ? null
+                                  : Number(e.target.value),
+                              )
+                            }
+                            style={{
+                              width: "100%",
+                              padding: "5px 8px",
+                              borderRadius: 6,
+                              border: "1px solid #d1d5db",
+                              fontSize: 13,
+                            }}
                           />
                         </div>
                       )}
@@ -1217,8 +1641,14 @@ const CourseEditor = () => {
                       const def = createNewModule(e.target.value);
                       handleModuleFormChange("text", def.text);
                       handleModuleFormChange("videoLink", def.videoLink);
-                      if (e.target.value === "quiz") handleModuleFormChange("quizData", { questions: [] });
-                      setValidationErrors((prev) => { const n = { ...prev }; delete n.videoLink; delete n.quizData; return n; });
+                      if (e.target.value === "quiz")
+                        handleModuleFormChange("quizData", { questions: [] });
+                      setValidationErrors((prev) => {
+                        const n = { ...prev };
+                        delete n.videoLink;
+                        delete n.quizData;
+                        return n;
+                      });
                     }}
                   >
                     <option value="text">Text Lesson</option>
@@ -1231,7 +1661,9 @@ const CourseEditor = () => {
                   <input
                     type="text"
                     value={selectedModule.description}
-                    onChange={(e) => handleModuleFormChange("description", e.target.value)}
+                    onChange={(e) =>
+                      handleModuleFormChange("description", e.target.value)
+                    }
                     placeholder="Short summary..."
                   />
                 </div>
@@ -1244,7 +1676,9 @@ const CourseEditor = () => {
                   <textarea
                     rows="12"
                     value={selectedModule.text}
-                    onChange={(e) => handleModuleFormChange("text", e.target.value)}
+                    onChange={(e) =>
+                      handleModuleFormChange("text", e.target.value)
+                    }
                   />
                 </div>
               )}
@@ -1263,7 +1697,11 @@ const CourseEditor = () => {
                       handleModuleFormChange("videoLink", url);
                       // Clear any stale validation error for this field
                       if (validationErrors.videoLink) {
-                        setValidationErrors((prev) => { const n = { ...prev }; delete n.videoLink; return n; });
+                        setValidationErrors((prev) => {
+                          const n = { ...prev };
+                          delete n.videoLink;
+                          return n;
+                        });
                       }
                     }}
                     onError={(msg) => console.error("Video upload error:", msg)}
@@ -1281,7 +1719,9 @@ const CourseEditor = () => {
                 <div className="form-field">
                   <QuizBuilder
                     quizData={selectedModule.quizData || { questions: [] }}
-                    onChange={(newData) => handleModuleFormChange("quizData", newData)}
+                    onChange={(newData) =>
+                      handleModuleFormChange("quizData", newData)
+                    }
                   />
                   {validationErrors.quizData && (
                     <div className="error-banner">
@@ -1297,18 +1737,26 @@ const CourseEditor = () => {
               <textarea
                 rows="6"
                 value={courseStructure.courseDescription}
-                onChange={(e) => handleCourseMetaChange("courseDescription", e.target.value)}
+                onChange={(e) =>
+                  handleCourseMetaChange("courseDescription", e.target.value)
+                }
                 placeholder="Describe the course..."
               />
             </div>
           )}
 
           <div className="editor-footer">
-            <button className="btn-add-child" onClick={() => handleAddModule(selectedModuleId)}>
+            <button
+              className="btn-add-child"
+              onClick={() => handleAddModule(selectedModuleId)}
+            >
               <Plus size={16} /> Add Sub-Module
             </button>
             {!isIntroModuleForm && (
-              <button className="btn-delete-module" onClick={() => handleDeleteModule(selectedModuleId)}>
+              <button
+                className="btn-delete-module"
+                onClick={() => handleDeleteModule(selectedModuleId)}
+              >
                 <Trash2 size={16} /> Delete
               </button>
             )}

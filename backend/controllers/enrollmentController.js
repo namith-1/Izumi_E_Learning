@@ -3,6 +3,28 @@ const Enrollment = require("../models/Enrollment");
 const Course = require("../models/Course");
 const mongoose = require("mongoose");
 const EnrollmentAnalytics = require("../models/EnrollmentAnalytics"); // Adjust the path as needed
+
+const recalculateCourseAverageRating = async (courseId) => {
+  const stats = await Enrollment.aggregate([
+    {
+      $match: {
+        courseId: new mongoose.Types.ObjectId(courseId),
+        rating: { $ne: null },
+      },
+    },
+    {
+      $group: {
+        _id: "$courseId",
+        avgRating: { $avg: "$rating" },
+      },
+    },
+  ]);
+
+  const nextRating =
+    stats.length > 0 ? Number(stats[0].avgRating.toFixed(1)) : 0;
+  await Course.findByIdAndUpdate(courseId, { rating: nextRating });
+  return nextRating;
+};
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPER: Build a flat list of all non-folder, non-root content module nodes
 // ─────────────────────────────────────────────────────────────────────────────
@@ -22,9 +44,7 @@ const getContentModules = (course) => {
   // Content modules = everything that is not the root, not the course doc, not a folder
   return all.filter(
     (m) =>
-      m.id !== rootModuleId &&
-      m.id !== courseObjectId &&
-      m.type !== "folder",
+      m.id !== rootModuleId && m.id !== courseObjectId && m.type !== "folder",
   );
 };
 
@@ -129,7 +149,9 @@ const computeEnrollmentResult = async (courseId, enrollment) => {
         : 0;
 
     const allGradedAttempted = gradedModules.every(
-      (m) => statusMap[m.id]?.quizScore !== null && statusMap[m.id]?.quizScore !== undefined,
+      (m) =>
+        statusMap[m.id]?.quizScore !== null &&
+        statusMap[m.id]?.quizScore !== undefined,
     );
     const anyGradedFailed = gradedModules.some(
       (m) => statusMap[m.id]?.passed === false,
@@ -141,11 +163,12 @@ const computeEnrollmentResult = async (courseId, enrollment) => {
     } else if (allGradedAttempted && anyGradedFailed) {
       passStatus = "fail";
     }
-
   } else if (mode === "weighted") {
     // ── WEIGHTED MODE ─────────────────────────────────────────────────────
     const allAttempted = gradedModules.every(
-      (m) => statusMap[m.id]?.quizScore !== null && statusMap[m.id]?.quizScore !== undefined,
+      (m) =>
+        statusMap[m.id]?.quizScore !== null &&
+        statusMap[m.id]?.quizScore !== undefined,
     );
 
     if (gradedModules.length > 0) {
@@ -159,11 +182,12 @@ const computeEnrollmentResult = async (courseId, enrollment) => {
         passStatus = weightedScore >= minimumWeightedScore ? "pass" : "fail";
       }
     }
-
   } else if (mode === "all-pass") {
     // ── ALL-PASS MODE ─────────────────────────────────────────────────────
     const allAttempted = gradedModules.every(
-      (m) => statusMap[m.id]?.quizScore !== null && statusMap[m.id]?.quizScore !== undefined,
+      (m) =>
+        statusMap[m.id]?.quizScore !== null &&
+        statusMap[m.id]?.quizScore !== undefined,
     );
     const allPassed = gradedModules.every(
       (m) => statusMap[m.id]?.passed === true,
@@ -183,7 +207,8 @@ const computeEnrollmentResult = async (courseId, enrollment) => {
   enrollment.passStatus = passStatus;
   enrollment.weightedScore = weightedScore;
   // Keep completionStatus in sync for backward-compat
-  enrollment.completionStatus = passStatus === "pass" ? "completed" : "in-progress";
+  enrollment.completionStatus =
+    passStatus === "pass" ? "completed" : "in-progress";
   enrollment.moduleSnapshotCount = totalContentModules;
 
   return enrollment;
@@ -208,7 +233,6 @@ const computeEnrollmentResult = async (courseId, enrollment) => {
 // };
 
 // Make sure to import all three models at the top of your file
-
 
 /**
  * @swagger
@@ -275,7 +299,7 @@ exports.enroll = async (req, res) => {
 
     // 1. Fetch the course to get its current price
     const course = await Course.findById(courseId);
-    
+
     if (!course) {
       return res.status(404).json({ message: "Course not found" });
     }
@@ -295,13 +319,14 @@ exports.enroll = async (req, res) => {
 
     // 4. Send the successful response
     res.status(201).json(enrollment);
-
   } catch (err) {
     // 11000 is the MongoDB duplicate key error code
     if (err.code === 11000) {
-      return res.status(400).json({ message: "Already enrolled in this course" });
+      return res
+        .status(400)
+        .json({ message: "Already enrolled in this course" });
     }
-    
+
     console.error("Enrollment Error:", err);
     res.status(500).json({ error: "An error occurred during enrollment." });
   }
@@ -622,7 +647,9 @@ exports.updateProgress = async (req, res) => {
     const { moduleId: rawModuleId, timeSpent, completed, quizScore } = req.body;
 
     if (!rawModuleId) {
-      return res.status(400).json({ message: "Module ID is required to update progress." });
+      return res
+        .status(400)
+        .json({ message: "Module ID is required to update progress." });
     }
     const moduleId = String(rawModuleId);
 
@@ -641,9 +668,7 @@ exports.updateProgress = async (req, res) => {
       course?.modules instanceof Map
         ? Array.from(course.modules.values())
         : Object.values(course?.modules || {});
-    const allNodes = modulesValues
-      .concat([course?.rootModule])
-      .filter(Boolean);
+    const allNodes = modulesValues.concat([course?.rootModule]).filter(Boolean);
     const moduleConfig = allNodes.find((m) => String(m.id) === moduleId) || {};
     const maxAttempts = moduleConfig.maxAttempts ?? null; // null = unlimited
 
@@ -689,8 +714,7 @@ exports.updateProgress = async (req, res) => {
         timeSpent: timeSpent ?? 0,
         completed: completed ?? false,
         quizScore: quizScore ?? null,
-        attemptsUsed:
-          quizScore !== undefined && quizScore !== null ? 1 : 0,
+        attemptsUsed: quizScore !== undefined && quizScore !== null ? 1 : 0,
       });
     }
 
@@ -705,5 +729,94 @@ exports.updateProgress = async (req, res) => {
   } catch (err) {
     console.error("Error in updateProgress:", err);
     res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * @swagger
+ * /api/enrollment/{courseId}/rating:
+ *   put:
+ *     summary: Submit or update rating for an enrolled course
+ *     tags: [Enrollment]
+ *     security:
+ *       - sessionAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: courseId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [rating]
+ *             properties:
+ *               rating:
+ *                 type: number
+ *                 minimum: 1
+ *                 maximum: 5
+ *               review:
+ *                 type: string
+ *                 maxLength: 500
+ *     responses:
+ *       200: { description: Rating saved }
+ */
+exports.submitCourseRating = async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const numericRating = Number(req.body.rating);
+    const review =
+      typeof req.body.review === "string" ? req.body.review.trim() : "";
+
+    if (
+      !Number.isFinite(numericRating) ||
+      numericRating < 1 ||
+      numericRating > 5
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Rating must be between 1 and 5." });
+    }
+
+    const enrollment = await Enrollment.findOne({
+      courseId,
+      studentId: req.session.user.id,
+    });
+
+    if (!enrollment) {
+      return res
+        .status(403)
+        .json({ message: "You must enroll in the course before rating it." });
+    }
+
+    const requireCompletionForRating =
+      process.env.RATING_REQUIRE_COMPLETION === "true";
+    if (
+      requireCompletionForRating &&
+      enrollment.passStatus !== "pass" &&
+      enrollment.completionStatus !== "completed"
+    ) {
+      return res.status(403).json({
+        message: "Complete the course before submitting a rating.",
+      });
+    }
+
+    enrollment.rating = numericRating;
+    enrollment.ratingReview = review;
+    enrollment.ratedAt = new Date();
+    await enrollment.save();
+
+    const courseRating = await recalculateCourseAverageRating(courseId);
+
+    return res.json({
+      message: "Rating submitted successfully.",
+      enrollment,
+      courseRating,
+    });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
   }
 };

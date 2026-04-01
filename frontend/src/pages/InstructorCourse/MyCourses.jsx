@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { fetchAllCourses } from "../../store";
+import { fetchAllCourses, fetchInstructorAnalytics } from "../../store";
 import { Loader2, Send, AlertCircle } from "lucide-react";
 import "../css/ReviewerDashboard.css"; // for status-badge styles
 
@@ -28,14 +28,35 @@ const MyCourses = () => {
 
   const { user } = useSelector((state) => state.auth);
   const { list: courses, loading } = useSelector((state) => state.courses);
+  const { instructorStats } = useSelector((state) => state.analytics);
 
   // Fetch courses when component mounts
   useEffect(() => {
     dispatch(fetchAllCourses());
+    dispatch(fetchInstructorAnalytics(30));
   }, [dispatch]);
 
   // Filter: Show only courses created by THIS instructor
   const myCourses = courses.filter((course) => course.teacherId === user?.id);
+
+  // Calculate metrics
+  const totalCourses = myCourses.length;
+
+  // Calculate total students from all courses
+  const fallbackStudentCount = myCourses.reduce((sum, course) => {
+    return sum + (course.enrollmentCount || course.students?.length || 0);
+  }, 0);
+  const totalStudents =
+    instructorStats?.overview?.totalStudents ?? fallbackStudentCount;
+
+  // Calculate average rating from all courses
+  const avgRating =
+    myCourses.length > 0
+      ? (
+          myCourses.reduce((sum, course) => sum + (course.rating || 0), 0) /
+          myCourses.length
+        ).toFixed(1)
+      : 0;
 
   const handleCreateClick = () => {
     // Navigate to the absolute route for course creation
@@ -59,11 +80,14 @@ const MyCourses = () => {
     setSubmitting(courseId);
     setSubmitError({});
     try {
-      const res = await fetch(`http://localhost:5000/api/review/submit/${courseId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-      });
+      const res = await fetch(
+        `http://localhost:5000/api/review/submit/${courseId}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+        },
+      );
       const data = await res.json();
       if (res.ok) {
         dispatch(fetchAllCourses()); // Refresh
@@ -75,9 +99,6 @@ const MyCourses = () => {
     }
     setSubmitting(null);
   };
-
-  // Calculate metrics (simplified version from old dashboard)
-  const totalCourses = myCourses.length;
 
   return (
     <>
@@ -104,11 +125,11 @@ const MyCourses = () => {
         </div>
         <div className="stat-card">
           <h3>Total Students</h3>
-          <p>0</p>
+          <p>{totalStudents}</p>
         </div>
         <div className="stat-card">
           <h3>Avg. Rating</h3>
-          <p>0.0</p>
+          <p>{avgRating}</p>
         </div>
       </div>
 
@@ -146,10 +167,22 @@ const MyCourses = () => {
                     ? course.description.substring(0, 80) + "..."
                     : "No description provided."}
                 </p>
-                <div className="course-card-footer" style={{ flexDirection: "column", gap: 8 }}>
+                <div
+                  className="course-card-footer"
+                  style={{ flexDirection: "column", gap: 8 }}
+                >
                   {/* Approval Status Badge */}
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
-                    <span className={`status-badge ${course.approvalStatus || "draft"}`}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      width: "100%",
+                    }}
+                  >
+                    <span
+                      className={`status-badge ${course.approvalStatus || "draft"}`}
+                    >
                       {course.approvalStatus || "draft"}
                     </span>
 
@@ -157,14 +190,22 @@ const MyCourses = () => {
                       <button
                         className="btn-browse"
                         onClick={() => handleEditClick(course._id)}
-                        style={{ backgroundColor: "#2563eb", fontSize: 12, padding: "6px 12px" }}
+                        style={{
+                          backgroundColor: "#2563eb",
+                          fontSize: 12,
+                          padding: "6px 12px",
+                        }}
                       >
                         Edit
                       </button>
                       <button
                         className="btn-browse"
                         onClick={() => handleViewClick(course._id)}
-                        style={{ backgroundColor: "#10b981", fontSize: 12, padding: "6px 12px" }}
+                        style={{
+                          backgroundColor: "#10b981",
+                          fontSize: 12,
+                          padding: "6px 12px",
+                        }}
                       >
                         Preview
                       </button>
@@ -172,7 +213,12 @@ const MyCourses = () => {
                   </div>
 
                   {/* Submit for Review button (only for draft/rejected/revision-requested) */}
-                  {["draft", "rejected", "revision-requested", undefined].includes(course.approvalStatus) && (
+                  {[
+                    "draft",
+                    "rejected",
+                    "revision-requested",
+                    undefined,
+                  ].includes(course.approvalStatus) && (
                     <button
                       className="btn-browse"
                       onClick={() => handleSubmitForReview(course._id)}
@@ -189,14 +235,22 @@ const MyCourses = () => {
                       }}
                     >
                       <Send size={13} />
-                      {submitting === course._id ? "Submitting..." : "Submit for Review"}
+                      {submitting === course._id
+                        ? "Submitting..."
+                        : "Submit for Review"}
                     </button>
                   )}
 
                   {/* Pre-check errors */}
                   {submitError[course._id] && (
                     <div className="precheck-issues">
-                      <h4 style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                      <h4
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 4,
+                        }}
+                      >
                         <AlertCircle size={14} /> Pre-check failed
                       </h4>
                       <ul>
