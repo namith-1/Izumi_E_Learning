@@ -4,7 +4,9 @@ const http = require("http");
 const { Server: SocketIO } = require("socket.io");
 const connectDB = require("./config/db");
 const path = require("path");
+const passport = require('./config/passport');
 
+// ... after sessionMiddleware
 // Import Custom Middlewares
 const setupLogging = require("./middleware/logger");
 const sessionMiddleware = require("./middleware/session");
@@ -55,6 +57,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(securityMiddleware);
 app.use(sessionMiddleware);
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Attach auth attempt info before logging so morgan can include it
 const authAttemptInfo = require("./middleware/authAttemptInfo");

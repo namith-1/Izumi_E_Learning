@@ -40,3 +40,14 @@
 .read-the-docs {
   color: #888;
 }
+
+  html {
+    /* Flips the colors of the entire page */
+    filter: invert(1) hue-rotate(180deg) brightness(0.8);
+    background-color: #fff; /* Inverted, this becomes your dark grey */
+  }
+
+  /* Re-invert images and your YouTube frames so they aren't 'X-rayed' */
+  img, iframe, video {
+    filter: invert(1) hue-rotate(180deg);
+  }

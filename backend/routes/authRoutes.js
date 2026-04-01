@@ -16,4 +16,26 @@ router.get("/me", authController.me);
 
 router.get("/teachers", authController.getAllTeachers);
 
+const passport = require('passport');
+
+// Route to start Google Auth
+router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+
+// Google Auth Callback
+router.get('/google/callback', 
+  passport.authenticate('google', { failureRedirect: '/login' }),
+  (req, res) => {
+    // Successful authentication, set the session user object
+    req.session.user = {
+      id: req.user._id,
+      role: 'student', // Defaulting to student for Google Sign-in
+      name: req.user.name,
+      email: req.user.email,
+    };
+    // Redirect to the frontend dashboard
+    // Fallback to localhost if the env variable is missing
+const redirectUrl = (process.env.FRONTEND_URL || 'http://localhost:5173') + '/student-dashboard';
+res.redirect(redirectUrl);
+  }
+);
 module.exports = router;

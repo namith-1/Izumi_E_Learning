@@ -5,6 +5,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { loginUser, clearAuthErrors } from "../store";
 import UnauthenticatedNavbar from "../components/UnauthenticatedNavbar";
 import "./css/Login.css"; // Importing the separate CSS file
+import GoogleOAuthButton from "../components/buttons/googleOAuth"; // Correct for default export
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -188,6 +189,7 @@ const Login = () => {
             <Link to="/signup" className="link-text">
               Sign up
             </Link>
+            <GoogleOAuthButton /> 
           </div>
         </div>
       </div>

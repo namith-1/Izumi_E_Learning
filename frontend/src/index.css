@@ -66,3 +66,34 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 } */
+/* src/index.css */
+
+/* 1. Apply the "Global Flip" to the entire page */
+html {
+  /* Inverts colors, fixes the color shift, and dims it slightly for that 'greyish' look */
+  filter: invert(1) hue-rotate(180deg) brightness(0.85);
+  background-color: #fff; /* This inverts to a dark grey/black */
+  min-height: 100%;
+}
+
+/* 2. Re-invert media so images and YouTube videos look normal */
+img, iframe, video, .logo {
+  filter: invert(1) hue-rotate(180deg) !important;
+}
+
+/* Your existing styles below */
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+
+/* ... the rest of your logo and card CSS ... */

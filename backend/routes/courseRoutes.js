@@ -22,5 +22,6 @@ router.post(
 );
 router.post("/", isAuthenticated, isTeacher, courseController.createCourse);
 router.put("/:id", isAuthenticated, isTeacher, courseController.updateCourse);
+router.use('/', require('./mediaUpload')); // Mount media upload routes
 
 module.exports = router;

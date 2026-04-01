@@ -5,6 +5,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { registerUser, clearAuthErrors } from '../store';
 import UnauthenticatedNavbar from '../components/UnauthenticatedNavbar'; // NEW IMPORT
 import './css/Signup.css';
+import GoogleOAuthButton from '../components/buttons/googleOAuth'; // NEW IMPORT
 
 const Signup = () => {
   const [formData, setFormData] = useState({
@@ -114,6 +115,9 @@ const Signup = () => {
           <div className="signup-footer">
             Already have an account? <Link to="/login" className="footer-link">Sign in</Link>
           </div>
+          <div className="oauth-section">
+            <GoogleOAuthButton /> 
+            </div>
         </div>
       </div>
     </>
