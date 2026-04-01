@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { fetchAllCourses } from "../../store";
+import { fetchAllCourses, fetchInstructorAnalytics } from "../../store";
 import { Loader2, Send, AlertCircle } from "lucide-react";
 import "../css/ReviewerDashboard.css"; // for status-badge styles
 
@@ -28,14 +28,30 @@ const MyCourses = () => {
 
   const { user } = useSelector((state) => state.auth);
   const { list: courses, loading } = useSelector((state) => state.courses);
+  const { instructorStats } = useSelector((state) => state.analytics);
 
   // Fetch courses when component mounts
   useEffect(() => {
     dispatch(fetchAllCourses());
+    dispatch(fetchInstructorAnalytics(30));
   }, [dispatch]);
 
   // Filter: Show only courses created by THIS instructor
   const myCourses = courses.filter((course) => course.teacherId === user?.id);
+
+  // Calculate metrics
+  const totalCourses = myCourses.length;
+  
+  // Calculate total students from all courses
+  const fallbackStudentCount = myCourses.reduce((sum, course) => {
+    return sum + (course.enrollmentCount || course.students?.length || 0);
+  }, 0);
+  const totalStudents = instructorStats?.overview?.totalStudents ?? fallbackStudentCount;
+
+  // Calculate average rating from all courses
+  const avgRating = myCourses.length > 0
+    ? (myCourses.reduce((sum, course) => sum + (course.rating || 0), 0) / myCourses.length).toFixed(1)
+    : 0;
 
   const handleCreateClick = () => {
     // Navigate to the absolute route for course creation
@@ -76,9 +92,6 @@ const MyCourses = () => {
     setSubmitting(null);
   };
 
-  // Calculate metrics (simplified version from old dashboard)
-  const totalCourses = myCourses.length;
-
   return (
     <>
       <div className="dashboard-intro">
@@ -104,11 +117,11 @@ const MyCourses = () => {
         </div>
         <div className="stat-card">
           <h3>Total Students</h3>
-          <p>0</p>
+          <p>{totalStudents}</p>
         </div>
         <div className="stat-card">
           <h3>Avg. Rating</h3>
-          <p>0.0</p>
+          <p>{avgRating}</p>
         </div>
       </div>
 
