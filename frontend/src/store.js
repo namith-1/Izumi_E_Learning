@@ -406,14 +406,14 @@ export const submitCourseRating = createAsyncThunk(
 const enrollmentSlice = createSlice({
   name: "enrollment",
   initialState: {
-    currentEnrollment: null,
+    currentEnrollment: undefined,
     enrolledList: [],
     loading: false,
     error: null,
   },
   reducers: {
     resetEnrollment: (state) => {
-      state.currentEnrollment = null;
+      state.currentEnrollment = undefined;
       state.error = null;
     },
   },

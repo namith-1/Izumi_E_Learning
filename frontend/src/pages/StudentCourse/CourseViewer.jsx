@@ -1,6 +1,12 @@
 // v2/src/pages/StudentCourse/CourseViewer.jsx
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, {
+  useEffect,
+  useState,
+  useCallback,
+  useRef,
+  useMemo,
+} from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -11,10 +17,6 @@ import {
 } from "../../store";
 import { BookOpen, Layers, Clock, Loader2, User, Play } from "lucide-react";
 import PaymentModal from "../../components/PaymentModal";
-
-// Placeholder for the actual learning page. This will handle the course structure navigation.
-// NOTE: Must be relative to the CourseViewer component's path in the Route definition.
-const COURSE_LEARN_ROUTE = "learn/module/";
 
 const CourseViewer = () => {
   // --- 1. HOOK CALLS (MUST BE UNCONDITIONAL) ---
@@ -36,6 +38,11 @@ const CourseViewer = () => {
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState("idle");
+  const redirectTimeoutRef = useRef(null);
+  const apiBase = (
+    import.meta.env.VITE_API_BASE || "http://localhost:5000"
+  ).replace(/\/$/, "");
 
   const loading = courseLoading || enrollmentLoading || isProcessing;
 
@@ -43,9 +50,25 @@ const CourseViewer = () => {
     course && course.imageUrl
       ? course.imageUrl
       : "https://placehold.co/1200x300/4c7c9f/ffffff?text=Course+Introduction";
-  const courseBgUrl = rawBg.startsWith("http")
-    ? rawBg
-    : `${import.meta.env.VITE_API_BASE || "http://localhost:5000"}${rawBg}`;
+  const courseBgUrl = useMemo(() => {
+    if (!rawBg) {
+      return "https://placehold.co/1200x300/4c7c9f/ffffff?text=Course+Introduction";
+    }
+
+    if (rawBg.startsWith("http://") || rawBg.startsWith("https://")) {
+      return rawBg;
+    }
+
+    if (rawBg.startsWith("/uploads/")) {
+      return `${apiBase}${rawBg}`;
+    }
+
+    if (/^course-.*\.(png|jpe?g|webp|gif)$/i.test(rawBg)) {
+      return `${apiBase}/uploads/courses/${rawBg}`;
+    }
+
+    return rawBg.startsWith("/") ? `${apiBase}${rawBg}` : `${apiBase}/${rawBg}`;
+  }, [rawBg, apiBase]);
 
   // --- 2. EFFECTS ---
   useEffect(() => {
@@ -53,20 +76,6 @@ const CourseViewer = () => {
     dispatch(fetchCourseById(courseId));
     dispatch(fetchEnrollmentStatus(courseId));
   }, [dispatch, courseId]);
-
-  // ** NEW EFFECT FOR AUTOMATIC REDIRECT **
-  useEffect(() => {
-    // Only run this check once course and enrollment data are confirmed
-    if (courseLoading || enrollmentLoading) return;
-
-    // If the user is enrolled (currentEnrollment is truthy) and course structure exists
-    if (currentEnrollment && course && course.rootModule) {
-      const firstModuleId = getFirstModuleId();
-
-      // Navigate directly to the learning page
-      navigate(`learn/module/${firstModuleId}`, { replace: true });
-    }
-  }, [currentEnrollment, course, courseLoading, enrollmentLoading, navigate]);
 
   // --- 3. CALLBACKS ---
   const getFirstModuleId = useCallback(() => {
@@ -84,6 +93,43 @@ const CourseViewer = () => {
     return rootId;
   }, [course]);
 
+  // ** NEW EFFECT FOR AUTOMATIC REDIRECT **
+  useEffect(() => {
+    return () => {
+      if (redirectTimeoutRef.current) {
+        clearTimeout(redirectTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    // Only run this check once course and enrollment data are confirmed
+    if (
+      courseLoading ||
+      enrollmentLoading ||
+      isProcessing ||
+      paymentStatus === "success"
+    )
+      return;
+
+    // If the user is enrolled (currentEnrollment is truthy) and course structure exists
+    if (currentEnrollment && course && course.rootModule) {
+      const firstModuleId = getFirstModuleId();
+
+      // Navigate directly to the learning page
+      navigate(`learn/module/${firstModuleId}`, { replace: true });
+    }
+  }, [
+    currentEnrollment,
+    course,
+    courseLoading,
+    enrollmentLoading,
+    isProcessing,
+    paymentStatus,
+    navigate,
+    getFirstModuleId,
+  ]);
+
   const handleStartLearning = useCallback(() => {
     const firstModuleId = getFirstModuleId();
     // Use relative path to navigate to the learning component
@@ -99,6 +145,7 @@ const CourseViewer = () => {
   const handlePaymentConfirm = async () => {
     if (isProcessing) return;
     setIsProcessing(true);
+    setPaymentStatus("processing");
 
     try {
       const result = await dispatch(
@@ -112,15 +159,34 @@ const CourseViewer = () => {
         enrollInCourse.fulfilled.match(result) ||
         (result.payload && result.payload.includes("Already enrolled"))
       ) {
+        setPaymentStatus("success");
+
+        await new Promise((resolve) => {
+          redirectTimeoutRef.current = window.setTimeout(resolve, 5000);
+        });
+
+        redirectTimeoutRef.current = null;
         setShowPaymentModal(false);
-        handleStartLearning();
+        setPaymentStatus("idle");
+
+        sessionStorage.setItem(
+          `izumi_just_enrolled_${courseId}`,
+          String(Date.now()),
+        );
+
+        navigate(`learn/module/${getFirstModuleId()}`, {
+          replace: true,
+          state: { justEnrolled: true },
+        });
       } else {
         console.error("Enrollment failed:", result.payload);
         alert("Enrollment failed. Please try again.");
+        setPaymentStatus("idle");
       }
     } catch (error) {
       console.error("Enrollment error:", error);
       alert("An error occurred during enrollment. Please try again.");
+      setPaymentStatus("idle");
     } finally {
       setIsProcessing(false);
     }
@@ -216,7 +282,9 @@ const CourseViewer = () => {
               <>
                 <div className="price-display">
                   <span className="price-label">Course Price</span>
-                  <span className="price-amount">${(course.price || 0).toFixed(2)}</span>
+                  <span className="price-amount">
+                    ${(course.price || 0).toFixed(2)}
+                  </span>
                 </div>
                 <button
                   onClick={handleEnroll}
@@ -266,6 +334,7 @@ const CourseViewer = () => {
         onClose={() => setShowPaymentModal(false)}
         onConfirm={handlePaymentConfirm}
         isProcessing={isProcessing}
+        paymentState={paymentStatus}
       />
     </div>
   );

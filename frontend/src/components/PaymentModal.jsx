@@ -1,15 +1,24 @@
 import React, { useState } from "react";
 import { Check, Loader2, X } from "lucide-react";
 
-const PaymentModal = ({ course, isOpen, onClose, onConfirm, isProcessing }) => {
+const PaymentModal = ({
+  course,
+  isOpen,
+  onClose,
+  onConfirm,
+  isProcessing,
+  paymentState = "idle",
+}) => {
   const [selectedMethod, setSelectedMethod] = useState("card");
   const [termsAccepted, setTermsAccepted] = useState(false);
 
   if (!isOpen) return null;
 
+  const isSuccess = paymentState === "success";
+
   return (
     <div>
-      <style jsx>{`
+      <style>{`
         .payment-modal-overlay {
           position: fixed;
           top: 0;
@@ -291,7 +300,14 @@ const PaymentModal = ({ course, isOpen, onClose, onConfirm, isProcessing }) => {
         }
       `}</style>
 
-      <div className="payment-modal-overlay" onClick={onClose}>
+      <div
+        className="payment-modal-overlay"
+        onClick={() => {
+          if (!isProcessing && !isSuccess) {
+            onClose();
+          }
+        }}
+      >
         <div
           className="payment-modal-container"
           onClick={(e) => e.stopPropagation()}
@@ -299,7 +315,11 @@ const PaymentModal = ({ course, isOpen, onClose, onConfirm, isProcessing }) => {
           {/* Header */}
           <div className="payment-header">
             <h2 className="payment-header-title">Complete Enrollment</h2>
-            <button className="payment-close-btn" onClick={onClose}>
+            <button
+              className="payment-close-btn"
+              onClick={onClose}
+              disabled={isProcessing || isSuccess}
+            >
               <X size={24} />
             </button>
           </div>
@@ -320,7 +340,9 @@ const PaymentModal = ({ course, isOpen, onClose, onConfirm, isProcessing }) => {
           {/* Info Message */}
           <div className="info-box">
             <p className="info-box-text">
-              💡 No actual payment gateway is implemented yet
+              {isSuccess
+                ? "Payment confirmed. Loading your course access now..."
+                : "💡 No actual payment gateway is implemented yet"}
             </p>
           </div>
 
@@ -352,6 +374,7 @@ const PaymentModal = ({ course, isOpen, onClose, onConfirm, isProcessing }) => {
                 type="checkbox"
                 className="terms-checkbox"
                 id="terms-check"
+                name="termsAccepted"
                 checked={termsAccepted}
                 onChange={(e) => setTermsAccepted(e.target.checked)}
               />
@@ -360,7 +383,9 @@ const PaymentModal = ({ course, isOpen, onClose, onConfirm, isProcessing }) => {
                 learning platform enrollment.
               </label>
             </div>
-            <p className="info-message">Automatic enrollment upon confirmation</p>
+            <p className="info-message">
+              Automatic enrollment upon confirmation
+            </p>
           </div>
 
           {/* Action Buttons */}
@@ -380,6 +405,10 @@ const PaymentModal = ({ course, isOpen, onClose, onConfirm, isProcessing }) => {
               {isProcessing ? (
                 <>
                   <Loader2 size={16} className="animate-spin" /> Processing...
+                </>
+              ) : isSuccess ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" /> Finalizing...
                 </>
               ) : (
                 <>

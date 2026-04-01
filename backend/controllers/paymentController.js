@@ -24,15 +24,29 @@ exports.checkoutStudentPayment = async (req, res) => {
       return deny(res, "Students only.");
     }
 
-    const { courseId, paymentMethod = "card", currency = "USD", notes = "" } = req.body;
-    if (!courseId) return res.status(400).json({ message: "courseId is required." });
+    const {
+      courseId,
+      paymentMethod = "card",
+      currency = "USD",
+      notes = "",
+    } = req.body;
+    if (!courseId)
+      return res.status(400).json({ message: "courseId is required." });
 
-    const course = await Course.findById(courseId).select("_id teacherId price");
+    const course = await Course.findById(courseId).select(
+      "_id teacherId price",
+    );
     if (!course) return res.status(404).json({ message: "Course not found." });
 
     const studentId = req.session.user.id;
-    const existingEnrollment = await Enrollment.findOne({ courseId, studentId });
-    if (existingEnrollment) return res.status(400).json({ message: "Already enrolled in this course." });
+    const existingEnrollment = await Enrollment.findOne({
+      courseId,
+      studentId,
+    });
+    if (existingEnrollment)
+      return res
+        .status(400)
+        .json({ message: "Already enrolled in this course." });
 
     const transaction = await Transaction.create({
       reference: buildReference(),
@@ -48,12 +62,18 @@ exports.checkoutStudentPayment = async (req, res) => {
     });
 
     const enrollment = await Enrollment.create({ courseId, studentId });
-    await EnrollmentAnalytics.create({ courseId, studentId, price: course.price || 0 });
+    await EnrollmentAnalytics.create({
+      courseId,
+      studentId,
+      price: course.price || 0,
+    });
 
     return res.status(201).json({ transaction, enrollment });
   } catch (err) {
     if (err.code === 11000) {
-      return res.status(400).json({ message: "Duplicate transaction/enrollment request." });
+      return res
+        .status(400)
+        .json({ message: "Duplicate transaction/enrollment request." });
     }
     return res.status(500).json({ error: err.message });
   }
@@ -61,7 +81,8 @@ exports.checkoutStudentPayment = async (req, res) => {
 
 exports.getStudentTransactions = async (req, res) => {
   try {
-    if (req.session?.user?.role !== "student") return deny(res, "Students only.");
+    if (req.session?.user?.role !== "student")
+      return deny(res, "Students only.");
     const txns = await Transaction.find({ studentId: req.session.user.id })
       .populate("courseId", "title subject price")
       .populate("teacherId", "name email")
@@ -74,12 +95,14 @@ exports.getStudentTransactions = async (req, res) => {
 
 exports.getStudentTransactionById = async (req, res) => {
   try {
-    if (req.session?.user?.role !== "student") return deny(res, "Students only.");
+    if (req.session?.user?.role !== "student")
+      return deny(res, "Students only.");
     const txn = await Transaction.findOne({
       _id: req.params.id,
       studentId: req.session.user.id,
     }).populate("courseId", "title subject");
-    if (!txn) return res.status(404).json({ message: "Transaction not found." });
+    if (!txn)
+      return res.status(404).json({ message: "Transaction not found." });
     return res.json(txn);
   } catch (err) {
     return res.status(500).json({ error: err.message });
@@ -88,17 +111,26 @@ exports.getStudentTransactionById = async (req, res) => {
 
 exports.updateStudentTransaction = async (req, res) => {
   try {
-    if (req.session?.user?.role !== "student") return deny(res, "Students only.");
+    if (req.session?.user?.role !== "student")
+      return deny(res, "Students only.");
     const payload = {};
     if (req.body.notes !== undefined) payload.notes = req.body.notes;
-    if (req.body.paymentMethod !== undefined) payload.paymentMethod = req.body.paymentMethod;
+    if (req.body.paymentMethod !== undefined)
+      payload.paymentMethod = req.body.paymentMethod;
 
     const txn = await Transaction.findOneAndUpdate(
-      { _id: req.params.id, studentId: req.session.user.id, status: { $in: ["pending", "paid"] } },
+      {
+        _id: req.params.id,
+        studentId: req.session.user.id,
+        status: { $in: ["pending", "paid"] },
+      },
       payload,
       { new: true },
     );
-    if (!txn) return res.status(404).json({ message: "Transaction not found or cannot be updated." });
+    if (!txn)
+      return res
+        .status(404)
+        .json({ message: "Transaction not found or cannot be updated." });
     return res.json(txn);
   } catch (err) {
     return res.status(500).json({ error: err.message });
@@ -107,13 +139,21 @@ exports.updateStudentTransaction = async (req, res) => {
 
 exports.cancelStudentTransaction = async (req, res) => {
   try {
-    if (req.session?.user?.role !== "student") return deny(res, "Students only.");
+    if (req.session?.user?.role !== "student")
+      return deny(res, "Students only.");
     const txn = await Transaction.findOneAndUpdate(
-      { _id: req.params.id, studentId: req.session.user.id, status: { $in: ["pending", "paid"] } },
+      {
+        _id: req.params.id,
+        studentId: req.session.user.id,
+        status: { $in: ["pending", "paid"] },
+      },
       { status: "cancelled", payoutStatus: "on-hold" },
       { new: true },
     );
-    if (!txn) return res.status(404).json({ message: "Transaction not found or cannot be cancelled." });
+    if (!txn)
+      return res
+        .status(404)
+        .json({ message: "Transaction not found or cannot be cancelled." });
     return res.json({ message: "Transaction cancelled.", transaction: txn });
   } catch (err) {
     return res.status(500).json({ error: err.message });
@@ -122,7 +162,8 @@ exports.cancelStudentTransaction = async (req, res) => {
 
 exports.getStudentPaymentSummary = async (req, res) => {
   try {
-    if (req.session?.user?.role !== "student") return deny(res, "Students only.");
+    if (req.session?.user?.role !== "student")
+      return deny(res, "Students only.");
     const studentId = req.session.user.id;
     const studentObjectId = toObjectId(studentId);
     if (!studentObjectId) {
@@ -136,11 +177,21 @@ exports.getStudentPaymentSummary = async (req, res) => {
           totalTransactions: { $sum: 1 },
           totalSpent: { $sum: "$amount" },
           paidCount: { $sum: { $cond: [{ $eq: ["$status", "paid"] }, 1, 0] } },
-          refundCount: { $sum: { $cond: [{ $eq: ["$status", "refunded"] }, 1, 0] } },
+          refundCount: {
+            $sum: { $cond: [{ $eq: ["$status", "refunded"] }, 1, 0] },
+          },
         },
       },
     ]);
-    return res.json(summary || { studentId, totalTransactions: 0, totalSpent: 0, paidCount: 0, refundCount: 0 });
+    return res.json(
+      summary || {
+        studentId,
+        totalTransactions: 0,
+        totalSpent: 0,
+        paidCount: 0,
+        refundCount: 0,
+      },
+    );
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
@@ -148,7 +199,8 @@ exports.getStudentPaymentSummary = async (req, res) => {
 
 exports.getTeacherTransactions = async (req, res) => {
   try {
-    if (req.session?.user?.role !== "teacher") return deny(res, "Teachers only.");
+    if (req.session?.user?.role !== "teacher")
+      return deny(res, "Teachers only.");
     const txns = await Transaction.find({ teacherId: req.session.user.id })
       .populate("courseId", "title subject")
       .populate("studentId", "name email")
@@ -161,14 +213,16 @@ exports.getTeacherTransactions = async (req, res) => {
 
 exports.getTeacherTransactionById = async (req, res) => {
   try {
-    if (req.session?.user?.role !== "teacher") return deny(res, "Teachers only.");
+    if (req.session?.user?.role !== "teacher")
+      return deny(res, "Teachers only.");
     const txn = await Transaction.findOne({
       _id: req.params.id,
       teacherId: req.session.user.id,
     })
       .populate("courseId", "title subject")
       .populate("studentId", "name email");
-    if (!txn) return res.status(404).json({ message: "Transaction not found." });
+    if (!txn)
+      return res.status(404).json({ message: "Transaction not found." });
     return res.json(txn);
   } catch (err) {
     return res.status(500).json({ error: err.message });
@@ -177,7 +231,8 @@ exports.getTeacherTransactionById = async (req, res) => {
 
 exports.updateTeacherTransactionStatus = async (req, res) => {
   try {
-    if (req.session?.user?.role !== "teacher") return deny(res, "Teachers only.");
+    if (req.session?.user?.role !== "teacher")
+      return deny(res, "Teachers only.");
     const { payoutStatus, notes } = req.body;
     const update = {};
     if (payoutStatus) update.payoutStatus = payoutStatus;
@@ -187,7 +242,8 @@ exports.updateTeacherTransactionStatus = async (req, res) => {
       update,
       { new: true },
     );
-    if (!txn) return res.status(404).json({ message: "Transaction not found." });
+    if (!txn)
+      return res.status(404).json({ message: "Transaction not found." });
     return res.json(txn);
   } catch (err) {
     return res.status(500).json({ error: err.message });
@@ -196,7 +252,8 @@ exports.updateTeacherTransactionStatus = async (req, res) => {
 
 exports.getTeacherPaymentSummary = async (req, res) => {
   try {
-    if (req.session?.user?.role !== "teacher") return deny(res, "Teachers only.");
+    if (req.session?.user?.role !== "teacher")
+      return deny(res, "Teachers only.");
     const teacherObjectId = toObjectId(req.session.user.id);
     if (!teacherObjectId) {
       return res.status(400).json({ message: "Invalid teacher id." });
@@ -209,15 +266,26 @@ exports.getTeacherPaymentSummary = async (req, res) => {
           totalTransactions: { $sum: 1 },
           grossRevenue: { $sum: "$amount" },
           releasedPayouts: {
-            $sum: { $cond: [{ $eq: ["$payoutStatus", "released"] }, "$amount", 0] },
+            $sum: {
+              $cond: [{ $eq: ["$payoutStatus", "released"] }, "$amount", 0],
+            },
           },
           pendingPayouts: {
-            $sum: { $cond: [{ $eq: ["$payoutStatus", "pending"] }, "$amount", 0] },
+            $sum: {
+              $cond: [{ $eq: ["$payoutStatus", "pending"] }, "$amount", 0],
+            },
           },
         },
       },
     ]);
-    return res.json(summary || { totalTransactions: 0, grossRevenue: 0, releasedPayouts: 0, pendingPayouts: 0 });
+    return res.json(
+      summary || {
+        totalTransactions: 0,
+        grossRevenue: 0,
+        releasedPayouts: 0,
+        pendingPayouts: 0,
+      },
+    );
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
@@ -244,7 +312,8 @@ exports.getTransactionByIdAdmin = async (req, res) => {
       .populate("courseId", "title")
       .populate("studentId", "name email")
       .populate("teacherId", "name email");
-    if (!txn) return res.status(404).json({ message: "Transaction not found." });
+    if (!txn)
+      return res.status(404).json({ message: "Transaction not found." });
     return res.json(txn);
   } catch (err) {
     return res.status(500).json({ error: err.message });
@@ -259,8 +328,11 @@ exports.updateTransactionAdmin = async (req, res) => {
     for (const key of allowed) {
       if (req.body[key] !== undefined) update[key] = req.body[key];
     }
-    const txn = await Transaction.findByIdAndUpdate(req.params.id, update, { new: true });
-    if (!txn) return res.status(404).json({ message: "Transaction not found." });
+    const txn = await Transaction.findByIdAndUpdate(req.params.id, update, {
+      new: true,
+    });
+    if (!txn)
+      return res.status(404).json({ message: "Transaction not found." });
     return res.json(txn);
   } catch (err) {
     return res.status(500).json({ error: err.message });
@@ -271,7 +343,8 @@ exports.deleteTransactionAdmin = async (req, res) => {
   try {
     if (req.session?.user?.role !== "admin") return deny(res, "Admins only.");
     const txn = await Transaction.findByIdAndDelete(req.params.id);
-    if (!txn) return res.status(404).json({ message: "Transaction not found." });
+    if (!txn)
+      return res.status(404).json({ message: "Transaction not found." });
     return res.json({ message: "Transaction deleted." });
   } catch (err) {
     return res.status(500).json({ error: err.message });
