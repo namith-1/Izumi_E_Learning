@@ -24,6 +24,7 @@
     "body-parser": "^2.2.0",
     "cloudinary": "^1.41.3",
     "connect-mongo": "^6.0.0",
+    "socks": "^2.8.7",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "ejs": "^3.1.10",
@@ -41,6 +42,7 @@
     "path": "^0.12.7",
     "rotating-file-stream": "^3.2.7",
     "socket.io": "^4.8.1",
+    "socks": "2.8.7",
     "sqlite3": "^5.0.2",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1"

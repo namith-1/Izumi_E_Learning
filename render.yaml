@@ -1,7 +1,7 @@
 services:
   # --- Backend Web Service ---
   - type: web
-    name: izumi-backend
+    name: izumi-e-learning   # Aligned with your Render URL
     runtime: node
     rootDir: backend
     buildCommand: npm install
@@ -11,24 +11,22 @@ services:
         value: production
       - key: PORT
         value: 5000
-      # Cloudinary and MongoDB vars should be set in the Render Dashboard safely
     autoDeploy: false
-    # Build Filter: Only deploy when backend directory changes
     filter:
       paths:
         - backend/**
 
   # --- Frontend Static Site ---
-  - type: static
-    name: izumi-frontend
+  - type: web            # Corrected from 'static'
+    name: izumi-e-learning-frontend # Aligned with your Render URL
+    runtime: static      # Required for static sites in Blueprints
     rootDir: frontend
     buildCommand: npm install && npm run build
-    publishDir: dist
+    staticPublishPath: dist  # Corrected syntax for static runtime
     autoDeploy: false
-    # Build Filter: Only deploy when frontend directory changes
     filter:
       paths:
         - frontend/**
     envVars:
       - key: VITE_API_BASE_URL
-        value: https://izumi-backend.onrender.com/api # Ensure this matches your backend URL
+        value: https://izumi-e-learning.onrender.com/api # Corrected to match your backend site
