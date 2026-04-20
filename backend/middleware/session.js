@@ -6,10 +6,10 @@ const sessionConfig = session({
     resave: false,
     saveUninitialized: false,
     proxy: true, // Tell express-session to trust the reverse proxy (Render)
-    store: MongoStore.create({
+    store: process.env.MONGO_URI ? MongoStore.create({
         mongoUrl: process.env.MONGO_URI,
         ttl: 14 * 24 * 60 * 60 
-    }),
+    }) : undefined,
     cookie: { 
         secure: true, // Always true for production HTTPS
         httpOnly: true,

@@ -4,9 +4,10 @@ const mongoose = require('mongoose');
 const connectDB = async () => {
     try {
         await mongoose.connect(process.env.MONGO_URI);
-        console.log('MongoDB Connected');
+        console.log('MongoDB Connected successfully');
     } catch (err) {
-        console.error('Database connection error:', err.message);
+        console.error('CRITICAL DATABASE ERROR:', err.message);
+        console.error('Check if MONGO_URI is correctly set in your Render dashboard.');
         process.exit(1);
     }
 };
