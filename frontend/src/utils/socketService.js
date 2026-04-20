@@ -1,7 +1,6 @@
-// frontend/src/utils/socketService.js
-import { io } from "socket.io-client";
+import { BACKEND_URL } from "../store";
 
-const SOCKET_URL = "http://localhost:5000";
+const SOCKET_URL = BACKEND_URL;
 
 let socket = null;
 

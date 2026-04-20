@@ -8,6 +8,7 @@ import {
 // 1. API UTILITY (Internal Helper)
 // ==========================================
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+export const BACKEND_URL = BASE_URL.replace(/\/api$/, "");
 
 /**
  * Universal fetch wrapper.
