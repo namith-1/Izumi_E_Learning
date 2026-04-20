@@ -71,17 +71,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Trigger Frontend Deploy
+        env:
+          FRONTEND_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_FRONTEND }}
         run: |
-          if [ -z "${{ secrets.RENDER_DEPLOY_HOOK_FRONTEND }}" ]; then
+          if [ -z "$FRONTEND_HOOK" ]; then
             echo "RENDER_DEPLOY_HOOK_FRONTEND not set, skipping"
           else
-            curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_FRONTEND }}
+            curl -X POST "$FRONTEND_HOOK"
           fi
 
       - name: Trigger Backend Deploy
+        env:
+          BACKEND_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_BACKEND }}
         run: |
-          if [ -z "${{ secrets.RENDER_DEPLOY_HOOK_BACKEND }}" ]; then
+          if [ -z "$BACKEND_HOOK" ]; then
             echo "RENDER_DEPLOY_HOOK_BACKEND not set, skipping"
           else
-            curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_BACKEND }}
+            curl -X POST "$BACKEND_HOOK"
           fi
