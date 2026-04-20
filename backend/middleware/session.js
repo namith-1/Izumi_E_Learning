@@ -1,19 +1,21 @@
 const session = require('express-session');
 const { MongoStore } = require('connect-mongo'); 
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 const sessionConfig = session({
     secret: process.env.SESSION_SECRET || 'izumi_fallback_secret_123',
     resave: false,
     saveUninitialized: false,
-    proxy: true, // Tell express-session to trust the reverse proxy (Render)
+    proxy: isProduction, // Trust proxy only in production
     store: process.env.MONGO_URI ? MongoStore.create({
         mongoUrl: process.env.MONGO_URI,
         ttl: 14 * 24 * 60 * 60 
     }) : undefined,
     cookie: { 
-        secure: true, // Always true for production HTTPS
+        secure: isProduction, // Only require HTTPS in production
         httpOnly: true,
-        sameSite: 'none', // Required for cross-site (frontend on one domain, backend on another)
+        sameSite: isProduction ? 'none' : 'lax', // Use 'lax' for local development compatibility
         maxAge: 14 * 24 * 60 * 60 * 1000 
     }
 });

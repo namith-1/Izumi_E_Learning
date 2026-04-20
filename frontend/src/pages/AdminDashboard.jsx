@@ -3,7 +3,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import {
     fetchAllAdminData, deleteUserAdmin, deleteCourseAdmin, updateCourseAdmin,
-    fetchStudentEnrollmentByEmail, fetchTeacherCoursesByEmail, clearLookup
+    fetchStudentEnrollmentByEmail, fetchTeacherCoursesByEmail, clearLookup,
+    BACKEND_URL
 } from '../store';
 import {
     Users, BookOpen, BarChart3, Loader2, Trash2, Edit, Save, X, Search, Eye, Shield, UserPlus, DollarSign, Terminal
@@ -67,7 +68,7 @@ const AdminDashboard = () => {
     useEffect(() => {
         if (activeTab === 'reviewers') {
             setReviewerLoading(true);
-            fetch('http://localhost:5000/api/admin/reviewers', { credentials: 'include' })
+            fetch(`${BACKEND_URL}/api/admin/reviewers`, { credentials: 'include' })
                 .then(r => r.json())
                 .then(data => { setReviewers(Array.isArray(data) ? data : []); setReviewerLoading(false); })
                 .catch(() => setReviewerLoading(false));
@@ -328,7 +329,7 @@ const AdminDashboard = () => {
         e.preventDefault();
         setReviewerMsg({ text: '', type: '' });
         try {
-            const res = await fetch('http://localhost:5000/api/admin/reviewers', {
+            const res = await fetch(`${BACKEND_URL}/api/admin/reviewers`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -339,7 +340,7 @@ const AdminDashboard = () => {
                 setReviewerMsg({ text: `Reviewer "${data.reviewer.name}" created!`, type: 'success' });
                 setReviewerForm({ name: '', email: '', password: '', specialization: '' });
                 // Refresh list
-                const listRes = await fetch('http://localhost:5000/api/admin/reviewers', { credentials: 'include' });
+                const listRes = await fetch(`${BACKEND_URL}/api/admin/reviewers`, { credentials: 'include' });
                 if (listRes.ok) setReviewers(await listRes.json());
             } else {
                 setReviewerMsg({ text: data.message || 'Failed to create reviewer.', type: 'error' });
@@ -352,7 +353,7 @@ const AdminDashboard = () => {
     const handleDeleteReviewer = async (id) => {
         if (!window.confirm('Delete this reviewer account?')) return;
         try {
-            await fetch(`http://localhost:5000/api/admin/users/reviewer/${id}`, {
+            await fetch(`${BACKEND_URL}/api/admin/users/reviewer/${id}`, {
                 method: 'DELETE',
                 credentials: 'include',
             });

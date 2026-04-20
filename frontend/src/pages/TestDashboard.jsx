@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { Play, RotateCcw, List, Terminal, FileText, CheckCircle2, XCircle, Loader2, BarChart3, ChevronRight } from 'lucide-react';
 import ProfileDropdown from '../components/ProfileDropdown';
+import { BACKEND_URL } from '../store';
 import './css/AdminDashboard.css';
 
 const TestDashboard = () => {
@@ -29,7 +30,7 @@ const TestDashboard = () => {
 
     const fetchTests = async () => {
         try {
-            const res = await fetch('http://localhost:5000/api/tests', { credentials: 'include' });
+            const res = await fetch(`${BACKEND_URL}/api/tests`, { credentials: 'include' });
             if (res.ok) {
                 const data = await res.json();
                 setTests(data);
@@ -46,7 +47,7 @@ const TestDashboard = () => {
         setLogs(prev => prev + `\n> Running: ${testPath}...\n`);
         
         try {
-            const res = await fetch('http://localhost:5000/api/tests/run', {
+            const res = await fetch(`${BACKEND_URL}/api/tests/run`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -161,7 +162,7 @@ const TestDashboard = () => {
                                 <span className="text-xs text-gray-400 ml-2 font-mono">test-runner-session.log</span>
                             </div>
                             <button 
-                                onClick={() => window.open('http://localhost:5000/tests/test-report.html', '_blank')}
+                                onClick={() => window.open(`${BACKEND_URL}/tests/test-report.html`, '_blank')}
                                 className="text-[10px] text-blue-400 hover:text-blue-300 font-mono flex items-center gap-1"
                             >
                                 <BarChart3 size={12} /> OPEN FULL REPORT

@@ -5,7 +5,9 @@ import { connectSocket } from "../utils/socketService";
 import { MessageCircle, Send, X, CheckCheck, Check } from "lucide-react";
 import "../pages/css/CourseChat.css";
 
-const BASE_URL = "http://localhost:5000/api";
+import { BACKEND_URL } from "../store";
+
+const BASE_URL = `${BACKEND_URL}/api`;
 
 // Relative time helper
 const relativeTime = (dateStr) => {

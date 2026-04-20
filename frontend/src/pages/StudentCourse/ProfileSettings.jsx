@@ -1,15 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { User, Mail, Key, Camera, X } from "lucide-react";
-import { updateStudentProfile } from "../../store";
+import { updateStudentProfile, BACKEND_URL } from "../../store";
 
 const ProfileSettings = () => {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const fileInputRef = useRef(null);
-  const apiBase = (
-    import.meta.env.VITE_API_BASE || "http://localhost:5000"
-  ).replace(/\/$/, "");
+  const apiBase = BACKEND_URL;
 
   const buildProfileImageUrl = useCallback(
     (profilePic) => {

@@ -1,5 +1,6 @@
 // frontend/src/pages/ApiDocs.jsx
 import React from 'react';
+import { BACKEND_URL } from '../store';
 
 const ApiDocs = () => {
   return (
@@ -26,7 +27,7 @@ const ApiDocs = () => {
                 Access the complete Swagger API documentation with interactive testing capabilities.
               </p>
               <a
-                href="http://localhost:5000/api-docs"
+                href={`${BACKEND_URL}/api-docs`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"

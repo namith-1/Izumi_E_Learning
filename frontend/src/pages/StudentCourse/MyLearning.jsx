@@ -3,7 +3,7 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
-import { fetchEnrolledCourses } from "../../store";
+import { fetchEnrolledCourses, BACKEND_URL } from "../../store";
 import { Loader2, CheckCircle, XCircle, Clock } from "lucide-react";
 import "../css/MyLearning.css";
 
@@ -121,7 +121,7 @@ const MyLearning = () => {
               const imageUrl =
                 rawImageUrl && rawImageUrl.startsWith("http")
                   ? rawImageUrl
-                  : `${import.meta.env.VITE_API_BASE || "http://localhost:5000"}${rawImageUrl}`;
+                  : `${BACKEND_URL}${rawImageUrl}`;
 
               // --- RESTORED LOGIC FOR COUNTS ---
               const backendCompleted = course.completedContentModules;

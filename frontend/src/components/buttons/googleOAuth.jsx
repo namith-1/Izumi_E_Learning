@@ -1,9 +1,9 @@
-import React from 'react';
+import { BACKEND_URL } from "../../store";
 
 const GoogleOAuthButton = () => {
   const handleGoogleLogin = () => {
     // Redirecting to the backend Google Auth route
-    window.location.href = "http://localhost:5000/api/auth/google";
+    window.location.href = `${BACKEND_URL}/api/auth/google`;
   };
 
   return (

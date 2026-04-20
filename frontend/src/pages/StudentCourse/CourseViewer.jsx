@@ -14,6 +14,7 @@ import {
   enrollInCourse,
   fetchEnrollmentStatus,
   resetEnrollment,
+  BACKEND_URL,
 } from "../../store";
 import { BookOpen, Layers, Clock, Loader2, User, Play } from "lucide-react";
 import PaymentModal from "../../components/PaymentModal";
@@ -40,9 +41,7 @@ const CourseViewer = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState("idle");
   const redirectTimeoutRef = useRef(null);
-  const apiBase = (
-    import.meta.env.VITE_API_BASE || "http://localhost:5000"
-  ).replace(/\/$/, "");
+  const apiBase = BACKEND_URL;
 
   const loading = courseLoading || enrollmentLoading || isProcessing;
 
@@ -215,11 +214,11 @@ const CourseViewer = () => {
   // --- 5. RENDER CONTENT ---
   const isEnrolled = !!currentEnrollment;
 
-  const instructor = teacherEntities[course.teacherId];
+  const instructor = course.teacherId ? teacherEntities[course.teacherId] : null;
   const instructorName = instructor ? instructor.name : "Unknown Instructor";
 
-  const rootModule = course.rootModule;
-  const introModule = (course.modules && course.modules[rootModule.id]) || rootModule;
+  const rootModule = course.rootModule || { id: "root", title: "Introduction" };
+  const introModule = (course.modules && rootModule.id && course.modules[rootModule.id]) || rootModule;
 
   // If the user is enrolled, but the automatic redirect hasn't happened yet (e.g., waiting for data fetch to complete),
   // we still show a loading screen to prevent a flicker.

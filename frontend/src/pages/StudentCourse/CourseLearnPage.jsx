@@ -123,17 +123,16 @@ const CourseLearnPage = () => {
     };
   }, [justEnrolledSince, courseId]);
 
-  // ✅ Effect 1: Fetch data (Course and Enrollment) and register cleanup.
-  // Runs ONLY on mount or when courseId changes. (Prevents re-fetching on module change)
   useEffect(() => {
-    // Fetch course data if not present, if it's the wrong course, or if it's a partial fetch (missing modules)
-    if (!course || course._id !== courseId || !course.modules) {
+    // Check if we already have the correct course with modules loaded
+    const hasCorrectCourse = course && (course._id === courseId || course.id === courseId) && course.modules;
+    
+    if (!hasCorrectCourse && !courseLoading) {
       dispatch(fetchCourseById(courseId));
     }
-    // Fetch enrollment status
+    
     dispatch(fetchEnrollmentStatus(courseId));
 
-    // Cleanup function runs on unmount
     return () => {
       dispatch(resetEnrollment());
       dispatch(clearCurrentCourse());
@@ -732,16 +731,16 @@ const CourseLearnPage = () => {
       </div>
 
       {/* 1:1 Chat with Instructor */}
-      {course.teacherId && (
+      {course?.teacherId && (
         <CourseChat
           courseId={courseId}
           otherUserId={
-            typeof course.teacherId === "object"
+            (course.teacherId && typeof course.teacherId === "object")
               ? course.teacherId._id
               : course.teacherId
           }
           otherUserName={
-            typeof course.teacherId === "object"
+            (course.teacherId && typeof course.teacherId === "object")
               ? course.teacherId.name
               : "Instructor"
           }

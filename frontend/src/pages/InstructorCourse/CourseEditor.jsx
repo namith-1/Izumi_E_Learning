@@ -31,13 +31,14 @@ import {
   X,
 } from "lucide-react";
 import QuizBuilder from "../../components/QuizBuilder";
+import { BACKEND_URL } from "../../store";
 import "../css/CourseEditor.css";
 
 // ==========================================
 // 1. UTILITIES & CONFIGURATION
 // ==========================================
 const COURSE_DATA_PATH = "local_course_draft";
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api").replace(/\/api$/, "");
+const API_BASE = BACKEND_URL;
 
 const URL_REGEX =
   /^(https?:\/\/)?([\\da-z.-]+)\.([a-z.]{2,6})(\/[\\w .-]*)*\/?$/;

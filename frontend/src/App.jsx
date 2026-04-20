@@ -1,8 +1,9 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { checkAuthStatus } from './store'; // Action to check session on load
-import AppRoutes from './routes/AppRoutes';       // The routes we just extracted
+import { checkAuthStatus } from './store'; 
+import AppRoutes from './routes/AppRoutes';
+import ErrorBoundary from './components/ErrorBoundary';
 
 function App() {
   const dispatch = useDispatch();
@@ -13,9 +14,11 @@ function App() {
   }, [dispatch]);
 
   return (
-    <Router>
-      <AppRoutes />
-    </Router>
+    <ErrorBoundary>
+      <Router>
+        <AppRoutes />
+      </Router>
+    </ErrorBoundary>
   );
 }
 

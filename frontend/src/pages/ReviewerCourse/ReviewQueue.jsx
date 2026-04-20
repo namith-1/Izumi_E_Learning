@@ -6,7 +6,9 @@ import "../css/AdminDashboard.css";
 import "../css/StudentDashboard.css";
 import "../css/ReviewerDashboard.css";
 
-const BASE_URL = "http://localhost:5000/api";
+import { BACKEND_URL } from "../../store";
+
+const BASE_URL = `${BACKEND_URL}/api`;
 
 const ReviewQueue = () => {
     const navigate = useNavigate();

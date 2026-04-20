@@ -7,7 +7,9 @@ import {
 // ==========================================
 // 1. API UTILITY (Internal Helper)
 // ==========================================
+// Get API base from environment or fallback to local
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+// Derived backend root for asset loading (e.g., images)
 export const BACKEND_URL = BASE_URL.replace(/\/api$/, "");
 
 /**

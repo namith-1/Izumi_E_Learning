@@ -1,3 +1,4 @@
+import { io } from "socket.io-client";
 import { BACKEND_URL } from "../store";
 
 const SOCKET_URL = BACKEND_URL;

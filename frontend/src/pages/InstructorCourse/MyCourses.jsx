@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { fetchAllCourses, fetchInstructorAnalytics } from "../../store";
+import { fetchAllCourses, fetchInstructorAnalytics, BACKEND_URL } from "../../store";
 import { Loader2, Send, AlertCircle } from "lucide-react";
 import "../css/ReviewerDashboard.css"; // for status-badge styles
 
@@ -81,7 +81,7 @@ const MyCourses = () => {
     setSubmitError({});
     try {
       const res = await fetch(
-        `http://localhost:5000/api/review/submit/${courseId}`,
+        `${BACKEND_URL}/api/review/submit/${courseId}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -145,7 +145,7 @@ const MyCourses = () => {
               : `https://picsum.photos/seed/${course._id}/400/220`;
             const imageUrl = rawImageUrl.startsWith("http")
               ? rawImageUrl
-              : `${import.meta.env.VITE_API_BASE || "http://localhost:5000"}${rawImageUrl}`;
+              : `${BACKEND_URL}${rawImageUrl}`;
             return (
               <div key={course._id} className="course-card">
                 <div
