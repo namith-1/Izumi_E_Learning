@@ -12,7 +12,7 @@ services:
       - key: PORT
         value: 5000
       # Cloudinary and MongoDB vars should be set in the Render Dashboard safely
-    autoDeploy: true
+    autoDeploy: false
     # Build Filter: Only deploy when backend directory changes
     filter:
       paths:
@@ -24,7 +24,7 @@ services:
     rootDir: frontend
     buildCommand: npm install && npm run build
     publishDir: dist
-    autoDeploy: true
+    autoDeploy: false
     # Build Filter: Only deploy when frontend directory changes
     filter:
       paths:

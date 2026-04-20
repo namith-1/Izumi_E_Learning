@@ -431,7 +431,9 @@ const CourseLearnPage = () => {
           <div style={{ fontSize: 14, color: "#94a3b8", lineHeight: 1.5 }}>
             {currentEnrollment === null
               ? "You are not enrolled in this course."
-              : "If the page stays here, reload once to finish restoring your session."}
+              : enrollmentError 
+                ? `Connection error: ${enrollmentError}. Please ensure you are logged in.`
+                : "If the page stays here, reload once to finish restoring your session."}
           </div>
           {showRecoveryPrompt && currentEnrollment === undefined && (
             <div

@@ -64,3 +64,24 @@ jobs:
         env:
           # You might need to set VITE_API_BASE_URL here if the build depends on it
           VITE_API_BASE_URL: https://izumi-e-learning.onrender.com/api
+
+  deploy:
+    needs: [backend-tests, frontend-build]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Frontend Deploy
+        run: |
+          if [ -z "${{ secrets.RENDER_DEPLOY_HOOK_FRONTEND }}" ]; then
+            echo "RENDER_DEPLOY_HOOK_FRONTEND not set, skipping"
+          else
+            curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_FRONTEND }}
+          fi
+
+      - name: Trigger Backend Deploy
+        run: |
+          if [ -z "${{ secrets.RENDER_DEPLOY_HOOK_BACKEND }}" ]; then
+            echo "RENDER_DEPLOY_HOOK_BACKEND not set, skipping"
+          else
+            curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_BACKEND }}
+          fi

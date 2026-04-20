@@ -7,15 +7,15 @@ const sessionConfig = session({
     secret: process.env.SESSION_SECRET || 'izumi_fallback_secret_123',
     resave: false,
     saveUninitialized: false,
-    proxy: isProduction, // Trust proxy only in production
+    proxy: true, // Render uses proxies, always trust for cookie setting
     store: process.env.MONGO_URI ? MongoStore.create({
         mongoUrl: process.env.MONGO_URI,
         ttl: 14 * 24 * 60 * 60 
     }) : undefined,
     cookie: { 
-        secure: isProduction, // Only require HTTPS in production
+        secure: true, // Requirement for SameSite: 'none'
         httpOnly: true,
-        sameSite: isProduction ? 'none' : 'lax', // Use 'lax' for local development compatibility
+        sameSite: 'none', // Allow cross-domain cookies for Render subdomains
         maxAge: 14 * 24 * 60 * 60 * 1000 
     }
 });

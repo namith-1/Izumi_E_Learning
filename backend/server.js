@@ -248,7 +248,10 @@ const errorHandler = require("./middleware/errorMiddleware");
 const registerChatHandlers = require("./sockets/chatSocket");
 
 const app = express();
-app.set("trust proxy", 1); // Required for secure cookies on Render
+
+// Trust proxy for session cookies in production (essential for Render)
+app.set("trust proxy", 1);
+
 const server = http.createServer(app);
 
 // Determine frontend base URL (env override or sensible default for Vite)
@@ -303,6 +306,16 @@ setupLogging(app);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // 4. Routes
+app.get("/api/health", (req, res) => {
+  const dbStatus = require("mongoose").connection.readyState === 1 ? "connected" : "disconnected";
+  res.json({
+    status: "ok",
+    database: dbStatus,
+    timestamp: new Date().toISOString(),
+    env: process.env.NODE_ENV
+  });
+});
+
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/courses", require("./routes/courseRoutes"));
 app.use("/api/enrollment", require("./routes/enrollmentRoutes"));
