@@ -8,3 +8,4 @@ export const BACKEND_BASE_URL = trimTrailingSlash(
 
 export const API_BASE_URL = `${BACKEND_BASE_URL}/api`;
 export const API_DOCS_URL = `${BACKEND_BASE_URL}/api-docs`;
+ 
