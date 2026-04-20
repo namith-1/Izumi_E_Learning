@@ -270,7 +270,7 @@ const AdminDashboard = () => {
             : '0.0';
 
         const courseStats = [
-            { label: 'Total   Courses', value: courses.length, icon: BookOpen, color: 'blue' },
+            { label: 'Total Courses', value: courses.length, icon: BookOpen, color: 'blue' },
             { label: 'Total Enrollments', value: totalEnrollments, icon: Users, color: 'green' },
             { label: 'Average Rating', value: avgRating, icon: BarChart3, color: 'purple' }
         ];
