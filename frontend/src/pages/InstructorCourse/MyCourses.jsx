@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { fetchAllCourses, fetchInstructorAnalytics } from "../../store";
+import { API_BASE_URL, BACKEND_BASE_URL } from "../../utils/env";
 import { Loader2, Send, AlertCircle } from "lucide-react";
 import "../css/ReviewerDashboard.css"; // for status-badge styles
 
@@ -80,14 +81,11 @@ const MyCourses = () => {
     setSubmitting(courseId);
     setSubmitError({});
     try {
-      const res = await fetch(
-        `http://localhost:5000/api/review/submit/${courseId}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-        },
-      );
+      const res = await fetch(`${API_BASE_URL}/review/submit/${courseId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
       const data = await res.json();
       if (res.ok) {
         dispatch(fetchAllCourses()); // Refresh
@@ -145,7 +143,7 @@ const MyCourses = () => {
               : `https://picsum.photos/seed/${course._id}/400/220`;
             const imageUrl = rawImageUrl.startsWith("http")
               ? rawImageUrl
-              : `${import.meta.env.VITE_API_BASE || "http://localhost:5000"}${rawImageUrl}`;
+              : `${BACKEND_BASE_URL}${rawImageUrl}`;
             return (
               <div key={course._id} className="course-card">
                 <div

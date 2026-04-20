@@ -2,10 +2,9 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSelector } from "react-redux";
 import { connectSocket } from "../utils/socketService";
+import { API_BASE_URL as BASE_URL } from "../utils/env";
 import { MessageCircle, Send, X, CheckCheck, Check } from "lucide-react";
 import "../pages/css/CourseChat.css";
-
-const BASE_URL = "http://localhost:5000/api";
 
 // Relative time helper
 const relativeTime = (dateStr) => {

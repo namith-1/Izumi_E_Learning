@@ -4,6 +4,7 @@ import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import { fetchEnrolledCourses } from "../../store";
+import { BACKEND_BASE_URL } from "../../utils/env";
 import { Loader2, CheckCircle, XCircle, Clock } from "lucide-react";
 import "../css/MyLearning.css";
 
@@ -16,13 +17,22 @@ const PassStatusBadge = ({ passStatus, weightedScore, passingPolicy }) => {
     return (
       <span
         style={{
-          display: "inline-flex", alignItems: "center", gap: 4,
-          background: "#d1fae5", color: "#065f46",
-          padding: "3px 10px", borderRadius: 99, fontSize: 12, fontWeight: 700,
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 4,
+          background: "#d1fae5",
+          color: "#065f46",
+          padding: "3px 10px",
+          borderRadius: 99,
+          fontSize: 12,
+          fontWeight: 700,
         }}
       >
         <CheckCircle size={12} />
-        Passed{weightedScore !== null && weightedScore !== undefined ? ` — Score: ${weightedScore.toFixed(1)}%` : ""}
+        Passed
+        {weightedScore !== null && weightedScore !== undefined
+          ? ` — Score: ${weightedScore.toFixed(1)}%`
+          : ""}
       </span>
     );
   }
@@ -30,13 +40,20 @@ const PassStatusBadge = ({ passStatus, weightedScore, passingPolicy }) => {
     return (
       <span
         style={{
-          display: "inline-flex", alignItems: "center", gap: 4,
-          background: "#fee2e2", color: "#991b1b",
-          padding: "3px 10px", borderRadius: 99, fontSize: 12, fontWeight: 700,
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 4,
+          background: "#fee2e2",
+          color: "#991b1b",
+          padding: "3px 10px",
+          borderRadius: 99,
+          fontSize: 12,
+          fontWeight: 700,
         }}
       >
         <XCircle size={12} />
-        Failed{weightedScore !== null && weightedScore !== undefined
+        Failed
+        {weightedScore !== null && weightedScore !== undefined
           ? ` — Score: ${weightedScore.toFixed(1)}%${mode === "weighted" && minScore ? ` (need ${minScore}%)` : ""}`
           : ""}
       </span>
@@ -46,9 +63,15 @@ const PassStatusBadge = ({ passStatus, weightedScore, passingPolicy }) => {
   return (
     <span
       style={{
-        display: "inline-flex", alignItems: "center", gap: 4,
-        background: "#e0f2fe", color: "#0369a1",
-        padding: "3px 10px", borderRadius: 99, fontSize: 12, fontWeight: 600,
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 4,
+        background: "#e0f2fe",
+        color: "#0369a1",
+        padding: "3px 10px",
+        borderRadius: 99,
+        fontSize: 12,
+        fontWeight: 600,
       }}
     >
       <Clock size={12} /> In Progress
@@ -66,8 +89,8 @@ const getCourseCompletionPercentage = (course) => {
     typeof course.totalContentModules === "number"
       ? course.totalContentModules
       : course.modules_status?.length ||
-      Object.keys(course.modules || {}).length ||
-      1;
+        Object.keys(course.modules || {}).length ||
+        1;
 
   if (!totalModules || totalModules === 0) return 0;
   return Math.min(100, (completed / totalModules) * 100);
@@ -121,7 +144,7 @@ const MyLearning = () => {
               const imageUrl =
                 rawImageUrl && rawImageUrl.startsWith("http")
                   ? rawImageUrl
-                  : `${import.meta.env.VITE_API_BASE || "http://localhost:5000"}${rawImageUrl}`;
+                  : `${BACKEND_BASE_URL}${rawImageUrl}`;
 
               // --- RESTORED LOGIC FOR COUNTS ---
               const backendCompleted = course.completedContentModules;
@@ -141,14 +164,16 @@ const MyLearning = () => {
               const passStatus = course.passStatus || null; // "pass" | "fail" | "in-progress" | null
               const isActuallyPassed =
                 passStatus === "pass" ||
-                (!passStatus && completedCount >= totalModulesDisplay && totalModulesDisplay > 0);
+                (!passStatus &&
+                  completedCount >= totalModulesDisplay &&
+                  totalModulesDisplay > 0);
               const isActuallyFailed = passStatus === "fail";
 
               const progressBarColor = isActuallyPassed
-                ? "#10b981"   // green
+                ? "#10b981" // green
                 : isActuallyFailed
-                  ? "#ef4444"   // red
-                  : "#3b82f6";  // blue
+                  ? "#ef4444" // red
+                  : "#3b82f6"; // blue
 
               return (
                 <div
@@ -181,7 +206,10 @@ const MyLearning = () => {
                     {/* Pass/Fail/Score badge */}
                     <div style={{ marginBottom: 6 }}>
                       <PassStatusBadge
-                        passStatus={passStatus || (isActuallyPassed ? "pass" : "in-progress")}
+                        passStatus={
+                          passStatus ||
+                          (isActuallyPassed ? "pass" : "in-progress")
+                        }
                         weightedScore={course.weightedScore}
                         passingPolicy={course.passingPolicy}
                       />
@@ -207,7 +235,11 @@ const MyLearning = () => {
                       className="btn-continue-compact"
                       onClick={() => handleViewCourse(course._id)}
                     >
-                      {isActuallyPassed ? "Review" : isActuallyFailed ? "Retry" : "Continue"}
+                      {isActuallyPassed
+                        ? "Review"
+                        : isActuallyFailed
+                          ? "Retry"
+                          : "Continue"}
                     </button>
                   </div>
                 </div>

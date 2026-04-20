@@ -3,15 +3,12 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom"; // Import useNavigate
 import { Search } from "lucide-react";
 import { fetchAllCourses, fetchAllTeachers } from "../../store";
+import { BACKEND_BASE_URL as apiBase } from "../../utils/env";
 import "../css/CourseSearch.css";
 
 const CourseSearch = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate(); // Initialize navigate
-  const apiBase = (
-    import.meta.env.VITE_API_BASE || "http://localhost:5000"
-  ).replace(/\/$/, "");
-
   // Get data from Redux store
   const { list: allCourses, loading: coursesLoading } = useSelector(
     (state) => state.courses,

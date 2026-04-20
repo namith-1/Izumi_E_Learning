@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { fetchAllCourses, enrollInCourse } from "../store";
+import { BACKEND_BASE_URL } from "../utils/env";
 import { BookOpen, User, Zap, CheckCircle } from "lucide-react";
 import "./css/CourseCatalog.css";
 
@@ -70,7 +71,7 @@ const CourseCatalog = () => {
             : `https://picsum.photos/seed/${course._id}/400/200`;
           const imageUrl = rawImageUrl.startsWith("http")
             ? rawImageUrl
-            : `${import.meta.env.VITE_API_BASE || "http://localhost:5000"}${rawImageUrl}`;
+            : `${BACKEND_BASE_URL}${rawImageUrl}`;
 
           return (
             <div
@@ -102,7 +103,9 @@ const CourseCatalog = () => {
                 </div>
 
                 <div className="card-price-section">
-                  <span className="card-price">${(course.price || 0).toFixed(2)}</span>
+                  <span className="card-price">
+                    ${(course.price || 0).toFixed(2)}
+                  </span>
                 </div>
 
                 <button

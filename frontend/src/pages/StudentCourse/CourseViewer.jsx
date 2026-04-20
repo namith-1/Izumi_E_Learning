@@ -15,6 +15,7 @@ import {
   fetchEnrollmentStatus,
   resetEnrollment,
 } from "../../store";
+import { BACKEND_BASE_URL as apiBase } from "../../utils/env";
 import { BookOpen, Layers, Clock, Loader2, User, Play } from "lucide-react";
 import PaymentModal from "../../components/PaymentModal";
 
@@ -40,10 +41,6 @@ const CourseViewer = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState("idle");
   const redirectTimeoutRef = useRef(null);
-  const apiBase = (
-    import.meta.env.VITE_API_BASE || "http://localhost:5000"
-  ).replace(/\/$/, "");
-
   const loading = courseLoading || enrollmentLoading || isProcessing;
 
   const rawBg =
@@ -68,7 +65,7 @@ const CourseViewer = () => {
     }
 
     return rawBg.startsWith("/") ? `${apiBase}${rawBg}` : `${apiBase}/${rawBg}`;
-  }, [rawBg, apiBase]);
+  }, [rawBg]);
 
   // --- 2. EFFECTS ---
   useEffect(() => {

@@ -10,6 +10,7 @@ import React, {
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import { createNewCourse, fetchCourseById, updateCourse } from "../../store";
+import { BACKEND_BASE_URL as API_BASE } from "../../utils/env";
 import {
   Plus,
   Trash2,
@@ -37,7 +38,6 @@ import "../css/CourseEditor.css";
 // 1. UTILITIES & CONFIGURATION
 // ==========================================
 const COURSE_DATA_PATH = "local_course_draft";
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 
 const URL_REGEX =
   /^(https?:\/\/)?([\\da-z.-]+)\.([a-z.]{2,6})(\/[\\w .-]*)*\/?$/;

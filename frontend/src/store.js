@@ -3,12 +3,11 @@ import {
   createSlice,
   createAsyncThunk,
 } from "@reduxjs/toolkit";
+import { API_BASE_URL as BASE_URL } from "./utils/env";
 
 // ==========================================
 // 1. API UTILITY (Internal Helper)
 // ==========================================
-const BASE_URL = "http://localhost:5000/api";
-
 /**
  * Universal fetch wrapper.
  * Automatically detects FormData to allow multipart/form-data (Multer) uploads.
