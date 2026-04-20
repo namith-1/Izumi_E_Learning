@@ -1,3 +1,4 @@
+import React from 'react';
 import { BACKEND_URL } from "../../store";
 
 const GoogleOAuthButton = () => {
