@@ -1,0 +1,817 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      Izumi E-Learning Platform — Domain-Driven Design Documentation
+    </title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap");
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: "Inter", sans-serif;
+        color: #1a1a2e;
+        line-height: 1.7;
+        padding: 40px 60px;
+        max-width: 1000px;
+        margin: auto;
+      }
+      h1 {
+        font-size: 28px;
+        text-align: center;
+        margin-bottom: 6px;
+        color: #0f3460;
+      }
+      h2 {
+        font-size: 20px;
+        color: #0f3460;
+        border-bottom: 2px solid #e94560;
+        padding-bottom: 4px;
+        margin: 30px 0 12px;
+        page-break-after: avoid;
+      }
+      h3 {
+        font-size: 16px;
+        color: #16213e;
+        margin: 18px 0 8px;
+      }
+      p,
+      li {
+        font-size: 13px;
+      }
+      ul {
+        padding-left: 22px;
+        margin-bottom: 10px;
+      }
+      .subtitle {
+        text-align: center;
+        font-size: 14px;
+        color: #555;
+        margin-bottom: 30px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 10px 0 20px;
+        font-size: 12.5px;
+      }
+      th {
+        background: #0f3460;
+        color: #fff;
+        padding: 8px 10px;
+        text-align: left;
+      }
+      td {
+        padding: 7px 10px;
+        border: 1px solid #ddd;
+      }
+      tr:nth-child(even) {
+        background: #f4f4f8;
+      }
+      .diagram-box {
+        margin: 15px 0 25px;
+        text-align: center;
+      }
+      .mermaid {
+        font-size: 13px;
+      }
+      .page-break {
+        page-break-before: always;
+      }
+      .badge {
+        display: inline-block;
+        background: #e94560;
+        color: #fff;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        margin-right: 4px;
+      }
+      .badge-blue {
+        background: #0f3460;
+      }
+      .badge-service {
+        background: #2e7d32;
+      }
+      .note {
+        background: #fff8e1;
+        border-left: 4px solid #ffc107;
+        padding: 10px 14px;
+        margin: 12px 0;
+        font-size: 12.5px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ================= TITLE PAGE ================= -->
+    <h1>Domain-Driven Design (DDD) — Comprehensive Analysis Document</h1>
+    <p class="subtitle">GROUP 50</p>
+
+    <h2>Members:</h2>
+    <ul>
+      <li>S20230010011 — Sai Teja</li>
+      <li>S20230010081 — Tharun Nayak</li>
+      <li>S20230010161 — Namith Raj</li>
+      <li>S20230010037 — B Nikhil</li>
+      <li>S20230010144 — Sri Charan</li>
+    </ul>
+
+    <h2>Under the Guidance of:</h2>
+    <ul>
+      <li>Dr. Himangshu Sarma</li>
+      <li>Dr. B N Pavan Kumar</li>
+    </ul>
+
+    <h2>Project Title: Izumi E-Learning Platform</h2>
+    <p class="subtitle">Intelligent E-Learning Management Platform</p>
+
+    <h2>1. Project Title &amp; Description</h2>
+    <h3>Title: Izumi — Intelligent E-Learning Management Platform</h3>
+    <p>
+      Izumi is a full-stack, web-based e-learning platform that enables
+      educators to create, publish, and monetize structured online courses while
+      providing students with an interactive learning experience. Built with a
+      <strong>React + Vite</strong> front-end and a
+      <strong>Node.js / Express</strong> back-end backed by
+      <strong>MongoDB</strong>, the system supports four distinct user roles:
+      <strong>Student, Teacher (Instructor), Reviewer, and Admin</strong>.
+    </p>
+    <p>
+      Teachers author courses composed of hierarchical modules (text lessons,
+      video content, and graded quizzes) and submit them through a formal
+      approval workflow managed by Reviewers. Students browse an approved course
+      catalog, purchase courses via an integrated payment/transaction subsystem,
+      and track per-module progress with weighted grading policies (threshold,
+      weighted-average, or all-pass). A real-time chat system (Socket.IO) allows
+      direct messaging between students and instructors within course contexts.
+      The Admin dashboard provides platform-wide user management, enrollment
+      oversight, and analytics.
+    </p>
+    <p>
+      Key features include Google OAuth integration, brute-force login
+      protection, file/media uploads, course rating &amp; reviews, enrollment
+      analytics, Swagger-documented REST APIs, and comprehensive role-based
+      access control — making Izumi a production-grade LMS solution.
+    </p>
+
+    <!-- ================= BOUNDED CONTEXTS ================= -->
+    <h2 class="page-break">2(a). Bounded Contexts</h2>
+    <p>
+      The following bounded contexts have been identified from the Izumi domain
+      model:
+    </p>
+
+    <div class="diagram-box">
+      <pre class="mermaid">
+graph TB
+    subgraph BC1["Identity & Access Context"]
+        S1[Student]
+        T1[Teacher]
+        R1[Reviewer]
+        A1[Admin]
+        AA1[AuthAttempt]
+    end
+    subgraph BC2["Course Management Context"]
+        C1[Course]
+        M1[Module / RootModule]
+        PP1[PassingPolicy]
+    end
+    subgraph BC3["Enrollment & Progress Context"]
+        E1[Enrollment]
+        MS1[ModuleStatus]
+        EA1[EnrollmentAnalytics]
+    end
+    subgraph BC4["Review & Approval Context"]
+        RW1[ReviewWorkflow]
+        RN1[ReviewNote]
+    end
+    subgraph BC5["Payment & Transaction Context"]
+        TX1[Transaction]
+    end
+    subgraph BC6["Communication Context"]
+        MSG1[Message]
+        SK1[ChatSocket]
+    end
+
+    style BC1 fill:#e3f2fd,stroke:#1565c0
+    style BC2 fill:#fff3e0,stroke:#e65100
+    style BC3 fill:#e8f5e9,stroke:#2e7d32
+    style BC4 fill:#fce4ec,stroke:#c62828
+    style BC5 fill:#f3e5f5,stroke:#6a1b9a
+    style BC6 fill:#fffde7,stroke:#f9a825
+</pre
+      >
+    </div>
+
+    <table>
+      <tr>
+        <th>Bounded Context</th>
+        <th>Responsibility</th>
+        <th>Key Models</th>
+      </tr>
+      <tr>
+        <td>Identity &amp; Access</td>
+        <td>
+          Authentication, registration, session management, OAuth, brute-force
+          protection, profile management
+        </td>
+        <td>Student, Teacher, Reviewer, Admin, AuthAttempt</td>
+      </tr>
+      <tr>
+        <td>Course Management</td>
+        <td>
+          Course CRUD, hierarchical module tree, grading/passing policies, media
+          uploads
+        </td>
+        <td>Course, Module, PassingPolicy</td>
+      </tr>
+      <tr>
+        <td>Enrollment &amp; Progress</td>
+        <td>
+          Student enrollment, per-module progress tracking, completion status,
+          weighted scoring, ratings
+        </td>
+        <td>Enrollment, ModuleStatus, EnrollmentAnalytics</td>
+      </tr>
+      <tr>
+        <td>Review &amp; Approval</td>
+        <td>
+          Course submission workflow, automated pre-checks, reviewer
+          approval/rejection/revision
+        </td>
+        <td>Course (approval fields), ReviewNote</td>
+      </tr>
+      <tr>
+        <td>Payment &amp; Transaction</td>
+        <td>
+          Checkout, payment processing, student/teacher transaction history,
+          payout management
+        </td>
+        <td>Transaction</td>
+      </tr>
+      <tr>
+        <td>Communication</td>
+        <td>
+          Real-time DM between student and teacher, typing indicators, read
+          receipts, unread counts
+        </td>
+        <td>Message, ChatSocket</td>
+      </tr>
+    </table>
+
+    <!-- ================= CONTEXT MAPPING ================= -->
+    <h2 class="page-break">2(b). Context Mappings</h2>
+
+    <div class="diagram-box">
+      <pre class="mermaid">
+graph LR
+    IAC["Identity & Access"]
+    CMC["Course Management"]
+    EPC["Enrollment & Progress"]
+    RAC["Review & Approval"]
+    PTC["Payment & Transaction"]
+    COM["Communication"]
+
+    IAC -- "Customer-Supplier (Teacher ID)" --> CMC
+    IAC -- "Customer-Supplier (Student ID)" --> EPC
+    CMC -- "Shared Kernel (Course ID)" --> EPC
+    CMC -- "Conformist (Course data)" --> RAC
+    EPC -- "Customer-Supplier (Enrollment)" --> PTC
+    CMC -- "Shared Kernel (Course ID)" --> PTC
+    IAC -- "Customer-Supplier (User IDs)" --> COM
+    CMC -- "Shared Kernel (Course ID)" --> COM
+    EPC -- "Conformist (Enrollment check)" --> COM
+    IAC -- "Customer-Supplier (User IDs)" --> PTC
+</pre
+      >
+    </div>
+
+    <table>
+      <tr>
+        <th>Upstream Context</th>
+        <th>Downstream Context</th>
+        <th>Relationship</th>
+        <th>Description</th>
+      </tr>
+      <tr>
+        <td>Identity &amp; Access</td>
+        <td>Course Management</td>
+        <td>Customer–Supplier</td>
+        <td>Teacher ID is referenced as course owner</td>
+      </tr>
+      <tr>
+        <td>Identity &amp; Access</td>
+        <td>Enrollment &amp; Progress</td>
+        <td>Customer–Supplier</td>
+        <td>Student ID is referenced in enrollments</td>
+      </tr>
+      <tr>
+        <td>Course Management</td>
+        <td>Enrollment &amp; Progress</td>
+        <td>Shared Kernel</td>
+        <td>Both share Course ID and module structure</td>
+      </tr>
+      <tr>
+        <td>Course Management</td>
+        <td>Review &amp; Approval</td>
+        <td>Conformist</td>
+        <td>Review context conforms to course schema</td>
+      </tr>
+      <tr>
+        <td>Enrollment &amp; Progress</td>
+        <td>Payment &amp; Transaction</td>
+        <td>Customer–Supplier</td>
+        <td>Enrollment created after successful payment</td>
+      </tr>
+      <tr>
+        <td>Course Management</td>
+        <td>Payment &amp; Transaction</td>
+        <td>Shared Kernel</td>
+        <td>Transaction references Course ID and price</td>
+      </tr>
+      <tr>
+        <td>Identity &amp; Access</td>
+        <td>Communication</td>
+        <td>Customer–Supplier</td>
+        <td>Sender/receiver are user IDs from IAC</td>
+      </tr>
+      <tr>
+        <td>Course Management</td>
+        <td>Communication</td>
+        <td>Shared Kernel</td>
+        <td>Chat is scoped per course</td>
+      </tr>
+      <tr>
+        <td>Enrollment &amp; Progress</td>
+        <td>Communication</td>
+        <td>Conformist</td>
+        <td>Chat access requires enrollment verification</td>
+      </tr>
+    </table>
+
+    <!-- ================= ENTITIES, VOs, SERVICES ================= -->
+    <h2 class="page-break">2(c). Entities, Value Objects &amp; Services</h2>
+
+    <h3>Identity &amp; Access Context</h3>
+    <table>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Key Attributes</th>
+      </tr>
+      <tr>
+        <td><span class="badge">Entity</span></td>
+        <td>Student</td>
+        <td>_id, name, email, password, profilePic, googleId</td>
+      </tr>
+      <tr>
+        <td><span class="badge">Entity</span></td>
+        <td>Teacher</td>
+        <td>_id, name, email, password, specialization</td>
+      </tr>
+      <tr>
+        <td><span class="badge">Entity</span></td>
+        <td>Reviewer</td>
+        <td>_id, name, email, password, specialization</td>
+      </tr>
+      <tr>
+        <td><span class="badge">Entity</span></td>
+        <td>AuthAttempt</td>
+        <td>_id, key, count, firstAt, blockedUntil, ip</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-blue">Value Object</span></td>
+        <td>Credentials</td>
+        <td>email, password, role</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-blue">Value Object</span></td>
+        <td>SessionUser</td>
+        <td>id, role, name, email, profilePic</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-service">Service</span></td>
+        <td>AuthService</td>
+        <td>register(), login(), logout(), me(), OAuth</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-service">Service</span></td>
+        <td>AttemptStoreService</td>
+        <td>recordFailedAttempt(), isBlocked(), clearAttempts()</td>
+      </tr>
+    </table>
+
+    <h3>Course Management Context</h3>
+    <table>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Key Attributes</th>
+      </tr>
+      <tr>
+        <td><span class="badge">Entity</span></td>
+        <td>Course</td>
+        <td>
+          _id, title, description, subject, teacherId, price, rating,
+          approvalStatus
+        </td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-blue">Value Object</span></td>
+        <td>Module</td>
+        <td>id, type, title, content, questions, weight, passingScore</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-blue">Value Object</span></td>
+        <td>RootModule</td>
+        <td>id, title, children[] (recursive tree)</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-blue">Value Object</span></td>
+        <td>PassingPolicy</td>
+        <td>mode, passingThreshold, minimumWeightedScore</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-blue">Value Object</span></td>
+        <td>ReviewNote</td>
+        <td>author, authorRole, content, createdAt</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-service">Service</span></td>
+        <td>CourseService</td>
+        <td>createCourse(), updateCourse(), fetchCourses()</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-service">Service</span></td>
+        <td>MediaUploadService</td>
+        <td>uploadImage(), uploadVideo()</td>
+      </tr>
+    </table>
+
+    <h3>Enrollment &amp; Progress Context</h3>
+    <table>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Key Attributes</th>
+      </tr>
+      <tr>
+        <td><span class="badge">Entity</span></td>
+        <td>Enrollment</td>
+        <td>
+          _id, courseId, studentId, completionStatus, passStatus, weightedScore
+        </td>
+      </tr>
+      <tr>
+        <td><span class="badge">Entity</span></td>
+        <td>EnrollmentAnalytics</td>
+        <td>_id, courseId, studentId, price, date</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-blue">Value Object</span></td>
+        <td>ModuleStatus</td>
+        <td>moduleId, completed, timeSpent, quizScore, passed, attemptsUsed</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-blue">Value Object</span></td>
+        <td>CourseRating</td>
+        <td>rating, ratingReview, ratedAt</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-service">Service</span></td>
+        <td>EnrollmentService</td>
+        <td>enroll(), updateProgress(), fetchEnrolled(), submitRating()</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-service">Service</span></td>
+        <td>AnalyticsService</td>
+        <td>getRevenueAnalytics(), getEnrollmentTrends()</td>
+      </tr>
+    </table>
+
+    <h3>Review &amp; Approval Context</h3>
+    <table>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Key Attributes</th>
+      </tr>
+      <tr>
+        <td><span class="badge">Entity</span></td>
+        <td>Course (approval view)</td>
+        <td>
+          approvalStatus, reviewerId, submittedAt, reviewedAt, reviewNotes[]
+        </td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-service">Service</span></td>
+        <td>ReviewService</td>
+        <td>
+          submitForReview(), approve(), reject(), requestRevision(), preChecks()
+        </td>
+      </tr>
+    </table>
+
+    <h3>Payment &amp; Transaction Context</h3>
+    <table>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Key Attributes</th>
+      </tr>
+      <tr>
+        <td><span class="badge">Entity</span></td>
+        <td>Transaction</td>
+        <td>
+          _id, reference, courseId, studentId, teacherId, amount, currency,
+          status, payoutStatus
+        </td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-blue">Value Object</span></td>
+        <td>PaymentMethod</td>
+        <td>card | wallet | upi | bank-transfer | other</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-service">Service</span></td>
+        <td>PaymentService</td>
+        <td>
+          checkout(), getTransactions(), cancelTransaction(), payoutSummary()
+        </td>
+      </tr>
+    </table>
+
+    <h3>Communication Context</h3>
+    <table>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Key Attributes</th>
+      </tr>
+      <tr>
+        <td><span class="badge">Entity</span></td>
+        <td>Message</td>
+        <td>
+          _id, courseId, senderId, receiverId, senderRole, senderName, content,
+          read
+        </td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-service">Service</span></td>
+        <td>ChatService</td>
+        <td>getMessages(), getConversations(), getUnreadCount()</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-service">Service</span></td>
+        <td>ChatSocketService</td>
+        <td>join-dm, send-message, mark-read, typing indicators</td>
+      </tr>
+    </table>
+
+    <!-- ================= CARDINALITY RATIOS ================= -->
+    <h2 class="page-break">2(d). Cardinality Ratios</h2>
+
+    <div class="diagram-box">
+      <pre class="mermaid">
+erDiagram
+    STUDENT ||--o{ ENROLLMENT : "enrolls in"
+    COURSE ||--o{ ENROLLMENT : "has"
+    TEACHER ||--o{ COURSE : "creates"
+    REVIEWER ||--o{ COURSE : "reviews"
+    COURSE ||--o{ MODULE : "contains"
+    ENROLLMENT ||--o{ MODULE_STATUS : "tracks"
+    STUDENT ||--o{ TRANSACTION : "makes"
+    TEACHER ||--o{ TRANSACTION : "receives"
+    COURSE ||--o{ TRANSACTION : "linked to"
+    STUDENT ||--o{ MESSAGE : "sends/receives"
+    TEACHER ||--o{ MESSAGE : "sends/receives"
+    COURSE ||--o{ MESSAGE : "scoped to"
+    COURSE ||--o{ REVIEW_NOTE : "has"
+    STUDENT ||--o{ ENROLLMENT_ANALYTICS : "recorded in"
+    COURSE ||--o{ ENROLLMENT_ANALYTICS : "tracked by"
+</pre
+      >
+    </div>
+
+    <table>
+      <tr>
+        <th>Relationship</th>
+        <th>Cardinality</th>
+        <th>Description</th>
+      </tr>
+      <tr>
+        <td>Teacher → Course</td>
+        <td>1 : N</td>
+        <td>One teacher creates many courses</td>
+      </tr>
+      <tr>
+        <td>Student → Enrollment</td>
+        <td>1 : N</td>
+        <td>One student can enroll in many courses</td>
+      </tr>
+      <tr>
+        <td>Course → Enrollment</td>
+        <td>1 : N</td>
+        <td>One course has many enrollments</td>
+      </tr>
+      <tr>
+        <td>Student ↔ Course (via Enrollment)</td>
+        <td>M : N</td>
+        <td>Many-to-many resolved through Enrollment</td>
+      </tr>
+      <tr>
+        <td>Course → Module</td>
+        <td>1 : N</td>
+        <td>One course contains many modules (Map)</td>
+      </tr>
+      <tr>
+        <td>Enrollment → ModuleStatus</td>
+        <td>1 : N</td>
+        <td>Each enrollment tracks many module statuses</td>
+      </tr>
+      <tr>
+        <td>Student → Transaction</td>
+        <td>1 : N</td>
+        <td>One student makes many transactions</td>
+      </tr>
+      <tr>
+        <td>Teacher → Transaction</td>
+        <td>1 : N</td>
+        <td>One teacher receives many transactions</td>
+      </tr>
+      <tr>
+        <td>Course → Transaction</td>
+        <td>1 : N</td>
+        <td>One course has many transactions</td>
+      </tr>
+      <tr>
+        <td>Reviewer → Course</td>
+        <td>1 : N</td>
+        <td>One reviewer reviews many courses</td>
+      </tr>
+      <tr>
+        <td>Course → ReviewNote</td>
+        <td>1 : N</td>
+        <td>One course has many review notes</td>
+      </tr>
+      <tr>
+        <td>Course → Message</td>
+        <td>1 : N</td>
+        <td>Messages are scoped per course</td>
+      </tr>
+      <tr>
+        <td>Student ↔ Teacher (via Message)</td>
+        <td>M : N</td>
+        <td>Many-to-many DM resolved through Message per course</td>
+      </tr>
+      <tr>
+        <td>Student → EnrollmentAnalytics</td>
+        <td>1 : N</td>
+        <td>Analytics record per enrollment event</td>
+      </tr>
+    </table>
+
+    <!-- ================= AGGREGATES ================= -->
+    <h2 class="page-break">2(e). Aggregates</h2>
+
+    <div class="diagram-box">
+      <pre class="mermaid">
+graph TB
+    subgraph AG1["Student Aggregate"]
+        SA_R["Student (Root)"]
+        SA_C[Credentials VO]
+        SA_P[ProfilePic VO]
+        SA_R --- SA_C
+        SA_R --- SA_P
+    end
+    subgraph AG2["Teacher Aggregate"]
+        TA_R["Teacher (Root)"]
+        TA_S[Specialization VO]
+        TA_R --- TA_S
+    end
+    subgraph AG3["Course Aggregate"]
+        CA_R["Course (Root)"]
+        CA_M[Modules Map]
+        CA_RM[RootModule Tree]
+        CA_PP[PassingPolicy VO]
+        CA_RN[ReviewNotes]
+        CA_R --- CA_M
+        CA_R --- CA_RM
+        CA_R --- CA_PP
+        CA_R --- CA_RN
+    end
+    subgraph AG4["Enrollment Aggregate"]
+        EA_R["Enrollment (Root)"]
+        EA_MS[ModuleStatus List]
+        EA_RT[CourseRating VO]
+        EA_R --- EA_MS
+        EA_R --- EA_RT
+    end
+    subgraph AG5["Transaction Aggregate"]
+        TXA_R["Transaction (Root)"]
+        TXA_PM[PaymentMethod VO]
+        TXA_R --- TXA_PM
+    end
+    subgraph AG6["Message Aggregate"]
+        MA_R["Message (Root)"]
+    end
+    subgraph AG7["AuthAttempt Aggregate"]
+        AAA_R["AuthAttempt (Root)"]
+    end
+
+    style AG1 fill:#e3f2fd,stroke:#1565c0
+    style AG2 fill:#e3f2fd,stroke:#1565c0
+    style AG3 fill:#fff3e0,stroke:#e65100
+    style AG4 fill:#e8f5e9,stroke:#2e7d32
+    style AG5 fill:#f3e5f5,stroke:#6a1b9a
+    style AG6 fill:#fffde7,stroke:#f9a825
+    style AG7 fill:#fce4ec,stroke:#c62828
+</pre
+      >
+    </div>
+
+    <table>
+      <tr>
+        <th>Aggregate</th>
+        <th>Root Entity</th>
+        <th>Contained Value Objects / Entities</th>
+        <th>Invariants</th>
+      </tr>
+      <tr>
+        <td>Student Aggregate</td>
+        <td>Student</td>
+        <td>Credentials, ProfilePic</td>
+        <td>Unique email; password required unless Google OAuth</td>
+      </tr>
+      <tr>
+        <td>Teacher Aggregate</td>
+        <td>Teacher</td>
+        <td>Specialization</td>
+        <td>Unique email; password required</td>
+      </tr>
+      <tr>
+        <td>Reviewer Aggregate</td>
+        <td>Reviewer</td>
+        <td>Specialization</td>
+        <td>Unique email; password required</td>
+      </tr>
+      <tr>
+        <td>Course Aggregate</td>
+        <td>Course</td>
+        <td>Modules (Map), RootModule (tree), PassingPolicy, ReviewNotes[]</td>
+        <td>
+          Title required; must have ≥1 content module; modules are owned
+          exclusively by the course
+        </td>
+      </tr>
+      <tr>
+        <td>Enrollment Aggregate</td>
+        <td>Enrollment</td>
+        <td>ModuleStatus[], CourseRating</td>
+        <td>
+          Unique (courseId + studentId); rating 1–5; module progress owned by
+          enrollment
+        </td>
+      </tr>
+      <tr>
+        <td>Transaction Aggregate</td>
+        <td>Transaction</td>
+        <td>PaymentMethod</td>
+        <td>
+          Unique reference; amount ≥ 0; status transitions follow defined state
+          machine
+        </td>
+      </tr>
+      <tr>
+        <td>Message Aggregate</td>
+        <td>Message</td>
+        <td>—</td>
+        <td>Content max 2000 chars; must have sender and receiver</td>
+      </tr>
+      <tr>
+        <td>AuthAttempt Aggregate</td>
+        <td>AuthAttempt</td>
+        <td>—</td>
+        <td>Key-indexed; auto-blocks after threshold failures</td>
+      </tr>
+    </table>
+
+    <!-- <div class="note">
+<strong>Note:</strong> To save this document as PDF, open it in a browser (Chrome recommended), press <strong>Ctrl+P</strong>, select <strong>"Save as PDF"</strong> as the destination, and click Save.
+</div> -->
+
+    <script>
+      mermaid.initialize({
+        startOnLoad: true,
+        theme: "default",
+        securityLevel: "loose",
+      });
+    </script>
+  </body>
+</html>
