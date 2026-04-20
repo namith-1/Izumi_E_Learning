@@ -11,7 +11,8 @@ const sessionConfig = session({
     }),
     cookie: { 
         secure: process.env.NODE_ENV === 'production', 
-        httpOnly: true 
+        httpOnly: true,
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
     }
 });
 

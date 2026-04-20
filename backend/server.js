@@ -248,6 +248,7 @@ const errorHandler = require("./middleware/errorMiddleware");
 const registerChatHandlers = require("./sockets/chatSocket");
 
 const app = express();
+app.set("trust proxy", 1); // Required for secure cookies on Render
 const server = http.createServer(app);
 
 // Determine frontend base URL (env override or sensible default for Vite)
