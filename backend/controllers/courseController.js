@@ -372,8 +372,8 @@ exports.uploadCourseImage = async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: "No file uploaded" });
 
-    // Construct a publicly accessible URL for the uploaded file
-    const imageUrl = `/uploads/courses/${req.file.filename}`;
+    // Return the permanent Cloudinary URL
+    const imageUrl = req.file.path;
     res.json({ imageUrl });
   } catch (err) {
     res.status(500).json({ error: err.message });

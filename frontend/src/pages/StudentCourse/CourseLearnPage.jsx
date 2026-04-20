@@ -499,9 +499,11 @@ const CourseLearnPage = () => {
   const renderTreeItem = (moduleId, depth = 0) => {
     if (!course) return null;
 
+    if (!course || !course.rootModule) return null;
+
     const module =
       (course.modules && course.modules[moduleId]) ||
-      (moduleId === course.rootModule.id ? course.rootModule : null);
+      (course.rootModule && moduleId === course.rootModule.id ? course.rootModule : null);
     if (!module) return null;
 
     const isCurrent = module.id === activeModuleId;
@@ -598,12 +600,15 @@ const CourseLearnPage = () => {
 
   // Calculate overall course progress (exclude root and any corrupt entries)
   const allModulesMap = {
-    ...(course.modules || {}),
-    [course.rootModule.id]: course.rootModule,
+    ...(course?.modules || {}),
+    ...(course?.rootModule ? { [course.rootModule.id]: course.rootModule } : {}),
   };
   const allModulesList = Object.values(allModulesMap).filter((m) => m && m.id);
   const nonRootContentModules = allModulesList.filter(
-    (m) => m.id !== course.rootModule.id && m.id !== course._id.toString(),
+    (m) =>
+      course?.rootModule &&
+      m.id !== course.rootModule.id &&
+      m.id !== course._id?.toString(),
   );
   const totalModules = nonRootContentModules.length || 1; // avoid divide-by-zero
 
@@ -715,8 +720,8 @@ const CourseLearnPage = () => {
             <BookOpen size={20} /> Course Structure
           </h2>
           <ul className="module-tree-list">
-            {renderTreeItem(course.rootModule.id)}
-            {(course.rootModule.children || []).map((childId) =>
+            {course?.rootModule?.id && renderTreeItem(course.rootModule.id)}
+            {(course?.rootModule?.children || []).map((childId) =>
               renderTreeItem(childId),
             )}
           </ul>

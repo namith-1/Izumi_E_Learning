@@ -431,7 +431,7 @@ exports.updateProfile = async (req, res) => {
     const { name, currentPassword, newPassword } = req.body;
     const userId = req.session.user.id;
     const profilePicPath = req.file
-      ? `/uploads/profiles/${req.file.filename}`
+      ? req.file.path
       : null;
 
     // --- NEW LOGIC: Block profile update for mock Admin account ---
