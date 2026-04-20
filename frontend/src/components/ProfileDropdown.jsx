@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { User, ChevronDown, Settings, LogOut, Layers } from "lucide-react";
-import { logoutUser } from "../store";
+import { logoutUser, BACKEND_URL } from "../store";
 
 const ProfileDropdown = ({ user, currentPath }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -39,9 +39,7 @@ const ProfileDropdown = ({ user, currentPath }) => {
   // Check if the link to Profile Settings is the current active route
   const isSettingsActive = currentPath.includes("/settings");
 
-  const apiBase = (
-    import.meta.env.VITE_API_BASE || "http://localhost:5000"
-  ).replace(/\/$/, "");
+  const apiBase = BACKEND_URL;
   const profileImageUrl = user?.profilePic
     ? user.profilePic.startsWith("http://") ||
       user.profilePic.startsWith("https://")

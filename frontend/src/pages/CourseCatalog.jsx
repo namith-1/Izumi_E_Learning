@@ -69,8 +69,7 @@ const CourseCatalog = () => {
             ? course.imageUrl
             : `https://picsum.photos/seed/${course._id}/400/200`;
           const imageUrl = rawImageUrl.startsWith("http")
-            ? rawImageUrl
-            : `${import.meta.env.VITE_API_BASE || "http://localhost:5000"}${rawImageUrl}`;
+            : `${BACKEND_URL}${rawImageUrl}`;
 
           return (
             <div
