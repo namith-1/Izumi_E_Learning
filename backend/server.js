@@ -307,6 +307,7 @@ app.use("/api/courses", require("./routes/courseRoutes"));
 app.use("/api/enrollment", require("./routes/enrollmentRoutes"));
 app.use("/api/admin", require("./routes/adminRoutes"));
 app.use("/api/analytics", require("./routes/analyticsRoutes"));
+app.use("/api/tests", require("./routes/testRoutes"));
 app.use("/api/chat", require("./routes/chatRoutes"));
 app.use("/api/review", require("./routes/reviewRoutes"));
 app.use("/api/payments", require("./routes/paymentRoutes"));

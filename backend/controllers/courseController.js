@@ -21,6 +21,7 @@ const checkWeightSum = (modules) => {
   }
   return null;
 };
+exports.checkWeightSum = checkWeightSum;
 
 /**
  * @swagger
@@ -105,48 +106,6 @@ const checkWeightSum = (modules) => {
  *               properties:
  *                 error:
  *                   type: string
- */
-
-// Create Course
-exports.createCourse = async (req, res) => {
-  try {
-    const {
-      courseTitle,
-      courseDescription,
-      subject,
-      imageUrl,
-      rootModule,
-      price,
-      modules,
-      passingPolicy,  // NEW: grading policy from instructor
-    } = req.body;
-
-    if (!subject) {
-      return res.status(400).json({ message: "Subject is required" });
-    }
-
-    const newCourse = await Course.create({
-      title: courseTitle,
-      description: courseDescription,
-      subject,
-      imageUrl,
-      rootModule,
-      modules,
-      price,
-      passingPolicy: passingPolicy || undefined, // use schema defaults if not provided
-      teacherId: req.session.user.id,
-    });
-
-    const weightWarning = checkWeightSum(modules);
-    res.status(201).json({ ...newCourse.toObject(), weightWarning });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-/**
- * @swagger
- * /api/courses:
  *   get:
  *     summary: Get all courses (catalog)
  *     tags: [Courses]
@@ -202,14 +161,49 @@ exports.createCourse = async (req, res) => {
  *                   type: string
  */
 
+// Create Course
+exports.createCourse = async (req, res) => {
+  try {
+    const {
+      courseTitle,
+      courseDescription,
+      subject,
+      imageUrl,
+      rootModule,
+      price,
+      modules,
+      passingPolicy,  // NEW: grading policy from instructor
+    } = req.body;
+
+    if (!subject) {
+      return res.status(400).json({ message: "Subject is required" });
+    }
+
+    const newCourse = await Course.create({
+      title: courseTitle,
+      description: courseDescription,
+      subject,
+      imageUrl,
+      rootModule,
+      modules,
+      price,
+      passingPolicy: passingPolicy || undefined, // use schema defaults if not provided
+      teacherId: req.session.user.id,
+    });
+
+    const weightWarning = checkWeightSum(modules);
+    res.status(201).json({ ...newCourse.toObject(), weightWarning });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 // Get All Courses (Catalog) - MODIFIED TO USE AGGREGATION LOOKUP
 exports.getAllCourses = async (req, res) => {
   try {
     const pipeline = [];
 
-    // Role-aware approval filter:
-    // Teachers see ALL courses (MyCourses filters by teacherId on frontend)
-    // Students/unauthenticated only see approved courses
+    // --- OPTIMIZATION: Early Filtering (Match before lookup) ---
     const userRole = req.session?.user?.role;
     if (userRole !== "teacher" && userRole !== "admin") {
       pipeline.push({
@@ -221,6 +215,9 @@ exports.getAllCourses = async (req, res) => {
         },
       });
     }
+
+    // Exclude heavy 'modules' Map to save DB memory
+    pipeline.push({ $project: { modules: 0 } });
 
     pipeline.push(
       {
@@ -246,6 +243,7 @@ exports.getAllCourses = async (req, res) => {
           teacherId: 1,
           approvalStatus: 1,
           instructorName: "$teacherDetails.name",
+          rootModule: 1,
         },
       }
     );
@@ -302,11 +300,18 @@ exports.getAllCourses = async (req, res) => {
 
 // Get Single Course
 exports.getCourseById = async (req, res) => {
+  console.time("DB_Get_Course_Detail");
   try {
-    const course = await Course.findById(req.params.id);
+    // Always include modules; frontend components like CourseViewer/Learn require them.
+    const course = await Course.findById(req.params.id)
+      .populate("teacherId", "name email")
+      .lean();
+    console.timeEnd("DB_Get_Course_Detail");
+
     if (!course) return res.status(404).json({ message: "Course not found" });
     res.json(course);
   } catch (err) {
+    console.timeEnd("DB_Get_Course_Detail");
     res.status(500).json({ error: err.message });
   }
 };
@@ -566,6 +571,7 @@ exports.updateCourse = async (req, res) => {
 
 // NEW: Get Course Analytics for Instructor's Courses
 exports.getCourseAnalytics = async (req, res) => {
+  console.time("DB_Instructor_Analytics");
   try {
     // Ensure to use the correct ObjectId type for comparison
     const instructorId = new mongoose.Types.ObjectId(req.session.user.id);
@@ -640,45 +646,49 @@ exports.getCourseAnalytics = async (req, res) => {
             },
           },
 
-          // Calculate Enrollment Trend (enrollments grouped by creation date)
-          // Using $function allows flexible client-side date logic inside the aggregation pipeline
-          enrollmentTrend: {
-            $function: {
-              body: function (enrollments) {
-                // Maps the last 7 days to a count of enrollments created on that day
-                const trend = {};
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-
-                for (let i = 0; i < 7; i++) {
-                  const date = new Date(today);
-                  date.setDate(today.getDate() - i);
-                  trend[date.toISOString().slice(0, 10)] = 0;
-                }
-
-                enrollments.forEach((e) => {
-                  if (e.createdAt) {
-                    const dateStr = e.createdAt.toISOString().slice(0, 10);
-                    if (trend.hasOwnProperty(dateStr)) {
-                      trend[dateStr]++;
-                    }
-                  }
-                });
-                // Return sorted by date
-                return Object.keys(trend)
-                  .sort()
-                  .map((date) => ({ date, count: trend[date] }));
-              },
-              args: ["$recentEnrollments"],
-              lang: "js",
-            },
-          },
+          recentEnrollments: 1,
         },
       },
     ]);
+    console.timeEnd("DB_Instructor_Analytics");
 
-    res.json(analytics);
+    // Post-process the analytics to calculate the enrollmentTrend in Node.js (much faster than $function in MongoDB)
+    const finalAnalytics = analytics.map((course) => {
+      const trend = {};
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      // Initialize the last 7 days with 0
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(today);
+        date.setDate(today.getDate() - i);
+        trend[date.toISOString().slice(0, 10)] = 0;
+      }
+
+      // Populate counts from recent enrollments
+      (course.recentEnrollments || []).forEach((e) => {
+        if (e.createdAt) {
+          const dateStr = new Date(e.createdAt).toISOString().slice(0, 10);
+          if (trend.hasOwnProperty(dateStr)) {
+            trend[dateStr]++;
+          }
+        }
+      });
+
+      // Convert to array and sort
+      const enrollmentTrend = Object.keys(trend)
+        .sort()
+        .map((date) => ({ date, count: trend[date] }));
+
+      // Clean up the temporary array
+      const result = { ...course, enrollmentTrend };
+      delete result.recentEnrollments;
+      return result;
+    });
+
+    res.json(finalAnalytics);
   } catch (err) {
+    console.timeEnd("DB_Instructor_Analytics");
     console.error("Analytics aggregation error:", err);
     res.status(500).json({ error: err.message });
   }

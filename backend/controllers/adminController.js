@@ -38,14 +38,10 @@ exports.login = async (req, res) => {
         const Model = getModel(actualRole);
         if (!Model) return res.status(400).json({ message: 'Invalid role provided.' });
 
-        const user = await Model.findOne({ email });
+        const user = await Model.findOne({ email }).lean();
 
         if (!user || !(await bcrypt.compare(password, user.password))) {
             return res.status(401).json({ message: 'Invalid credentials' });
-        }
-
-        if (actualRole === 'admin') {
-            actualRole = 'admin';
         }
 
         req.session.user = { id: user._id, role: actualRole, name: user.name, email: user.email };
@@ -57,6 +53,7 @@ exports.login = async (req, res) => {
 
 // 1. Get All Enrollments
 exports.getAllEnrollments = async (req, res) => {
+    console.time("DB_Admin_AllEnrollments");
     try {
         const enrollments = await Enrollment.find()
             .populate({
@@ -64,7 +61,9 @@ exports.getAllEnrollments = async (req, res) => {
                 select: 'title subject teacherId',
                 populate: { path: 'teacherId', select: 'name' }
             })
-            .populate('studentId', 'name email');
+            .populate('studentId', 'name email')
+            .lean();
+        console.timeEnd("DB_Admin_AllEnrollments");
 
         const formattedEnrollments = enrollments.map(e => ({
             _id: e._id,
@@ -78,78 +77,16 @@ exports.getAllEnrollments = async (req, res) => {
 
         res.json(formattedEnrollments);
     } catch (err) {
+        console.timeEnd("DB_Admin_AllEnrollments");
         res.status(500).json({ error: 'Error fetching enrollments: ' + err.message });
     }
 };
 
-/**
- * @swagger
- * /api/admin/users:
- *   get:
- *     summary: Get all users (admin)
- *     tags: [Admin]
- *     security:
- *       - sessionAuth: []
- *     responses:
- *       200:
- *         description: List of all users
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 students:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       _id:
- *                         type: string
- *                         example: "60c728362d294d1f88c88888"
- *                       name:
- *                         type: string
- *                         example: "John Doe"
- *                       email:
- *                         type: string
- *                         example: "john.doe@example.com"
- *                 teachers:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       _id:
- *                         type: string
- *                         example: "60c728362d294d1f88c88888"
- *                       name:
- *                         type: string
- *                         example: "Dr. Smith"
- *                       email:
- *                         type: string
- *                         example: "dr.smith@example.com"
- *                       specialization:
- *                         type: string
- *                         example: "Computer Science"
- *                       totalStudents:
- *                         type: number
- *                         example: 150
- *                       courseCount:
- *                         type: number
- *                         example: 5
- *       500:
- *         description: Server error
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- */
-
 // 2. Get All Users (Split by role + Analytics for Teachers)
 exports.getAllUsers = async (req, res) => {
+    console.time("DB_Admin_AllUsers");
     try {
-        const students = await Student.find().select('-password');
+        const students = await Student.find().select('-password').lean();
 
         // Complex Aggregation for Teachers to get Student Count
         const teachers = await Teacher.aggregate([
@@ -180,9 +117,11 @@ exports.getAllUsers = async (req, res) => {
                 }
             }
         ]);
+        console.timeEnd("DB_Admin_AllUsers");
 
         res.json({ students, teachers });
     } catch (err) {
+        console.timeEnd("DB_Admin_AllUsers");
         res.status(500).json({ error: err.message });
     }
 };
@@ -194,11 +133,10 @@ exports.createReviewer = async (req, res) => {
         if (!name || !email || !password) {
             return res.status(400).json({ message: 'Name, email, and password are required.' });
         }
-        const existing = await Reviewer.findOne({ email });
+        const existing = await Reviewer.findOne({ email }).lean();
         if (existing) {
             return res.status(400).json({ message: 'A reviewer with this email already exists.' });
         }
-        const bcrypt = require('bcryptjs');
         const hashedPassword = await bcrypt.hash(password, 10);
         const reviewer = await Reviewer.create({ name, email, password: hashedPassword, specialization: specialization || '' });
         res.status(201).json({ message: 'Reviewer account created.', reviewer: { _id: reviewer._id, name: reviewer.name, email: reviewer.email } });
@@ -210,7 +148,7 @@ exports.createReviewer = async (req, res) => {
 // 2c. Get All Reviewers
 exports.getAllReviewers = async (req, res) => {
     try {
-        const reviewers = await Reviewer.find().select('-password');
+        const reviewers = await Reviewer.find().select('-password').lean();
         res.json(reviewers);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -226,10 +164,8 @@ exports.deleteUser = async (req, res) => {
 
         await Model.findByIdAndDelete(id);
 
-        // Cascade delete logic (simplified)
         if (role === 'teacher') {
             await Course.deleteMany({ teacherId: id });
-            // Note: Enrollments linked to those courses should technically be deleted too
         } else if (role === 'student') {
             await Enrollment.deleteMany({ studentId: id });
         }
@@ -246,7 +182,7 @@ exports.updateUser = async (req, res) => {
     const { name, email } = req.body;
     try {
         const Model = getModel(role);
-        const updated = await Model.findByIdAndUpdate(id, { name, email }, { new: true }).select('-password');
+        const updated = await Model.findByIdAndUpdate(id, { name, email }, { new: true }).select('-password').lean();
         res.json(updated);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -266,6 +202,7 @@ exports.deleteCourse = async (req, res) => {
 
 // 6. Course CRUD - Get All (List for admin)
 exports.getAllCoursesAdmin = async (req, res) => {
+    console.time("DB_Admin_AllCourses");
     try {
         const coursesWithAnalytics = await Course.aggregate([
             {
@@ -353,9 +290,11 @@ exports.getAllCoursesAdmin = async (req, res) => {
                 }
             }
         ]);
+        console.timeEnd("DB_Admin_AllCourses");
 
         res.json(coursesWithAnalytics);
     } catch (err) {
+        console.timeEnd("DB_Admin_AllCourses");
         res.status(500).json({ error: err.message });
     }
 };
@@ -363,7 +302,7 @@ exports.getAllCoursesAdmin = async (req, res) => {
 // 7. Course CRUD - Update
 exports.updateCourseAdmin = async (req, res) => {
     try {
-        const updatedCourse = await Course.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        const updatedCourse = await Course.findByIdAndUpdate(req.params.id, req.body, { new: true }).lean();
         res.json(updatedCourse);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -372,17 +311,23 @@ exports.updateCourseAdmin = async (req, res) => {
 
 // 8. Lookup: Student Progress by Email
 exports.getStudentEnrollmentByEmail = async (req, res) => {
+    console.time("DB_Admin_LookupEmail");
     const { email } = req.params;
     try {
-        const student = await Student.findOne({ email });
-        if (!student) return res.status(404).json({ message: 'Student not found.' });
+        const student = await Student.findOne({ email }).lean();
+        if (!student) {
+            console.timeEnd("DB_Admin_LookupEmail");
+            return res.status(404).json({ message: 'Student not found.' });
+        }
 
         const enrollments = await Enrollment.find({ studentId: student._id })
             .populate({
                 path: 'courseId',
                 select: 'title description subject teacherId',
                 populate: { path: 'teacherId', select: 'name' }
-            });
+            })
+            .lean();
+        console.timeEnd("DB_Admin_LookupEmail");
 
         const formattedEnrollments = enrollments.map(e => ({
             _id: e._id,
@@ -391,7 +336,6 @@ exports.getStudentEnrollmentByEmail = async (req, res) => {
             instructorName: e.courseId?.teacherId?.name || 'N/A',
             completionStatus: e.completionStatus,
             dateEnrolled: e.createdAt,
-            // Calculate simple progress %
             progress: e.modules_status ? Math.round((e.modules_status.filter(m => m.completed).length / (e.modules_status.length || 1)) * 100) : 0
         }));
 
@@ -400,6 +344,7 @@ exports.getStudentEnrollmentByEmail = async (req, res) => {
             enrollments: formattedEnrollments
         });
     } catch (err) {
+        console.timeEnd("DB_Admin_LookupEmail");
         res.status(500).json({ error: err.message });
     }
 };
@@ -408,7 +353,7 @@ exports.getStudentEnrollmentByEmail = async (req, res) => {
 exports.getTeacherCoursesByEmail = async (req, res) => {
     const { email } = req.params;
     try {
-        const teacher = await Teacher.findOne({ email });
+        const teacher = await Teacher.findOne({ email }).lean();
         if (!teacher) return res.status(404).json({ message: 'Teacher not found.' });
 
         // Get courses and aggregate enrollment counts for them

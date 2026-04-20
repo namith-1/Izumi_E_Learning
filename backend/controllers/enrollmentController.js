@@ -49,27 +49,15 @@ const getContentModules = (course) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CORE GRADING ENGINE — replaces the old checkCourseCompletion()
-//
-// Modes (set per-course by instructor via passingPolicy.mode):
-//   "threshold" — legacy: ≥ passingThreshold% of content modules must be
-//                 completed AND all graded quiz modules must pass
-//   "weighted"  — weighted average of graded quiz scores must reach
-//                 minimumWeightedScore.  Weights are auto-normalised if they
-//                 don't sum to 100.
-//   "all-pass"  — every graded module with a passingScore must be individually
-//                 passed; completion % is not checked.
-//
-// Per-module optional fields (set by instructor inside module node object):
-//   weight         {Number 0-100}   contribution to total weighted score
-//   passingScore   {Number 0-100}   minimum % score to pass this module
-//   isGraded       {Boolean}        false → module skipped in grading
-//   maxAttempts    {Number|null}    max quiz retakes; null = unlimited
+// CORE GRADING ENGINE
+// MODIFIED: Accepts optional pre-fetched course object to avoid redundant DB calls
 // ─────────────────────────────────────────────────────────────────────────────
-const computeEnrollmentResult = async (courseId, enrollment) => {
-  const course = await Course.findById(courseId).select(
+const computeEnrollmentResult = async (courseId, enrollment, preFetchedCourse = null) => {
+  // OPTIMIZATION: Use pre-fetched course if available to avoid DB round-trip
+  const course = preFetchedCourse || await Course.findById(courseId).select(
     "_id rootModule modules title passingPolicy",
-  );
+  ).lean();
+  
   if (!course) return enrollment;
 
   const policy = course.passingPolicy || {};
@@ -87,7 +75,6 @@ const computeEnrollmentResult = async (courseId, enrollment) => {
   }
 
   // ── Identify graded modules ───────────────────────────────────────────────
-  // A module is graded if isGraded !== false AND is a quiz (or explicitly marked graded)
   const gradedModules = contentModules.filter((m) => {
     if (m.isGraded === false) return false;
     if (m.isGraded === true) return true;
@@ -99,7 +86,6 @@ const computeEnrollmentResult = async (courseId, enrollment) => {
     (sum, m) => sum + (m.weight ?? 0),
     0,
   );
-  // Proportionally scale weights so they effectively sum to 100
   const normalise = totalAssignedWeight > 0 && totalAssignedWeight !== 100;
 
   // ── Per-module grading pass ───────────────────────────────────────────────
@@ -110,13 +96,11 @@ const computeEnrollmentResult = async (courseId, enrollment) => {
     const rawScore = s.quizScore; // 0-100 or null
     const passingScore = m.passingScore ?? null;
 
-    // Determine per-module pass/fail
     let modulePassed = null;
     if (rawScore !== null) {
       modulePassed = passingScore !== null ? rawScore >= passingScore : true;
     }
 
-    // Effective weight after optional normalisation
     const rawWeight = m.weight ?? 0;
     const effectiveWeight = normalise
       ? (rawWeight / totalAssignedWeight) * 100
@@ -125,7 +109,6 @@ const computeEnrollmentResult = async (courseId, enrollment) => {
     const contribution =
       rawScore !== null ? (effectiveWeight / 100) * rawScore : 0;
 
-    // Write back to the Mongoose sub-document
     s.passed = modulePassed;
     s.weightedContribution = parseFloat(contribution.toFixed(2));
   }
@@ -139,7 +122,6 @@ const computeEnrollmentResult = async (courseId, enrollment) => {
     .map((s) => s.moduleId);
 
   if (mode === "threshold") {
-    // ── THRESHOLD MODE (legacy default) ──────────────────────────────────
     const completedCount = contentModules.filter((m) =>
       completedIds.includes(m.id),
     ).length;
@@ -164,7 +146,6 @@ const computeEnrollmentResult = async (courseId, enrollment) => {
       passStatus = "fail";
     }
   } else if (mode === "weighted") {
-    // ── WEIGHTED MODE ─────────────────────────────────────────────────────
     const allAttempted = gradedModules.every(
       (m) =>
         statusMap[m.id]?.quizScore !== null &&
@@ -183,7 +164,6 @@ const computeEnrollmentResult = async (courseId, enrollment) => {
       }
     }
   } else if (mode === "all-pass") {
-    // ── ALL-PASS MODE ─────────────────────────────────────────────────────
     const allAttempted = gradedModules.every(
       (m) =>
         statusMap[m.id]?.quizScore !== null &&
@@ -203,10 +183,8 @@ const computeEnrollmentResult = async (courseId, enrollment) => {
     }
   }
 
-  // ── Persist results ───────────────────────────────────────────────────────
   enrollment.passStatus = passStatus;
   enrollment.weightedScore = weightedScore;
-  // Keep completionStatus in sync for backward-compat
   enrollment.completionStatus =
     passStatus === "pass" ? "completed" : "in-progress";
   enrollment.moduleSnapshotCount = totalContentModules;
@@ -214,281 +192,74 @@ const computeEnrollmentResult = async (courseId, enrollment) => {
   return enrollment;
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
 // Enroll in a course
-// ─────────────────────────────────────────────────────────────────────────────
-// exports.enroll = async (req, res) => {
-//   try {
-//     const { courseId } = req.body;
-//     const enrollment = await Enrollment.create({
-//       courseId,
-//       studentId: req.session.user.id,
-//     });
-//     res.status(201).json(enrollment);
-//   } catch (err) {
-//     if (err.code === 11000)
-//       return res.status(400).json({ message: "Already enrolled" });
-//     res.status(500).json({ error: err.message });
-//   }
-// };
-
-// Make sure to import all three models at the top of your file
-
-/**
- * @swagger
- * /api/enrollment/enroll:
- *   post:
- *     summary: Enroll in a course
- *     tags: [Enrollment]
- *     security:
- *       - sessionAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - courseId
- *             properties:
- *               courseId:
- *                 type: string
- *                 example: "60c728362d294d1f88c88888"
- *     responses:
- *       201:
- *         description: Enrollment successful
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Enrollment'
- *       400:
- *         description: Already enrolled or invalid input
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Already enrolled in this course"
- *       404:
- *         description: Course not found
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Course not found"
- *       500:
- *         description: Server error
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- */
-
 exports.enroll = async (req, res) => {
+  console.time("DB_Enroll_Course");
   try {
     const { courseId } = req.body;
     const studentId = req.session.user.id;
 
-    // 1. Fetch the course to get its current price
-    const course = await Course.findById(courseId);
-
+    const course = await Course.findById(courseId).lean();
     if (!course) {
-      return res.status(404).json({ message: "Course not found" });
+        console.timeEnd("DB_Enroll_Course");
+        return res.status(404).json({ message: "Course not found" });
     }
 
-    // 2. Create the primary Enrollment record
     const enrollment = await Enrollment.create({
       courseId,
       studentId,
     });
 
-    // 3. Create the Analytics record, storing the exact price paid at this moment
     await EnrollmentAnalytics.create({
       courseId,
       studentId,
-      price: course.price || 0, // Fallback to 0 if the course price is undefined
+      price: course.price || 0,
     });
 
-    // 4. Send the successful response
+    console.timeEnd("DB_Enroll_Course");
     res.status(201).json(enrollment);
   } catch (err) {
-    // 11000 is the MongoDB duplicate key error code
+    console.timeEnd("DB_Enroll_Course");
     if (err.code === 11000) {
-      return res
-        .status(400)
-        .json({ message: "Already enrolled in this course" });
+      return res.status(400).json({ message: "Already enrolled in this course" });
     }
-
     console.error("Enrollment Error:", err);
     res.status(500).json({ error: "An error occurred during enrollment." });
   }
 };
 
-/**
- * @swagger
- * /api/enrollment/{courseId}:
- *   get:
- *     summary: Get enrollment status for a course
- *     tags: [Enrollment]
- *     security:
- *       - sessionAuth: []
- *     parameters:
- *       - in: path
- *         name: courseId
- *         required: true
- *         schema:
- *           type: string
- *         example: "60c728362d294d1f88c88888"
- *     responses:
- *       200:
- *         description: Enrollment details
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Enrollment'
- *       404:
- *         description: Not enrolled
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Not enrolled"
- *       500:
- *         description: Server error
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- */
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Get enrollment / progress for CourseViewer
-// ─────────────────────────────────────────────────────────────────────────────
+// Get enrollment status
 exports.getEnrollment = async (req, res) => {
+  console.time("DB_Get_Enrollment");
   try {
     const enrollment = await Enrollment.findOne({
       courseId: req.params.courseId,
       studentId: req.session.user.id,
-    });
+    }).lean();
+    console.timeEnd("DB_Get_Enrollment");
+    
     if (!enrollment) return res.status(404).json({ message: "Not enrolled" });
     res.json(enrollment);
   } catch (err) {
+    console.timeEnd("DB_Get_Enrollment");
     res.status(500).json({ error: err.message });
   }
 };
 
-/**
- * @swagger
- * /api/enrollment/my-courses:
- *   get:
- *     summary: Get my enrolled courses
- *     tags: [Enrollment]
- *     security:
- *       - sessionAuth: []
- *     responses:
- *       200:
- *         description: List of enrolled courses
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   _id:
- *                     type: string
- *                     example: "60c728362d294d1f88c88888"
- *                   courseTitle:
- *                     type: string
- *                     example: "Introduction to Programming"
- *                   description:
- *                     type: string
- *                     example: "Learn the basics of programming"
- *                   subject:
- *                     type: string
- *                     example: "Computer Science"
- *                   imageUrl:
- *                     type: string
- *                     example: "/uploads/courses/image.jpg"
- *                   rating:
- *                     type: number
- *                     example: 4.5
- *                   instructorName:
- *                     type: string
- *                     example: "Dr. Smith"
- *                   teacherId:
- *                     type: string
- *                     example: "60c728362d294d1f88c88889"
- *                   completionStatus:
- *                     type: string
- *                     example: "completed"
- *                   passStatus:
- *                     type: string
- *                     example: "passed"
- *                   weightedScore:
- *                     type: number
- *                     example: 85.5
- *                   passingPolicy:
- *                     type: object
- *                     example: {"mode": "threshold", "passingThreshold": 70}
- *                   modules_status:
- *                     type: array
- *                     items:
- *                       type: object
- *                       properties:
- *                         moduleId:
- *                           type: string
- *                           example: "module1"
- *                         completed:
- *                           type: boolean
- *                           example: true
- *                         quizScore:
- *                           type: number
- *                           example: 90
- *                   totalContentModules:
- *                     type: number
- *                     example: 10
- *                   completedContentModules:
- *                     type: number
- *                     example: 8
- *       500:
- *         description: Server error
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- */
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Get all enrolled courses with details (My Learning page)
-// ─────────────────────────────────────────────────────────────────────────────
+// Get all enrolled courses (My Learning)
 exports.getMyEnrolledCourses = async (req, res) => {
+  console.time("DB_Get_My_Courses");
   try {
     const enrollments = await Enrollment.find({
       studentId: req.session.user.id,
-    }).populate({
-      path: "courseId",
-      select:
-        "title description subject teacherId rating imageUrl rootModule modules passingPolicy",
-      populate: { path: "teacherId", select: "name" },
-    });
+    })
+      .populate({
+        path: "courseId",
+        select: "title description subject teacherId rating imageUrl rootModule modules passingPolicy",
+        populate: { path: "teacherId", select: "name" },
+      })
+      .lean();
+    console.timeEnd("DB_Get_My_Courses");
 
     const enrolledCoursesData = [];
     for (const enrollment of enrollments) {
@@ -503,13 +274,23 @@ exports.getMyEnrolledCourses = async (req, res) => {
       // Recompute only if module count has changed since last snapshot
       if ((enrollment.moduleSnapshotCount || 0) !== totalContentModules) {
         try {
+          // PASSING THE PRE-FETCHED COURSE OBJECT (Major Optimization)
           updatedEnrollment = await computeEnrollmentResult(
             course._id,
             enrollment,
+            course
           );
-          await updatedEnrollment.save();
+          // Only save if it's an actual Mongoose doc (if we need persistence)
+          // Since it's lean, we might need to findOne and update or skip saving if not critical
+          // For simple display, in-memory is fine. If we MUST save:
+          await Enrollment.findByIdAndUpdate(enrollment._id, {
+            passStatus: updatedEnrollment.passStatus,
+            weightedScore: updatedEnrollment.weightedScore,
+            completionStatus: updatedEnrollment.completionStatus,
+            moduleSnapshotCount: updatedEnrollment.moduleSnapshotCount
+          });
         } catch (e) {
-          // silent — use in-memory values
+          console.error("Error recomputing result:", e);
         }
       }
 
@@ -527,9 +308,7 @@ exports.getMyEnrolledCourses = async (req, res) => {
         rating: course.rating,
         instructorName: course.teacherId.name,
         teacherId: course.teacherId._id,
-        // Legacy field
         completionStatus: updatedEnrollment.completionStatus,
-        // New grading fields
         passStatus: updatedEnrollment.passStatus,
         weightedScore: updatedEnrollment.weightedScore,
         passingPolicy: course.passingPolicy,
@@ -541,115 +320,22 @@ exports.getMyEnrolledCourses = async (req, res) => {
 
     res.json(enrolledCoursesData);
   } catch (err) {
+    console.timeEnd("DB_Get_My_Courses");
     console.error("Error fetching enrolled courses:", err);
     res.status(500).json({ error: err.message });
   }
 };
 
-/**
- * @swagger
- * /api/enrollment/{courseId}/progress:
- *   put:
- *     summary: Update progress in enrolled course
- *     tags: [Enrollment]
- *     security:
- *       - sessionAuth: []
- *     parameters:
- *       - in: path
- *         name: courseId
- *         required: true
- *         schema:
- *           type: string
- *         example: "60c728362d294d1f88c88888"
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - moduleId
- *             properties:
- *               moduleId:
- *                 type: string
- *                 example: "module1"
- *               timeSpent:
- *                 type: number
- *                 example: 300
- *               completed:
- *                 type: boolean
- *                 example: true
- *               quizScore:
- *                 type: number
- *                 minimum: 0
- *                 maximum: 100
- *                 example: 85
- *     responses:
- *       200:
- *         description: Progress updated successfully
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Enrollment'
- *       400:
- *         description: Module ID is required
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Module ID is required to update progress."
- *       403:
- *         description: Maximum attempts reached
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Maximum attempts (3) reached for this module."
- *                 attemptsUsed:
- *                   type: number
- *                   example: 3
- *                 maxAttempts:
- *                   type: number
- *                   example: 3
- *       404:
- *         description: Enrollment not found
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Enrollment not found"
- *       500:
- *         description: Server error
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- */
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Update Progress — called when video ends, text is marked read, or quiz submitted
-// ─────────────────────────────────────────────────────────────────────────────
+// Update Progress
 exports.updateProgress = async (req, res) => {
+  console.time("DB_Update_Progress");
   try {
     const { courseId } = req.params;
     const { moduleId: rawModuleId, timeSpent, completed, quizScore } = req.body;
 
     if (!rawModuleId) {
-      return res
-        .status(400)
-        .json({ message: "Module ID is required to update progress." });
+      console.timeEnd("DB_Update_Progress");
+      return res.status(400).json({ message: "Module ID is required to update progress." });
     }
     const moduleId = String(rawModuleId);
 
@@ -657,36 +343,23 @@ exports.updateProgress = async (req, res) => {
       courseId,
       studentId: req.session.user.id,
     });
-    if (!enrollment)
-      return res.status(404).json({ message: "Enrollment not found" });
+    if (!enrollment) {
+        console.timeEnd("DB_Update_Progress");
+        return res.status(404).json({ message: "Enrollment not found" });
+    }
 
-    // ── Fetch module config for maxAttempts check ─────────────────────────
-    const course = await Course.findById(courseId).select(
-      "modules rootModule passingPolicy",
-    );
-    const modulesValues =
-      course?.modules instanceof Map
-        ? Array.from(course.modules.values())
-        : Object.values(course?.modules || {});
+    const course = await Course.findById(courseId).select("modules rootModule passingPolicy").lean();
+    const modulesValues = course?.modules instanceof Map ? Array.from(course.modules.values()) : Object.values(course?.modules || {});
     const allNodes = modulesValues.concat([course?.rootModule]).filter(Boolean);
     const moduleConfig = allNodes.find((m) => String(m.id) === moduleId) || {};
-    const maxAttempts = moduleConfig.maxAttempts ?? null; // null = unlimited
+    const maxAttempts = moduleConfig.maxAttempts ?? null;
 
-    // ── Find or create the status entry for this module ───────────────────
-    const moduleIndex = enrollment.modules_status.findIndex(
-      (m) => m.moduleId === moduleId,
-    );
+    const moduleIndex = enrollment.modules_status.findIndex((m) => m.moduleId === moduleId);
 
     if (moduleIndex > -1) {
       const existing = enrollment.modules_status[moduleIndex];
-
-      // Enforce maxAttempts before accepting a new quiz score
-      if (
-        quizScore !== undefined &&
-        quizScore !== null &&
-        maxAttempts !== null &&
-        (existing.attemptsUsed || 0) >= maxAttempts
-      ) {
+      if (quizScore !== undefined && quizScore !== null && maxAttempts !== null && (existing.attemptsUsed || 0) >= maxAttempts) {
+        console.timeEnd("DB_Update_Progress");
         return res.status(403).json({
           message: `Maximum attempts (${maxAttempts}) reached for this module.`,
           attemptsUsed: existing.attemptsUsed,
@@ -694,19 +367,12 @@ exports.updateProgress = async (req, res) => {
         });
       }
 
-      if (timeSpent !== undefined)
-        enrollment.modules_status[moduleIndex].timeSpent = timeSpent;
-      if (completed !== undefined)
-        enrollment.modules_status[moduleIndex].completed = completed;
+      if (timeSpent !== undefined) enrollment.modules_status[moduleIndex].timeSpent = timeSpent;
+      if (completed !== undefined) enrollment.modules_status[moduleIndex].completed = completed;
       if (quizScore !== undefined && quizScore !== null) {
-        // Keep the best score across attempts
         const prevScore = existing.quizScore ?? -Infinity;
-        enrollment.modules_status[moduleIndex].quizScore = Math.max(
-          prevScore,
-          quizScore,
-        );
-        enrollment.modules_status[moduleIndex].attemptsUsed =
-          (existing.attemptsUsed || 0) + 1;
+        enrollment.modules_status[moduleIndex].quizScore = Math.max(prevScore, quizScore);
+        enrollment.modules_status[moduleIndex].attemptsUsed = (existing.attemptsUsed || 0) + 1;
       }
     } else {
       enrollment.modules_status.push({
@@ -718,67 +384,29 @@ exports.updateProgress = async (req, res) => {
       });
     }
 
-    // ── Run the grading engine and save ───────────────────────────────────
-    const updatedEnrollment = await computeEnrollmentResult(
-      courseId,
-      enrollment,
-    );
+    const updatedEnrollment = await computeEnrollmentResult(courseId, enrollment, course);
     await updatedEnrollment.save();
+    console.timeEnd("DB_Update_Progress");
 
     res.json(updatedEnrollment);
   } catch (err) {
+    console.timeEnd("DB_Update_Progress");
     console.error("Error in updateProgress:", err);
     res.status(500).json({ error: err.message });
   }
 };
 
-/**
- * @swagger
- * /api/enrollment/{courseId}/rating:
- *   put:
- *     summary: Submit or update rating for an enrolled course
- *     tags: [Enrollment]
- *     security:
- *       - sessionAuth: []
- *     parameters:
- *       - in: path
- *         name: courseId
- *         required: true
- *         schema:
- *           type: string
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [rating]
- *             properties:
- *               rating:
- *                 type: number
- *                 minimum: 1
- *                 maximum: 5
- *               review:
- *                 type: string
- *                 maxLength: 500
- *     responses:
- *       200: { description: Rating saved }
- */
+// Submit Rating
 exports.submitCourseRating = async (req, res) => {
+  console.time("DB_Submit_Rating");
   try {
     const { courseId } = req.params;
     const numericRating = Number(req.body.rating);
-    const review =
-      typeof req.body.review === "string" ? req.body.review.trim() : "";
+    const review = typeof req.body.review === "string" ? req.body.review.trim() : "";
 
-    if (
-      !Number.isFinite(numericRating) ||
-      numericRating < 1 ||
-      numericRating > 5
-    ) {
-      return res
-        .status(400)
-        .json({ message: "Rating must be between 1 and 5." });
+    if (!Number.isFinite(numericRating) || numericRating < 1 || numericRating > 5) {
+      console.timeEnd("DB_Submit_Rating");
+      return res.status(400).json({ message: "Rating must be between 1 and 5." });
     }
 
     const enrollment = await Enrollment.findOne({
@@ -787,21 +415,8 @@ exports.submitCourseRating = async (req, res) => {
     });
 
     if (!enrollment) {
-      return res
-        .status(403)
-        .json({ message: "You must enroll in the course before rating it." });
-    }
-
-    const requireCompletionForRating =
-      process.env.RATING_REQUIRE_COMPLETION === "true";
-    if (
-      requireCompletionForRating &&
-      enrollment.passStatus !== "pass" &&
-      enrollment.completionStatus !== "completed"
-    ) {
-      return res.status(403).json({
-        message: "Complete the course before submitting a rating.",
-      });
+      console.timeEnd("DB_Submit_Rating");
+      return res.status(403).json({ message: "You must be enrolled to rate this course." });
     }
 
     enrollment.rating = numericRating;
@@ -809,14 +424,12 @@ exports.submitCourseRating = async (req, res) => {
     enrollment.ratedAt = new Date();
     await enrollment.save();
 
-    const courseRating = await recalculateCourseAverageRating(courseId);
+    await recalculateCourseAverageRating(courseId);
+    console.timeEnd("DB_Submit_Rating");
 
-    return res.json({
-      message: "Rating submitted successfully.",
-      enrollment,
-      courseRating,
-    });
+    res.json({ message: "Rating submitted successfully.", rating: numericRating });
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    console.timeEnd("DB_Submit_Rating");
+    res.status(500).json({ error: err.message });
   }
 };

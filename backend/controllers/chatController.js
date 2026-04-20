@@ -5,28 +5,35 @@ const Course = require("../models/Course");
 const mongoose = require("mongoose");
 
 // ——— GET DM HISTORY ————————————————————————————————————————
-// GET /api/chat/:courseId/messages?otherUserId=xxx&before=timestamp&limit=50
 exports.getMessages = async (req, res) => {
+    console.time("DB_Chat_History");
     try {
         const { courseId } = req.params;
         const { otherUserId, before, limit = 50 } = req.query;
         const userId = req.session.user.id;
 
         if (!otherUserId) {
+            console.timeEnd("DB_Chat_History");
             return res.status(400).json({ message: "otherUserId is required" });
         }
 
         // Verify access
         const role = req.session.user.role;
         if (role === "student") {
-            const enrolled = await Enrollment.findOne({ courseId, studentId: userId });
-            if (!enrolled) return res.status(403).json({ message: "Not enrolled" });
+            const enrolled = await Enrollment.findOne({ courseId, studentId: userId }).lean();
+            if (!enrolled) {
+                console.timeEnd("DB_Chat_History");
+                return res.status(403).json({ message: "Not enrolled" });
+            }
         } else if (role === "teacher") {
-            const course = await Course.findOne({ _id: courseId, teacherId: userId });
-            if (!course) return res.status(403).json({ message: "Not your course" });
+            const course = await Course.findOne({ _id: courseId, teacherId: userId }).lean();
+            if (!course) {
+                console.timeEnd("DB_Chat_History");
+                return res.status(403).json({ message: "Not your course" });
+            }
         }
 
-        // Build query: messages between these two users in this course
+        // Build query
         const query = {
             courseId,
             $or: [
@@ -43,37 +50,36 @@ exports.getMessages = async (req, res) => {
             .sort({ createdAt: -1 })
             .limit(Math.min(Number(limit), 100))
             .lean();
+        console.timeEnd("DB_Chat_History");
 
         // Return in chronological order
         res.json(messages.reverse());
     } catch (err) {
+        console.timeEnd("DB_Chat_History");
         res.status(500).json({ error: err.message });
     }
 };
 
 // ——— GET CONVERSATIONS LIST (Instructor Only) ———————————————
-// GET /api/chat/:courseId/conversations
-// Returns list of students who have chatted, with last message + unread count
 exports.getConversations = async (req, res) => {
+    console.time("DB_Conversations_Link");
     try {
         const { courseId } = req.params;
         const userId = req.session.user.id;
 
-        // Verify instructor owns this course
-        const course = await Course.findOne({ _id: courseId, teacherId: userId });
+        const course = await Course.findOne({ _id: courseId, teacherId: userId }).lean();
         if (!course) {
+            console.timeEnd("DB_Conversations_Link");
             return res.status(403).json({ message: "Not your course" });
         }
 
         const courseObjId = new mongoose.Types.ObjectId(courseId);
         const teacherObjId = new mongoose.Types.ObjectId(userId);
 
-        // Aggregate: find all unique students who have messaged or been messaged
         const conversations = await Message.aggregate([
             { $match: { courseId: courseObjId } },
             {
                 $addFields: {
-                    // The "other" user from the instructor's POV
                     studentId: {
                         $cond: [
                             { $eq: ["$senderId", teacherObjId] },
@@ -91,7 +97,6 @@ exports.getConversations = async (req, res) => {
                     lastMessageAt: { $first: "$createdAt" },
                     lastSenderRole: { $first: "$senderRole" },
                     senderName: { $first: "$senderName" },
-                    // Count unread messages sent TO the teacher
                     unreadCount: {
                         $sum: {
                             $cond: [
@@ -111,12 +116,13 @@ exports.getConversations = async (req, res) => {
             { $sort: { lastMessageAt: -1 } },
         ]);
 
-        // Populate student names
-        const Student = require("../models/Student");
         const studentIds = conversations.map((c) => c._id);
+        const Student = require("../models/Student");
         const students = await Student.find({ _id: { $in: studentIds } })
             .select("name email")
             .lean();
+
+        console.timeEnd("DB_Conversations_Link");
 
         const studentMap = {};
         for (const s of students) {
@@ -135,12 +141,12 @@ exports.getConversations = async (req, res) => {
 
         res.json(result);
     } catch (err) {
+        console.timeEnd("DB_Conversations_Link");
         res.status(500).json({ error: err.message });
     }
 };
 
-// ——— GET UNREAD COUNT FOR CURRENT USER ———————————————————————
-// GET /api/chat/unread-count
+// ——— GET UNREAD COUNT ————————————————————————————————————————
 exports.getUnreadCount = async (req, res) => {
     try {
         const userId = req.session.user.id;

@@ -219,7 +219,7 @@ const CourseViewer = () => {
   const instructorName = instructor ? instructor.name : "Unknown Instructor";
 
   const rootModule = course.rootModule;
-  const introModule = course.modules[rootModule.id] || rootModule;
+  const introModule = (course.modules && course.modules[rootModule.id]) || rootModule;
 
   // If the user is enrolled, but the automatic redirect hasn't happened yet (e.g., waiting for data fetch to complete),
   // we still show a loading screen to prevent a flicker.

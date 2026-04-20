@@ -40,7 +40,8 @@ const messageSchema = new mongoose.Schema(
 // Fast lookup for conversation history
 messageSchema.index({ courseId: 1, senderId: 1, receiverId: 1, createdAt: -1 });
 
-// Fast unread count
-messageSchema.index({ receiverId: 1, read: 1 });
+// Fast lookups
+messageSchema.index({ courseId: 1 });
+messageSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model("Message", messageSchema);

@@ -126,8 +126,8 @@ const CourseLearnPage = () => {
   // ✅ Effect 1: Fetch data (Course and Enrollment) and register cleanup.
   // Runs ONLY on mount or when courseId changes. (Prevents re-fetching on module change)
   useEffect(() => {
-    // Fetch course data (conditionally)
-    if (!course || course._id !== courseId) {
+    // Fetch course data if not present, if it's the wrong course, or if it's a partial fetch (missing modules)
+    if (!course || course._id !== courseId || !course.modules) {
       dispatch(fetchCourseById(courseId));
     }
     // Fetch enrollment status
@@ -159,7 +159,7 @@ const CourseLearnPage = () => {
 
     // Check 2: Invalid starting module from URL -> Fix internal state (no navigation)
     const moduleExists =
-      course.modules[moduleId] || moduleId === course.rootModule.id;
+      (course.modules && course.modules[moduleId]) || moduleId === course.rootModule.id;
     if (!moduleExists) {
       const validStartId =
         course.rootModule.children?.[0] || course.rootModule.id;
@@ -500,7 +500,7 @@ const CourseLearnPage = () => {
     if (!course) return null;
 
     const module =
-      course.modules[moduleId] ||
+      (course.modules && course.modules[moduleId]) ||
       (moduleId === course.rootModule.id ? course.rootModule : null);
     if (!module) return null;
 
@@ -551,7 +551,7 @@ const CourseLearnPage = () => {
     if (!activeModuleId)
       return <div>Select a module to begin your learning.</div>;
 
-    const module = course.modules[activeModuleId] || course.rootModule;
+    const module = (course.modules && course.modules[activeModuleId]) || course.rootModule;
 
     if (!module)
       return (
@@ -598,7 +598,7 @@ const CourseLearnPage = () => {
 
   // Calculate overall course progress (exclude root and any corrupt entries)
   const allModulesMap = {
-    ...course.modules,
+    ...(course.modules || {}),
     [course.rootModule.id]: course.rootModule,
   };
   const allModulesList = Object.values(allModulesMap).filter((m) => m && m.id);

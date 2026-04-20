@@ -47,5 +47,6 @@ const transactionSchema = new mongoose.Schema(
 
 transactionSchema.index({ studentId: 1, courseId: 1 });
 transactionSchema.index({ teacherId: 1, createdAt: -1 });
+transactionSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model("Transaction", transactionSchema);

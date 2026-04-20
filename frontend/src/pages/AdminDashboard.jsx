@@ -6,7 +6,7 @@ import {
     fetchStudentEnrollmentByEmail, fetchTeacherCoursesByEmail, clearLookup
 } from '../store';
 import {
-    Users, BookOpen, BarChart3, Loader2, Trash2, Edit, Save, X, Search, Eye, Shield, UserPlus, DollarSign
+    Users, BookOpen, BarChart3, Loader2, Trash2, Edit, Save, X, Search, Eye, Shield, UserPlus, DollarSign, Terminal
 } from 'lucide-react';
 import ProfileDropdown from '../components/ProfileDropdown';
 import AnalyticsDashboard from '../components/analytics/AnalyticsDashboard';

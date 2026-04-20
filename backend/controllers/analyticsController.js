@@ -4,7 +4,7 @@ const Teacher = require('../models/Teacher');
 const Course = require('../models/Course');
 const Enrollment = require('../models/Enrollment');
 const Transaction = require('../models/Transaction');
-const EnrollmentAnalytics = require('../models/EnrollmentAnalytics'); // For tracking enrollments with price and date
+const EnrollmentAnalytics = require('../models/EnrollmentAnalytics'); 
 const PLATFORM_FEE_RATE = 0.2;
 
 const getDateMatch = (req) => {
@@ -37,10 +37,9 @@ const getGroupDateExpression = (groupBy) => {
 
 // ===== ADMIN ANALYTICS =====
 
-// Add this alongside your other controller functions
 exports.getOverallTimeAnalytics = async (req, res) => {
+  console.time("DB_Analytics_OverallTime");
   try {
-    // 1. Aggregate enrollments by Date AND Course ID (No $lookup here)
     const overallTimes = await EnrollmentAnalytics.aggregate([
       {
         $group: {
@@ -65,26 +64,18 @@ exports.getOverallTimeAnalytics = async (req, res) => {
         $sort: { date: 1 },
       },
     ]);
+    console.timeEnd("DB_Analytics_OverallTime");
 
-    // If there are no enrollments at all, return empty array early
-    if (overallTimes.length === 0) {
-      return res.json([]);
-    }
+    if (overallTimes.length === 0) return res.json([]);
 
-    // 2. Extract unique course IDs from the aggregated data
     const uniqueCourseIds = [...new Set(overallTimes.map(item => item.courseId.toString()))];
+    const courses = await Course.find({ _id: { $in: uniqueCourseIds } }).select("title").lean();
 
-    // 3. Fetch the titles for those specific courses using the Course model
-    // Using .select("title") ensures we don't pull heavy module data into memory
-    const courses = await Course.find({ _id: { $in: uniqueCourseIds } }).select("title");
-
-    // 4. Create a dictionary (hash map) for instant O(1) title lookups
     const courseTitleMap = {};
     courses.forEach(course => {
       courseTitleMap[course._id.toString()] = course.title;
     });
 
-    // 5. Map over the analytics results and inject the courseName
     const enrichedAnalytics = overallTimes.map(record => ({
       date: record.date,
       courseId: record.courseId,
@@ -93,52 +84,38 @@ exports.getOverallTimeAnalytics = async (req, res) => {
       numberOfEnrollments: record.numberOfEnrollments,
     }));
 
-    // 6. Send the enriched data to the frontend
     res.json(enrichedAnalytics);
-
   } catch (err) {
+    console.timeEnd("DB_Analytics_OverallTime");
     console.error("Overall Analytics Error:", err);
     res.status(500).json({ error: err.message });
   }
 };
 
-
 exports.getCourseTimeAnalytics = async (req, res) => {
   try {
     const { courseId } = req.body;
-
-    if (!courseId) {
-      return res.status(400).json({ message: "courseId is required" });
-    }
+    if (!courseId) return res.status(400).json({ message: "courseId is required" });
 
     const courseTimes = await EnrollmentAnalytics.aggregate([
-      // 1. Match only the enrollments for this specific course
       {
-        $match: {
-          courseId: new mongoose.Types.ObjectId(courseId),
-        },
+        $match: { courseId: new mongoose.Types.ObjectId(courseId) },
       },
-      // 2. Group by the calendar date
       {
         $group: {
-          // Format date to YYYY-MM-DD to group by day
           _id: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
-          
-          // Calculate total price and count for the day
           dayWisePrice: { $sum: "$price" },
           numberOfEnrollments: { $sum: 1 },
         },
       },
-      // 3. Reshape the output for a cleaner response
       {
         $project: {
-          _id: 0,           // Hide the default _id field
-          date: "$_id",     // Rename _id back to 'date'
+          _id: 0,
+          date: "$_id",
           dayWisePrice: 1,
           numberOfEnrollments: 1,
         },
       },
-      // 4. Sort chronologically by date (oldest to newest)
       {
         $sort: { date: 1 },
       },
@@ -152,78 +129,48 @@ exports.getCourseTimeAnalytics = async (req, res) => {
 };
 
 exports.getAdminOverview = async (req, res) => {
+    console.time("DB_Analytics_Overview");
     try {
-        const totalStudents = await Student.countDocuments();
-        const totalInstructors = await Teacher.countDocuments();
-        const totalCourses = await Course.countDocuments();
-        const totalEnrollments = await Enrollment.countDocuments();
-
-        // Calculate completion rate
-        const completedEnrollments = await Enrollment.countDocuments({ completionStatus: 'completed' });
-        const completionRate = totalEnrollments > 0 ? ((completedEnrollments / totalEnrollments) * 100).toFixed(1) : 0;
-
-        // Calculate average rating across all courses
-        const courses = await Course.find({ rating: { $exists: true, $ne: null } });
-        const avgRating = courses.length > 0
-            ? (courses.reduce((sum, c) => sum + (c.rating || 0), 0) / courses.length).toFixed(1)
-            : 0;
-
-        // Get growth metrics (users can filter)
-        const days = parseInt(req.query.days) || 30;
-        const startDate = new Date();
-        startDate.setDate(startDate.getDate() - days);
-
-        const newStudents = await Student.countDocuments({ createdAt: { $gte: startDate } });
-        const newInstructors = await Teacher.countDocuments({ createdAt: { $gte: startDate } });
-        const newCourses = await Course.countDocuments({ createdAt: { $gte: startDate } });
-
-        const txOverview = await Transaction.aggregate([
-            { $match: { status: { $in: ['paid', 'refunded'] } } },
-            {
-                $group: {
-                    _id: null,
-                    grossRevenue: { $sum: { $cond: [{ $eq: ['$status', 'paid'] }, '$amount', 0] } },
-                    refundedAmount: { $sum: { $cond: [{ $eq: ['$status', 'refunded'] }, '$amount', 0] } },
-                    totalTransactions: { $sum: 1 },
-                }
-            }
+        const [totalStudents, totalInstructors, totalCourses, totalEnrollments] = await Promise.all([
+            Student.countDocuments(),
+            Teacher.countDocuments(),
+            Course.countDocuments(),
+            Enrollment.countDocuments()
         ]);
-        const tx = txOverview[0] || { grossRevenue: 0, refundedAmount: 0, totalTransactions: 0 };
+
+        const last30d = new Date();
+        last30d.setDate(last30d.getDate() - 30);
+
+        const [newStudents, newInstructors, newCourses] = await Promise.all([
+            Student.countDocuments({ createdAt: { $gte: last30d } }),
+            Teacher.countDocuments({ createdAt: { $gte: last30d } }),
+            Course.countDocuments({ createdAt: { $gte: last30d } })
+        ]);
+        console.timeEnd("DB_Analytics_Overview");
 
         res.json({
-            totalStudents,
-            totalInstructors,
-            totalCourses,
-            totalEnrollments,
-            totalTransactions: tx.totalTransactions,
-            grossRevenue: parseFloat((tx.grossRevenue || 0).toFixed(2)),
-            refundedAmount: parseFloat((tx.refundedAmount || 0).toFixed(2)),
-            netRevenue: parseFloat(((tx.grossRevenue || 0) - (tx.refundedAmount || 0)).toFixed(2)),
-            completionRate: parseFloat(completionRate),
-            averageRating: parseFloat(avgRating),
-            growth: {
-                students: newStudents,
-                instructors: newInstructors,
-                courses: newCourses,
-                days: days // Return the days used for context
+            totals: {
+                students: totalStudents,
+                instructors: totalInstructors,
+                courses: totalCourses,
+                enrollments: totalEnrollments
             },
-            // Backward compatibility (optional, but good for safety)
             growth30d: {
-                students: newStudents, // This might not be 30d anymore, but keeps frontend from crashing until updated
+                students: newStudents, 
                 instructors: newInstructors,
                 courses: newCourses
             }
         });
     } catch (err) {
+        console.timeEnd("DB_Analytics_Overview");
         res.status(500).json({ error: err.message });
     }
 };
 
-// 11. Revenue/Transaction overview for admin
 exports.getRevenueOverview = async (req, res) => {
     try {
         const matchStage = getDateMatch(req);
-        const overview = await Transaction.aggregate([
+        const overviewArr = await Transaction.aggregate([
             { $match: matchStage },
             {
                 $group: {
@@ -238,13 +185,8 @@ exports.getRevenueOverview = async (req, res) => {
             }
         ]);
 
-        const data = overview[0] || {
-            totalTransactions: 0,
-            paidTransactions: 0,
-            refundedTransactions: 0,
-            failedTransactions: 0,
-            grossRevenue: 0,
-            refundedAmount: 0
+        const data = overviewArr[0] || {
+            totalTransactions: 0, paidTransactions: 0, refundedTransactions: 0, failedTransactions: 0, grossRevenue: 0, refundedAmount: 0
         };
 
         res.json({
@@ -257,40 +199,40 @@ exports.getRevenueOverview = async (req, res) => {
     }
 };
 
-// 12. Revenue trend by day
 exports.getRevenueTrend = async (req, res) => {
+    console.time("DB_Analytics_RevenueTrend");
     try {
         const matchStage = getDateMatch(req);
-        const groupBy = req.query.groupBy || 'day';
-        const dateExpr = getGroupDateExpression(groupBy);
+        const { groupBy = 'day' } = req.query;
 
         const trend = await Transaction.aggregate([
             { $match: matchStage },
             {
                 $group: {
-                    _id: dateExpr,
+                    _id: getGroupDateExpression(groupBy),
+                    count: { $sum: 1 },
                     grossRevenue: { $sum: { $cond: [{ $eq: ['$status', 'paid'] }, '$amount', 0] } },
                     refundedAmount: { $sum: { $cond: [{ $eq: ['$status', 'refunded'] }, '$amount', 0] } },
-                    count: { $sum: 1 },
                 }
             },
             { $sort: { _id: 1 } }
         ]);
+        console.timeEnd("DB_Analytics_RevenueTrend");
 
         res.json(trend.map((t) => ({
             date: t._id,
-            transactionCount: t.count,
+            transactions: t.count,
             grossRevenue: parseFloat((t.grossRevenue || 0).toFixed(2)),
             refundedAmount: parseFloat((t.refundedAmount || 0).toFixed(2)),
             netRevenue: parseFloat(((t.grossRevenue || 0) - (t.refundedAmount || 0)).toFixed(2)),
             platformProfit: parseFloat((((t.grossRevenue || 0) - (t.refundedAmount || 0)) * PLATFORM_FEE_RATE).toFixed(2)),
         })));
     } catch (err) {
+        console.timeEnd("DB_Analytics_RevenueTrend");
         res.status(500).json({ error: err.message });
     }
 };
 
-// 13. Transaction status distribution
 exports.getTransactionStatusDistribution = async (req, res) => {
     try {
         const stats = await Transaction.aggregate([
@@ -313,7 +255,6 @@ exports.getTransactionStatusDistribution = async (req, res) => {
     }
 };
 
-// 14. Revenue by teacher leaderboard
 exports.getRevenueByTeacher = async (req, res) => {
     try {
         const limit = parseInt(req.query.limit) || 10;
@@ -363,7 +304,6 @@ exports.getRevenueByTeacher = async (req, res) => {
     }
 };
 
-// 15. Revenue/profit by student
 exports.getRevenueByStudent = async (req, res) => {
     try {
         const limit = parseInt(req.query.limit) || 10;
@@ -409,7 +349,6 @@ exports.getRevenueByStudent = async (req, res) => {
     }
 };
 
-// 16. Revenue/profit by course
 exports.getRevenueByCourse = async (req, res) => {
     try {
         const limit = parseInt(req.query.limit) || 10;
@@ -455,7 +394,6 @@ exports.getRevenueByCourse = async (req, res) => {
     }
 };
 
-// 2. Growth Trends - Registration and enrollment over time
 exports.getGrowthTrends = async (req, res) => {
     try {
         const days = parseInt(req.query.days) || 30;
@@ -463,49 +401,42 @@ exports.getGrowthTrends = async (req, res) => {
         const startDate = new Date();
         startDate.setDate(startDate.getDate() - days);
 
-        // If subject filter is applied, we only filter Courses and Enrollments
-        // Students/Instructors are platform-wide, so we return empty/unfiltered based on UX choice.
-        // Returning empty for students/instructors when subject is selected to avoid confusion.
-
         let courseMatch = { createdAt: { $gte: startDate } };
         let enrollmentMatch = { createdAt: { $gte: startDate } };
         let studentTrends = [];
         let instructorTrends = [];
 
         if (subject) {
-            // Find courses with this subject first
-            const subjectCourses = await Course.find({ subject }).select('_id');
+            const subjectCourses = await Course.find({ subject }).select('_id').lean();
             const subjectCourseIds = subjectCourses.map(c => c._id);
-
             courseMatch.subject = subject;
             enrollmentMatch.courseId = { $in: subjectCourseIds };
         } else {
-            // Only fetch Student/Instructor trends if NO subject filter
-            studentTrends = await Student.aggregate([
-                { $match: { createdAt: { $gte: startDate } } },
-                { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } }, count: { $sum: 1 } } },
-                { $sort: { _id: 1 } }
-            ]);
-
-            instructorTrends = await Teacher.aggregate([
-                { $match: { createdAt: { $gte: startDate } } },
-                { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } }, count: { $sum: 1 } } },
-                { $sort: { _id: 1 } }
+            [studentTrends, instructorTrends] = await Promise.all([
+                Student.aggregate([
+                    { $match: { createdAt: { $gte: startDate } } },
+                    { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } }, count: { $sum: 1 } } },
+                    { $sort: { _id: 1 } }
+                ]),
+                Teacher.aggregate([
+                    { $match: { createdAt: { $gte: startDate } } },
+                    { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } }, count: { $sum: 1 } } },
+                    { $sort: { _id: 1 } }
+                ])
             ]);
         }
 
-        // Course creations over time
-        const courseTrends = await Course.aggregate([
-            { $match: courseMatch },
-            { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } }, count: { $sum: 1 } } },
-            { $sort: { _id: 1 } }
-        ]);
-
-        // Enrollments over time
-        const enrollmentTrends = await Enrollment.aggregate([
-            { $match: enrollmentMatch },
-            { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } }, count: { $sum: 1 } } },
-            { $sort: { _id: 1 } }
+        const [courseTrends, enrollmentTrends] = await Promise.all([
+            Course.aggregate([
+                { $match: courseMatch },
+                { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } }, count: { $sum: 1 } } },
+                { $sort: { _id: 1 } }
+            ]),
+            Enrollment.aggregate([
+                { $match: enrollmentMatch },
+                { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } }, count: { $sum: 1 } } },
+                { $sort: { _id: 1 } }
+            ])
         ]);
 
         res.json({
@@ -519,7 +450,6 @@ exports.getGrowthTrends = async (req, res) => {
     }
 };
 
-// 3. Subject Distribution - Enrollment counts by subject
 exports.getSubjectDistribution = async (req, res) => {
     try {
         const distribution = await Course.aggregate([
@@ -553,21 +483,17 @@ exports.getSubjectDistribution = async (req, res) => {
     }
 };
 
-// 4. Top Courses - Best performing courses by various metrics
 exports.getTopCourses = async (req, res) => {
     try {
         const limit = parseInt(req.query.limit) || 10;
-        const sortBy = req.query.sortBy || 'enrollments'; // enrollments, rating, completion
+        const sortBy = req.query.sortBy || 'enrollments'; 
         const { subject } = req.query;
-
         const pipeline = [];
 
-        // 1. Match Stage (Subject Filter)
         if (subject && subject !== 'All') {
             pipeline.push({ $match: { subject: subject } });
         }
 
-        // 2. Lookups and Projections
         pipeline.push(
             {
                 $lookup: {
@@ -603,23 +529,11 @@ exports.getTopCourses = async (req, res) => {
                         }
                     }
                 }
-            },
-            {
-                $addFields: {
-                    completionRate: {
-                        $cond: [
-                            { $gt: ['$totalEnrollments', 0] },
-                            { $multiply: [{ $divide: ['$completedEnrollments', '$totalEnrollments'] }, 100] },
-                            0
-                        ]
-                    }
-                }
             }
         );
 
         const courses = await Course.aggregate(pipeline);
 
-        // Sort based on parameter
         if (sortBy === 'rating') {
             courses.sort((a, b) => (b.rating || 0) - (a.rating || 0));
         } else if (sortBy === 'completion') {
@@ -634,7 +548,6 @@ exports.getTopCourses = async (req, res) => {
     }
 };
 
-// 5. Instructor Leaderboard - Top instructors by metrics
 exports.getInstructorLeaderboard = async (req, res) => {
     try {
         const leaderboard = await Teacher.aggregate([
@@ -697,9 +610,6 @@ exports.getInstructorLeaderboard = async (req, res) => {
     }
 };
 
-// ===== COURSE ANALYTICS =====
-
-// 6. Course Enrollment Trends - Per course or all courses
 exports.getCourseEnrollmentTrends = async (req, res) => {
     try {
         const { courseId } = req.query;
@@ -727,7 +637,6 @@ exports.getCourseEnrollmentTrends = async (req, res) => {
     }
 };
 
-// 7. Completion Analysis - Breakdown of completion rates
 exports.getCompletionAnalysis = async (req, res) => {
     try {
         const analysis = await Enrollment.aggregate([
@@ -754,7 +663,6 @@ exports.getCompletionAnalysis = async (req, res) => {
     }
 };
 
-// 8. Rating Analysis - Subject-wise and overall rating trends
 exports.getRatingAnalysis = async (req, res) => {
     try {
         const bySubject = await Course.aggregate([
@@ -793,38 +701,26 @@ exports.getRatingAnalysis = async (req, res) => {
     }
 };
 
-// 9. Instructor Analytics - Detailed stats for a specific instructor
 exports.getInstructorAnalytics = async (req, res) => {
     try {
         let instructorId = new mongoose.Types.ObjectId(req.session.user.id);
-
-        // Allow Admin to view specific instructor
-        // Requires session user role to be admin AND instructorId query param
         if (req.session.user.role === 'admin' && req.query.instructorId) {
             instructorId = new mongoose.Types.ObjectId(req.query.instructorId);
         }
 
-        // 1. Overall Stats
-        const courses = await Course.find({ teacherId: instructorId });
+        const courses = await Course.find({ teacherId: instructorId }).lean();
         const courseIds = courses.map(c => c._id);
         const totalCourses = courses.length;
-
-        const enrollments = await Enrollment.find({ courseId: { $in: courseIds } });
-        const totalStudents = enrollments.length;
-
-        const completedStudents = enrollments.filter(e => e.completionStatus === 'completed').length;
+        const enrollmentsArr = await Enrollment.find({ courseId: { $in: courseIds } }).lean();
+        const totalStudents = enrollmentsArr.length;
+        const completedStudents = enrollmentsArr.filter(e => e.completionStatus === 'completed').length;
         const activeStudents = totalStudents - completedStudents;
-
         const completionRate = totalStudents > 0 ? ((completedStudents / totalStudents) * 100).toFixed(1) : 0;
 
-        // 2. Subject Distribution
         const subjects = {};
-        courses.forEach(c => {
-            subjects[c.subject] = (subjects[c.subject] || 0) + 1;
-        });
+        courses.forEach(c => { subjects[c.subject] = (subjects[c.subject] || 0) + 1; });
         const subjectDistribution = Object.keys(subjects).map(s => ({ name: s, value: subjects[s] }));
 
-        // 3. Course Performance (Detailed)
         const coursePerformance = await Course.aggregate([
             { $match: { teacherId: instructorId } },
             {
@@ -839,7 +735,7 @@ exports.getInstructorAnalytics = async (req, res) => {
                 $project: {
                     title: 1,
                     subject: 1,
-                    rating: 1, // Add rating
+                    rating: 1, 
                     totalEnrollments: { $size: '$enrollments' },
                     avgQuizScore: {
                         $avg: {
@@ -849,104 +745,46 @@ exports.getInstructorAnalytics = async (req, res) => {
                                 in: { $concatArrays: ['$$value', '$$this'] }
                             }
                         }
-                    },
-                    completionRate: {
-                        $cond: [
-                            { $gt: [{ $size: '$enrollments' }, 0] },
-                            {
-                                $multiply: [
-                                    {
-                                        $divide: [
-                                            {
-                                                $size: {
-                                                    $filter: {
-                                                        input: '$enrollments',
-                                                        as: 'e',
-                                                        cond: { $eq: ['$$e.completionStatus', 'completed'] }
-                                                    }
-                                                }
-                                            },
-                                            { $size: '$enrollments' }
-                                        ]
-                                    },
-                                    100
-                                ]
-                            },
-                            0
-                        ]
                     }
                 }
             }
         ]);
 
-        // 4. Enrollment Trend (Dynamic Range)
-        const days = parseInt(req.query.days) || 30;
-        const startDate = new Date();
-        startDate.setDate(startDate.getDate() - days);
-
-        const enrollmentTrend = await Enrollment.aggregate([
-            { $match: { courseId: { $in: courseIds }, createdAt: { $gte: startDate } } },
-            {
-                $group: {
-                    _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
-                    count: { $sum: 1 }
-                }
-            },
-            { $sort: { _id: 1 } }
-        ]);
-
         res.json({
-            overview: {
+            summary: {
                 totalCourses,
                 totalStudents,
                 activeStudents,
                 completedStudents,
-                completionRate: parseFloat(completionRate)
+                completionRate
             },
             subjectDistribution,
-            coursePerformance: coursePerformance.map(c => ({
-                ...c,
-                completionRate: parseFloat(c.completionRate.toFixed(1)),
-                // Fix avgQuizScore logic which might return array of objects from reduce
-                // Actually the previous logic in courseController was better for this.
-                // Simplified here: if no quiz scores, it returns null.
-            })),
-            enrollmentTrend: enrollmentTrend.map(t => ({ date: t._id, count: t.count }))
+            coursePerformance
         });
-
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 };
 
-// 10. Instructor Student Analytics - List of students enrolled in instructor's courses
 exports.getInstructorStudentAnalytics = async (req, res) => {
     try {
         const instructorId = new mongoose.Types.ObjectId(req.session.user.id);
-
-        // Find courses taught by this instructor
-        const courses = await Course.find({ teacherId: instructorId }, 'title _id');
+        const courses = await Course.find({ teacherId: instructorId }, 'title _id').lean();
         const courseIds = courses.map(c => c._id);
         const courseMap = courses.reduce((acc, c) => { acc[c._id.toString()] = c.title; return acc; }, {});
 
-        // Find enrollments
         const enrollments = await Enrollment.find({ courseId: { $in: courseIds } })
             .populate('studentId', 'name email')
-            .sort({ updatedAt: -1 });
+            .sort({ updatedAt: -1 })
+            .lean();
 
-        // Transform data
         const data = enrollments.map(e => {
-            if (!e.studentId) return null; // Skip if student deleted
-
+            if (!e.studentId) return null;
             const totalModules = e.modules_status ? e.modules_status.length : 0;
             const completedModules = e.modules_status ? e.modules_status.filter(m => m.completed).length : 0;
-            // Approximate progress if totalModules is known, else rely on completionStatus
             const progress = totalModules > 0 ? Math.round((completedModules / totalModules) * 100) : (e.completionStatus === 'completed' ? 100 : 0);
-
             const quizScores = e.modules_status ? e.modules_status.filter(m => m.quizScore != null).map(m => m.quizScore) : [];
-            const avgQuizScore = quizScores.length > 0
-                ? (quizScores.reduce((a, b) => a + b, 0) / quizScores.length).toFixed(1)
-                : 'N/A';
+            const avgQuizScore = quizScores.length > 0 ? (quizScores.reduce((a, b) => a + b, 0) / quizScores.length).toFixed(1) : 'N/A';
 
             return {
                 id: e.studentId._id,
@@ -965,5 +803,3 @@ exports.getInstructorStudentAnalytics = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
-
-module.exports = exports;

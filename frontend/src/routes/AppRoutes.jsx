@@ -11,6 +11,7 @@ import LandingPage from "../pages/LandingPage";
 import AdminDashboard from "../pages/AdminDashboard"; // NEW IMPORT
 import AdminLogin from "../pages/AdminLogin";
 import ReviewerDashboard from "../pages/ReviewerDashboard";
+import TestDashboard from "../pages/TestDashboard";
 import ApiDocs from "../pages/ApiDocs";
 
 const AppRoutes = () => {
@@ -32,6 +33,15 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRole="admin">
             <AdminDashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/tests"
+        element={
+          <ProtectedRoute allowedRole="admin">
+            <TestDashboard />
           </ProtectedRoute>
         }
       />

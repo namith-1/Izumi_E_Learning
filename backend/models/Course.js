@@ -12,6 +12,7 @@ const courseSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Teacher",
       required: true,
+      index: true,
     },
     rating: { type: Number, default: 0 },
     whatULearning: [String],
@@ -34,6 +35,7 @@ const courseSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Reviewer",
       default: null,
+      index: true,
     },
     // Comment thread between reviewer and instructor
     reviewNotes: [
@@ -67,5 +69,7 @@ const courseSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
+
+courseSchema.index({ title: "text", description: "text" });
 
 module.exports = mongoose.model("Course", courseSchema);
