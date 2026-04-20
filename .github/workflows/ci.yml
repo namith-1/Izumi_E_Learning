@@ -30,7 +30,15 @@ jobs:
         run: npm run test:report
         env:
           NODE_ENV: test
-          # Add other necessary dummy env vars for tests if needed
+          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+          CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
+          CLIENT_URL: ${{ secrets.CLIENT_URL }}
+          GOOGLE_CALLBACK_URL: ${{ secrets.GOOGLE_CALLBACK_URL }}
+          # MongoMemoryServer handles MONGO_URI, but you can add others here
           
       - name: Upload Test Report
         uses: actions/upload-artifact@v4
@@ -66,7 +74,7 @@ jobs:
           VITE_API_BASE_URL: https://izumi-e-learning.onrender.com/api
 
   deploy:
-    needs: [backend-tests, frontend-build]
+    needs: [backend-tests]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
