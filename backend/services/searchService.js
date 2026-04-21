@@ -72,6 +72,33 @@ const searchService = {
       console.error("Meilisearch Batch Sync Error:", err);
     }
   },
+
+  // Update Settings (Typo tolerance, ranking, etc.)
+  updateSettings: async () => {
+    try {
+      await index.updateSettings({
+        searchableAttributes: ["title", "subject", "description", "instructorName"],
+        rankingRules: [
+          "words",
+          "typo",
+          "proximity",
+          "attribute",
+          "sort",
+          "exactness",
+        ],
+        typoTolerance: {
+          enabled: true,
+          minWordSizeForTypos: {
+            oneTypo: 3, // Allow 1 typo for 3-letter words (fixes das vs dsa)
+            twoTypos: 7,
+          },
+        },
+      });
+      console.log("[Meilisearch] Index settings updated successfully.");
+    } catch (err) {
+      console.error("Meilisearch Settings Error:", err);
+    }
+  },
 };
 
 module.exports = searchService;

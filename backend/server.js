@@ -284,10 +284,13 @@ io.use((socket, next) => {
 // Register chat socket handlers
 registerChatHandlers(io);
 
-// 1. Database
+// 2. Global Middlewares
 connectDB();
 
-// 2. Global Middlewares
+// Initialize Search Engine Settings
+const searchService = require("./services/searchService");
+searchService.updateSettings();
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(securityMiddleware);

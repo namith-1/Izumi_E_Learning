@@ -230,9 +230,9 @@ export const fetchAllCourses = createAsyncThunk(
       const { courses } = getState();
       const isAppend = args?.append === true;
 
-      // STRICT BLOCK: If we're not appending, and we already have data, BLOCK the call.
-      if (!isAppend && courses.list?.length > 0 && courses.lastFetched) {
-        console.log("[Cache] Blocking redundant course fetch.");
+      // STRICT BLOCK: If we're already initialized for this session, and we already have data, BLOCK the call.
+      if (courses.isSessionInitialized && !isAppend && courses.list?.length > 0) {
+        console.log("[Cache] Blocking redundant catalog fetch (Switching Tabs).");
         return false;
       }
     },
@@ -318,6 +318,21 @@ const saveCatalogCache = (list) => {
 
 const initialCatalog = loadCatalogCache();
 
+// Helper to load/save enrolled courses cache
+const ENROLLED_CACHE_KEY = "izumi_enrolled_cache";
+const loadEnrolledCache = () => {
+  try {
+    const cached = sessionStorage.getItem(ENROLLED_CACHE_KEY);
+    return cached ? JSON.parse(cached) : null;
+  } catch (e) { return null; }
+};
+const saveEnrolledCache = (list) => {
+  try {
+    sessionStorage.setItem(ENROLLED_CACHE_KEY, JSON.stringify({ list, timestamp: Date.now() }));
+  } catch (e) {}
+};
+const initialEnrolled = loadEnrolledCache();
+
 const courseSlice = createSlice({
   name: "courses",
   initialState: {
@@ -327,10 +342,11 @@ const courseSlice = createSlice({
     lastSearchQuery: "",
     currentCourse: null,
     loading: false,
-    loadingMore: false, // NEW: Lock for infinite scroll
+    loadingMore: false,
     error: null,
     analyticsData: [],
     lastFetched: initialCatalog?.timestamp || null,
+    isSessionInitialized: false, // Flag: true after very first successful fetch of the session
   },
   reducers: {
     clearCurrentCourse: (state) => {
@@ -365,6 +381,7 @@ const courseSlice = createSlice({
         state.hasMore = courses.length === 100;
         state.lastSearchQuery = "";
         state.lastFetched = Date.now();
+        state.isSessionInitialized = true; // Mark session as healthy
         saveCatalogCache(state.list);
       })
       .addCase(fetchAllCourses.rejected, (state, action) => {
@@ -508,12 +525,11 @@ export const fetchEnrolledCourses = createAsyncThunk(
   {
     condition: (_, { getState }) => {
       const { enrollment } = getState();
-      // STRICT CACHE: Only re-fetch if list is empty or explicitly invalidated (lastEnrolledFetch is null)
-      const isCacheValid =
-        enrollment.enrolledList.length > 0 && enrollment.lastEnrolledFetch;
-
-      if (isCacheValid) {
-        return false; // Skip the network request
+      // STRICT CACHE: Only block if we've already done the first fetch of this session.
+      // This allows data to refresh on Page Reload, but skip on Nav Bar Switch.
+      if (enrollment.isSessionInitialized && enrollment.enrolledList.length > 0) {
+        console.log("[Cache] Blocking redundant 'My Courses' fetch (Switching Tabs).");
+        return false;
       }
     },
   },
@@ -547,8 +563,9 @@ const enrollmentSlice = createSlice({
   name: "enrollment",
   initialState: {
     currentEnrollment: undefined,
-    enrolledList: [],
-    lastEnrolledFetch: null, // Timestamp for caching
+    enrolledList: initialEnrolled?.list || [],
+    lastEnrolledFetch: initialEnrolled?.timestamp || null,
+    isSessionInitialized: false, // Flag: true after very first successful fetch of the session
     loading: false,
     error: null,
   },
@@ -567,7 +584,8 @@ const enrollmentSlice = createSlice({
       .addCase(enrollInCourse.fulfilled, (state, action) => {
         state.loading = false;
         state.currentEnrollment = action.payload;
-        state.lastEnrolledFetch = null; // Invalidate cache on new enrollment
+        state.isSessionInitialized = false; // BUSTER: Force refetch to see new course
+        state.lastEnrolledFetch = null;
       })
       .addCase(enrollInCourse.rejected, (state, action) => {
         state.loading = false;
@@ -596,7 +614,9 @@ const enrollmentSlice = createSlice({
       .addCase(fetchEnrolledCourses.fulfilled, (state, action) => {
         state.loading = false;
         state.enrolledList = action.payload;
-        state.lastEnrolledFetch = Date.now(); // Update cache timestamp
+        state.lastEnrolledFetch = Date.now();
+        state.isSessionInitialized = true; // Mark session as healthy
+        saveEnrolledCache(state.enrolledList);
       })
       .addCase(fetchEnrolledCourses.rejected, (state, action) => {
         state.loading = false;
