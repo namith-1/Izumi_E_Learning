@@ -286,6 +286,13 @@ export const fetchCourseAnalytics = createAsyncThunk(
 
 const courseSlice = createSlice({
   name: "courses",
+  initialState: {
+    list: [],
+    hasMore: true,
+    currentPage: 1,
+    lastSearchQuery: "",
+    currentCourse: null,
+    loading: false,
     loadingMore: false, // NEW: Lock for infinite scroll
     error: null,
     analyticsData: [],
