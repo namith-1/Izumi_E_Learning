@@ -256,10 +256,11 @@ exports.login = async (req, res) => {
 
     const user = await Model.findOne({ email }).lean();
     if (!user || !(await bcrypt.compare(password, user.password))) {
-      const waitTime = await attemptStore.recordFailure(email);
-      if (waitTime) {
+      const attemptRec = await attemptStore.recordFailedAttempt(email);
+      if (attemptRec && attemptRec.blockedUntil) {
+        const remainingMs = Math.max(0, new Date(attemptRec.blockedUntil).getTime() - Date.now());
         return res.status(429).json({
-          message: `Too many attempts. Try again in ${waitTime} seconds.`,
+          message: `Too many attempts. Try again in ${Math.ceil(remainingMs / 1000)} seconds.`,
         });
       }
       return res.status(401).json({ message: "Invalid credentials" });

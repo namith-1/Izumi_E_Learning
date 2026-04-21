@@ -65,8 +65,8 @@ describe("Payment API (Comprehensive)", () => {
     test("POST /student/checkout - Success creates transaction and enrollment", async () => {
       const teacher = await Teacher.create({ name: "T", email: "t@t.com", password: "p" });
       const course = await createValidCourse(teacher._id);
-      const studentId = new mongoose.Types.ObjectId();
-      activeUser = { id: studentId, role: "student" };
+      const student = await Student.create({ name: "S1", email: "s1@s.com", password: "p" });
+      activeUser = { id: student._id, role: "student" };
 
       const res = await request(app)
         .post("/api/payments/student/checkout")
@@ -75,62 +75,63 @@ describe("Payment API (Comprehensive)", () => {
       expect(res.status).toBe(201);
       expect(res.body.transaction.amount).toBe(99);
       
-      const enrollment = await Enrollment.findOne({ studentId, courseId: course._id });
+      const enrollment = await Enrollment.findOne({ studentId: student._id, courseId: course._id });
       expect(enrollment).toBeDefined();
     });
 
     test("POST /student/checkout - Fail on missing courseId", async () => {
-      activeUser = { id: new mongoose.Types.ObjectId(), role: "student" };
+      const student = await Student.create({ name: "S2", email: "s2@s.com", password: "p" });
+      activeUser = { id: student._id, role: "student" };
       const res = await request(app).post("/api/payments/student/checkout").send({});
       expect(res.status).toBe(400);
     });
 
     test("GET /student/transactions - List owned transactions", async () => {
-      const studentId = new mongoose.Types.ObjectId();
+      const student = await Student.create({ name: "S3", email: "s3@s.com", password: "p" });
       const courseId = new mongoose.Types.ObjectId();
-      await Transaction.create({ studentId, teacherId: new mongoose.Types.ObjectId(), courseId, amount: 50, status: "paid", reference: "REF_S1" });
+      await Transaction.create({ studentId: student._id, teacherId: new mongoose.Types.ObjectId(), courseId, amount: 50, status: "paid", reference: "REF_S1" });
       
-      activeUser = { id: studentId, role: "student" };
+      activeUser = { id: student._id, role: "student" };
       const res = await request(app).get("/api/payments/student/transactions");
       expect(res.status).toBe(200);
       expect(res.body.length).toBe(1);
     });
 
     test("GET /student/transactions/:id - Block unauthorized access", async () => {
-      const student1 = new mongoose.Types.ObjectId();
-      const student2 = new mongoose.Types.ObjectId();
-      const txn = await Transaction.create({ reference: "REF_U1", studentId: student1, teacherId: new mongoose.Types.ObjectId(), courseId: new mongoose.Types.ObjectId(), amount: 10, status: "paid" });
+      const student1 = await Student.create({ name: "S_U1", email: "u1@s.com", password: "p" });
+      const student2 = await Student.create({ name: "S_U2", email: "u2@s.com", password: "p" });
+      const txn = await Transaction.create({ reference: "REF_U1", studentId: student1._id, teacherId: new mongoose.Types.ObjectId(), courseId: new mongoose.Types.ObjectId(), amount: 10, status: "paid" });
       
-      activeUser = { id: student2, role: "student" };
+      activeUser = { id: student2._id, role: "student" };
       const res = await request(app).get(`/api/payments/student/transactions/${txn._id}`);
-      expect(res.status).toBe(404); // Controller logic uses findOne({_id, studentId})
+      expect(res.status).toBe(404);
     });
   });
 
   describe("Teacher Revenue Operations", () => {
     test("GET /teacher/summary - returns revenue data", async () => {
-      const teacherId = new mongoose.Types.ObjectId();
+      const teacher = await Teacher.create({ name: "T_Rev", email: "rev@t.com", password: "p" });
       await Transaction.create({ 
         reference: "REF_T1",
-        teacherId, studentId: new mongoose.Types.ObjectId(), 
+        teacherId: teacher._id, studentId: new mongoose.Types.ObjectId(), 
         courseId: new mongoose.Types.ObjectId(), amount: 100, status: "paid", payoutStatus: "released" 
       });
 
-      activeUser = { id: teacherId, role: "teacher" };
+      activeUser = { id: teacher._id, role: "teacher" };
       const res = await request(app).get("/api/payments/teacher/summary");
       expect(res.status).toBe(200);
       expect(res.body.grossRevenue).toBe(100);
     });
 
     test("PUT /teacher/transactions/:id/status - teacher updates payout status", async () => {
-      const teacherId = new mongoose.Types.ObjectId();
+      const teacher = await Teacher.create({ name: "T_P", email: "payout@t.com", password: "p" });
       const txn = await Transaction.create({ 
         reference: "REF_T2",
-        teacherId, studentId: new mongoose.Types.ObjectId(), 
+        teacherId: teacher._id, studentId: new mongoose.Types.ObjectId(), 
         courseId: new mongoose.Types.ObjectId(), amount: 100, status: "paid", payoutStatus: "pending" 
       });
 
-      activeUser = { id: teacherId, role: "teacher" };
+      activeUser = { id: teacher._id, role: "teacher" };
       const res = await request(app)
         .put(`/api/payments/teacher/transactions/${txn._id}/status`)
         .send({ payoutStatus: "released" });
@@ -151,7 +152,7 @@ describe("Payment API (Comprehensive)", () => {
           amount: 50, status: "paid" 
       });
 
-      activeUser = { id: new mongoose.Types.ObjectId(), role: "admin" };
+      activeUser = { id: "60c728362d294d1f88c88888", role: "admin" };
       const res = await request(app).get("/api/payments/admin/transactions");
       expect(res.status).toBe(200);
       expect(res.body.length).toBe(1);
@@ -172,7 +173,7 @@ describe("Payment API (Comprehensive)", () => {
         amount: 50, status: "paid" 
       });
 
-      activeUser = { id: new mongoose.Types.ObjectId(), role: "admin" };
+      activeUser = { id: "60c728362d294d1f88c88888", role: "admin" };
       const res = await request(app)
         .put(`/api/payments/admin/transactions/${txn._id}`)
         .send({ status: "failed" });

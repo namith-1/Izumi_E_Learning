@@ -62,9 +62,9 @@ describe("Analytics API", () => {
 
     const res = await request(app).get("/api/analytics/admin/overview");
     expect(res.status).toBe(200);
-    expect(res.body.totals.students).toBe(1);
-    expect(res.body.totals.instructors).toBe(1);
-    expect(res.body.totals.courses).toBe(1);
-    expect(res.body.totals.enrollments).toBe(1);
+    expect(res.body.totalStudents).toBe(1);
+    expect(res.body.totalInstructors).toBe(1);
+    expect(res.body.totalCourses).toBe(1);
+    expect(res.body.totalEnrollments).toBe(1);
   });
 });

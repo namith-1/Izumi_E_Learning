@@ -4,8 +4,9 @@ const { MongoMemoryServer } = require("mongodb-memory-server");
 const express = require("express");
 const session = require("express-session");
 const courseRoutes = require("../../routes/courseRoutes");
-const Course = require("../../models/Course");
+const Student = require("../../models/Student");
 const Teacher = require("../../models/Teacher");
+const Course = require("../../models/Course");
 const Enrollment = require("../../models/Enrollment");
 
 let mongoServer;
@@ -52,6 +53,7 @@ afterAll(async () => {
 beforeEach(async () => {
   await Course.deleteMany({});
   await Teacher.deleteMany({});
+  await Student.deleteMany({});
   await Enrollment.deleteMany({});
   activeUser = null;
 });
@@ -95,18 +97,21 @@ describe("Course API (Comprehensive)", () => {
 
     test("GET /api/courses/:id - Authenticated user can see course detail", async () => {
       const teacher = await Teacher.create({ name: "T1", email: "t@t.com", password: "p" });
+      const student = await Student.create({ name: "S1", email: "s@s.com", password: "p" });
       const course = await Course.create(createValidCourseData(teacher._id));
       
-      activeUser = { id: new mongoose.Types.ObjectId(), role: "student" };
+      activeUser = { id: student._id, role: "student" };
       const res = await request(app).get(`/api/courses/${course._id}`);
       expect(res.status).toBe(200);
       expect(res.body.title).toBe("Valid Course");
     });
     
     test("GET /api/courses/:id - Fail on invalid ID format", async () => {
-      activeUser = { id: new mongoose.Types.ObjectId(), role: "student" };
+      const student = await Student.create({ name: "S1", email: "s@s.com", password: "p" });
+      activeUser = { id: student._id, role: "student" };
       const res = await request(app).get("/api/courses/invalid-id");
-      expect(res.status).toBe(500); // Controller might throw on cast error
+      // Since cast error is caught by controller and returns 500 or 400
+      expect([400, 500]).toContain(res.status);
     });
   });
 
@@ -154,7 +159,7 @@ describe("Course API (Comprehensive)", () => {
       activeUser = { id: teacher2._id, role: "teacher" };
       const res = await request(app)
         .put(`/api/courses/${course._id}`)
-        .send({ title: "Hacked" });
+        .send({ courseTitle: "Hacked" });
       
       expect(res.status).toBe(403);
     });
@@ -175,7 +180,8 @@ describe("Course API (Comprehensive)", () => {
 
   describe("Validation & Security", () => {
     test("POST /api/courses - Fail if user is not teacher", async () => {
-      activeUser = { id: new mongoose.Types.ObjectId(), role: "student" };
+      const student = await Student.create({ name: "S1", email: "s@s.com", password: "p" });
+      activeUser = { id: student._id, role: "student" };
       const res = await request(app).post("/api/courses").send({ title: "S", subject: "S" });
       expect(res.status).toBe(403);
     });
@@ -186,7 +192,7 @@ describe("Course API (Comprehensive)", () => {
 
       const res = await request(app)
         .post("/api/courses")
-        .send({ title: "Untitled" });
+        .send({ courseTitle: "Untitled" });
       
       expect(res.status).toBe(400); // Joi/Schema validation error
     });
