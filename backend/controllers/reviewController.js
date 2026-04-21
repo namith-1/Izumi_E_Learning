@@ -50,10 +50,11 @@ const runPreChecks = (course) => {
 // POST /api/review/submit/:courseId — Instructor submits course for review
 exports.submitForReview = async (req, res) => {
     try {
-        const course = await Course.findOne({
-            _id: req.params.courseId,
-            teacherId: req.session.user.id,
-        });
+        let query = { _id: req.params.courseId, teacherId: req.session.user.id };
+        if (req.session.user.role === 'admin') {
+            query = { _id: req.params.courseId }; 
+        }
+        const course = await Course.findOne(query);
 
         if (!course) {
             return res.status(404).json({ message: "Course not found or not yours." });
@@ -97,7 +98,13 @@ exports.submitForReview = async (req, res) => {
 // GET /api/review/my-status — Instructor sees approval status of their courses
 exports.getMyCoursesStatus = async (req, res) => {
     try {
-        const courses = await Course.find({ teacherId: req.session.user.id })
+        let query = { teacherId: req.session.user.id };
+        if (req.session.user.role === 'admin' && req.query.instructorId) {
+            query = { teacherId: req.query.instructorId };
+        } else if (req.session.user.role === 'admin') {
+            query = {}; // Admin sees all if no specific instructor selected
+        }
+        const courses = await Course.find(query)
             .select("title subject approvalStatus submittedAt reviewedAt reviewNotes")
             .sort({ updatedAt: -1 });
         res.json(courses);
@@ -114,10 +121,11 @@ exports.addInstructorNote = async (req, res) => {
             return res.status(400).json({ message: "Note content is required." });
         }
 
-        const course = await Course.findOne({
-            _id: req.params.courseId,
-            teacherId: req.session.user.id,
-        });
+        let query = { _id: req.params.courseId, teacherId: req.session.user.id };
+        if (req.session.user.role === 'admin') {
+            query = { _id: req.params.courseId };
+        }
+        const course = await Course.findOne(query);
         if (!course) {
             return res.status(404).json({ message: "Course not found." });
         }

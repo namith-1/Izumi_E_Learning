@@ -426,14 +426,18 @@ const CourseLearnPage = () => {
           <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>
             {currentEnrollment === null
               ? "Redirecting..."
-              : "Session not ready"}
+              : justEnrolled 
+                ? "Setting up your student workspace..."
+                : "Session not ready"}
           </div>
           <div style={{ fontSize: 14, color: "#94a3b8", lineHeight: 1.5 }}>
             {currentEnrollment === null
               ? "You are not enrolled in this course."
-              : enrollmentError 
-                ? `Connection error: ${enrollmentError}. Please ensure you are logged in.`
-                : "If the page stays here, reload once to finish restoring your session."}
+              : justEnrolled
+                ? "We are finalizing your enrollment and preparing your modules. This takes just a moment..."
+                : enrollmentError 
+                  ? `Connection error: ${enrollmentError}. Please ensure you are logged in.`
+                  : "If the page stays here, reload once to finish restoring your session."}
           </div>
           {showRecoveryPrompt && currentEnrollment === undefined && (
             <div

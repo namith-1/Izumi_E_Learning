@@ -17,7 +17,7 @@ const Login = () => {
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { loading, error, user } = useSelector((state) => state.auth);
+  const { loading, error, errorDetail, user } = useSelector((state) => state.auth);
 
   useEffect(() => {
     if (user) {
@@ -39,8 +39,8 @@ const Login = () => {
 
   // Watch for blocking error (structured object may contain blockedUntil)
   useEffect(() => {
-    if (error && typeof error === "object" && error.blockedUntil) {
-      const until = new Date(error.blockedUntil);
+    if (errorDetail && typeof errorDetail === "object" && errorDetail.blockedUntil) {
+      const until = new Date(errorDetail.blockedUntil);
       const tick = () => {
         const secs = Math.max(
           0,
@@ -137,13 +137,13 @@ const Login = () => {
 
           {error && (
             <div className="error-msg">
-              {typeof error === "object" ? error.message || "Error" : error}
-              {error?.blockedUntil && remainingSeconds > 0 && (
+              {error}
+              {errorDetail?.blockedUntil && remainingSeconds > 0 && (
                 <div style={{ marginTop: 6 }}>
                   Too many attempts. Try again in{" "}
                   {formatRemaining(remainingSeconds)}.
                   <div style={{ fontSize: 12, color: "#555", marginTop: 4 }}>
-                    (until {formatAbsoluteTime(error.blockedUntil)})
+                    (until {formatAbsoluteTime(errorDetail.blockedUntil)})
                   </div>
                 </div>
               )}

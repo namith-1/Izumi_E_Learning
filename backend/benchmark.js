@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 
-dotenv.config();
+require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 
 const Course = require('./models/Course');
 const Enrollment = require('./models/Enrollment');
@@ -45,16 +45,11 @@ async function benchmark() {
       },
       {
         name: 'getRevenueTrend (Last 30 Days)',
-        op: () => Transaction.aggregate([
-          { $match: { createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } } },
-          { $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }, total: { $sum: "$amount" } } },
-          { $sort: { _id: 1 } }
-        ])
+        op: () => Transaction.find({ createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } }).sort({ createdAt: 1 })
       },
       {
-        name: 'getUserSearch (Title/Desc)',
-        // Simulating a case-insensitive search without a text index yet
-        op: () => Course.find({ title: { $regex: /programming/i } }).limit(5)
+        name: 'getUserSearch (Text Index)',
+        op: () => Course.find({ $text: { $search: "programming" } }).limit(5)
       }
     ];
 

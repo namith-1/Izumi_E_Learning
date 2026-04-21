@@ -191,4 +191,41 @@ router.get('/reviewers', adminController.getAllReviewers);
  */
 router.post('/reviewers', adminController.createReviewer);
 
+// --- Advanced Power Tools ---
+/** @swagger
+ * /api/admin/courses/{id}/status:
+ *   patch:
+ *     summary: Force update course status (admin)
+ *     tags: [Admin]
+ *     security: [{ sessionAuth: [] }]
+ */
+router.patch('/courses/:id/status', adminController.updateCourseStatusAdmin);
+
+/** @swagger
+ * /api/admin/courses/{id}/toggle-featured:
+ *   patch:
+ *     summary: Toggle course featured status (admin)
+ *     tags: [Admin]
+ *     security: [{ sessionAuth: [] }]
+ */
+router.patch('/courses/:id/toggle-featured', adminController.toggleCourseFeatured);
+
+/** @swagger
+ * /api/admin/users/{role}/{id}/reset-password:
+ *   post:
+ *     summary: Reset user password to default (admin)
+ *     tags: [Admin]
+ *     security: [{ sessionAuth: [] }]
+ */
+router.post('/users/:role/:id/reset-password', adminController.resetUserPassword);
+
+/** @swagger
+ * /api/admin/users/{role}/{id}/toggle-lock:
+ *   patch:
+ *     summary: Toggle user account lock (admin)
+ *     tags: [Admin]
+ *     security: [{ sessionAuth: [] }]
+ */
+router.patch('/users/:role/:id/toggle-lock', adminController.toggleUserLock);
+
 module.exports = router;

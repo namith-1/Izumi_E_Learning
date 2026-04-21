@@ -65,11 +65,14 @@ const courseSchema = new mongoose.Schema(
       // Used when mode === "weighted"
       minimumWeightedScore: { type: Number, default: 60, min: 0, max: 100 },
     },
+    // ── Promotional Features ──────────────────────────────────────────────────
+    isFeatured: { type: Boolean, default: false, index: true },
     // ────────────────────────────────────────────────────────────────────────
   },
   { timestamps: true },
 );
 
+courseSchema.index({ createdAt: -1 });
 courseSchema.index({ title: "text", description: "text" });
 
 module.exports = mongoose.model("Course", courseSchema);

@@ -1,7 +1,9 @@
 // backend/controllers/courseController.js
 const Course = require("../models/Course");
 const Teacher = require("../models/Teacher");
-const mongoose = require("mongoose"); // Need mongoose for ObjectId conversion
+const mongoose = require("mongoose");
+const cacheService = require("../services/cacheService");
+const searchService = require("../services/searchService");
 
 // ─── Helper: validate that graded module weights sum to ~100 ────────────────
 const checkWeightSum = (modules) => {
@@ -192,18 +194,33 @@ exports.createCourse = async (req, res) => {
     });
 
     const weightWarning = checkWeightSum(modules);
+    
+    // Invalidate Kurs catalog cache
+    await cacheService.del("courses:catalog");
+    
+    // Sync to Search Engine
+    await searchService.syncCourse(newCourse);
+    
     res.status(201).json({ ...newCourse.toObject(), weightWarning });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-// Get All Courses (Catalog) - MODIFIED TO USE AGGREGATION LOOKUP
+// Get All Courses (Catalog) - RELAXED & HIGH-LIMIT
 exports.getAllCourses = async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 100; // Boosted from 12 to 100 for instant load
+    const skip = (page - 1) * limit;
+
+    // Cache key now includes the higher limit
+    const cacheKey = `courses:catalog:p${page}:l${limit}`;
+    const cachedData = await cacheService.get(cacheKey);
+    if (cachedData) return res.json(cachedData);
+
     const pipeline = [];
 
-    // --- OPTIMIZATION: Early Filtering (Match before lookup) ---
     const userRole = req.session?.user?.role;
     if (userRole !== "teacher" && userRole !== "admin") {
       pipeline.push({
@@ -216,7 +233,6 @@ exports.getAllCourses = async (req, res) => {
       });
     }
 
-    // Exclude heavy 'modules' Map to save DB memory
     pipeline.push({ $project: { modules: 0 } });
 
     pipeline.push(
@@ -229,7 +245,11 @@ exports.getAllCourses = async (req, res) => {
         },
       },
       {
-        $unwind: "$teacherDetails",
+        // preserveNullAndEmptyArrays ensures course isn't dropped if teacher profile is missing
+        $unwind: {
+          path: "$teacherDetails",
+          preserveNullAndEmptyArrays: true
+        },
       },
       {
         $project: {
@@ -242,13 +262,18 @@ exports.getAllCourses = async (req, res) => {
           createdAt: 1,
           teacherId: 1,
           approvalStatus: 1,
-          instructorName: "$teacherDetails.name",
+          // Fallback name if teacher details are missing
+          instructorName: { $ifNull: ["$teacherDetails.name", "Izumi Instructor"] },
           rootModule: 1,
         },
-      }
+      },
+      { $sort: { createdAt: -1 } },
+      { $skip: skip },
+      { $limit: limit }
     );
 
     const courses = await Course.aggregate(pipeline);
+    await cacheService.set(cacheKey, courses, 600); 
     res.json(courses);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -300,8 +325,15 @@ exports.getAllCourses = async (req, res) => {
 
 // Get Single Course
 exports.getCourseById = async (req, res) => {
+  const cacheKey = `course:detail:${req.params.id}`;
   console.time("DB_Get_Course_Detail");
   try {
+    const cachedData = await cacheService.get(cacheKey);
+    if (cachedData) {
+      console.timeEnd("DB_Get_Course_Detail");
+      return res.json(cachedData);
+    }
+
     // Always include modules; frontend components like CourseViewer/Learn require them.
     const course = await Course.findById(req.params.id)
       .populate("teacherId", "name email")
@@ -309,6 +341,7 @@ exports.getCourseById = async (req, res) => {
     console.timeEnd("DB_Get_Course_Detail");
 
     if (!course) return res.status(404).json({ message: "Course not found" });
+    await cacheService.set(cacheKey, course);
     res.json(course);
   } catch (err) {
     console.timeEnd("DB_Get_Course_Detail");
@@ -507,6 +540,14 @@ exports.updateCourse = async (req, res) => {
         .json({ message: "Not authorized or course not found" });
 
     const weightWarning = checkWeightSum(modules);
+    
+    // Invalidate caches
+    await cacheService.del("courses:catalog");
+    await cacheService.del(`course:detail:${req.params.id}`);
+    
+    // Sync to Search Engine
+    await searchService.syncCourse(updatedCourse);
+    
     res.json({ ...updatedCourse.toObject(), weightWarning });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -690,6 +731,41 @@ exports.getCourseAnalytics = async (req, res) => {
   } catch (err) {
     console.timeEnd("DB_Instructor_Analytics");
     console.error("Analytics aggregation error:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * @swagger
+ * /api/courses/search:
+ *   get:
+ *     summary: Search courses using Meilisearch
+ *     tags: [Courses]
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         schema:
+ *           type: string
+ *         description: Search query
+ *     responses:
+ *       200:
+ *         description: Search results
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ */
+exports.searchCourses = async (req, res) => {
+  const { q } = req.query;
+
+  try {
+    // Reverted to 'Load All' mode: fetching all results in a single call (up to 1,000)
+    const results = await searchService.search(q, {
+      limit: 1000,
+      offset: 0, 
+    });
+    res.json(results);
+  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };

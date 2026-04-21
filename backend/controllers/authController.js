@@ -108,17 +108,23 @@ exports.register = async (req, res) => {
     });
 
     // Auto-login after register
-    req.session.user = {
-      id: newUser._id,
-      role: role,
-      name: newUser.name,
-      email: newUser.email,
-      profilePic: newUser.profilePic || "",
-    };
+    // SECURITY: Regenerate session to prevent fixation and account bleeding
+    req.session.regenerate((err) => {
+      if (err) return res.status(500).json({ error: "Session regeneration failed" });
 
-    res
-      .status(201)
-      .json({ message: "Registration successful", user: req.session.user });
+      req.session.user = {
+        id: newUser._id,
+        role: role,
+        name: newUser.name,
+        email: newUser.email,
+        profilePic: newUser.profilePic || "",
+      };
+
+      res.status(201).json({
+        message: "Registration successful",
+        user: req.session.user,
+      });
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -206,16 +212,20 @@ exports.login = async (req, res) => {
     email === ADMIN_EMAIL &&
     password === ADMIN_PASSWORD
   ) {
-    // Bypass database lookup and create a mock session
-    req.session.user = {
-      id: MOCK_ADMIN_ID,
-      role: "admin",
-      name: "Izumi Admin",
-      email: ADMIN_EMAIL,
-    };
-    return res.json({
-      message: "Logged in successfully",
-      user: req.session.user,
+    // SECURITY: Regenerate session to prevent fixation and account bleeding
+    return req.session.regenerate((err) => {
+      if (err) return res.status(500).json({ error: "Session regeneration failed" });
+
+      req.session.user = {
+        id: MOCK_ADMIN_ID,
+        role: "admin",
+        name: "Izumi Admin",
+        email: ADMIN_EMAIL,
+      };
+      res.json({
+        message: "Logged in successfully",
+        user: req.session.user,
+      });
     });
   }
   // --- END Hardcoded Admin Check ---
@@ -242,52 +252,52 @@ exports.login = async (req, res) => {
       }
     }
     const Model = getModel(actualRole);
-    if (!Model)
-      return res.status(400).json({ message: "Invalid role provided." });
+    if (!Model) return res.status(400).json({ message: "Invalid role" });
 
-    const user = await Model.findOne({ email });
-
+    const user = await Model.findOne({ email }).lean();
     if (!user || !(await bcrypt.compare(password, user.password))) {
-      // Record failed attempt for students and teachers (role-based)
-      try {
-        if (actualRole === "student" || actualRole === "teacher") {
-          const rec = await attemptStore.recordFailedAttempt(
-            `${actualRole}:${email}`,
-            req.ip,
-          );
-          if (res && res.locals)
-            res.locals.authAttempt = { key: `${actualRole}:${email}`, rec };
-        }
-      } catch (e) {
-        console.error("Failed to record attempt", e && e.message);
+      const waitTime = await attemptStore.recordFailure(email);
+      if (waitTime) {
+        return res.status(429).json({
+          message: `Too many attempts. Try again in ${waitTime} seconds.`,
+        });
       }
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // Save session (Only for student/teacher here, admin is handled above)
-    req.session.user = {
-      id: user._id,
-      role: actualRole,
-      name: user.name,
-      email: user.email,
-      profilePic: user.profilePic || "",
-    };
-
-    // Successful login — clear any recorded attempts for this user (students/teachers)
-    try {
-      if (actualRole === "student" || actualRole === "teacher") {
-        await attemptStore.clearAttempts(`${actualRole}:${email}`);
-        if (res && res.locals)
-          res.locals.authAttempt = {
-            key: `${actualRole}:${email}`,
-            cleared: true,
-          };
-      }
-    } catch (e) {
-      console.error("Failed to clear attempts", e && e.message);
+    if (user.isLocked) {
+      return res.status(403).json({ message: "Account is locked. Please contact support." });
     }
 
-    res.json({ message: "Logged in successfully", user: req.session.user });
+    // Save session (Only for student/teacher here, admin is handled above)
+    // SECURITY: Regenerate session to prevent fixation and account bleeding
+    req.session.regenerate(async (err) => {
+      if (err) return res.status(500).json({ error: "Session regeneration failed" });
+
+      req.session.user = {
+        id: user._id,
+        role: actualRole,
+        name: user.name,
+        email: user.email,
+        profilePic: user.profilePic || "",
+      };
+
+      // Successful login — clear any recorded attempts for this user (students/teachers)
+      try {
+        if (actualRole === "student" || actualRole === "teacher") {
+          await attemptStore.clearAttempts(`${actualRole}:${email}`);
+          if (res && res.locals)
+            res.locals.authAttempt = {
+              key: `${actualRole}:${email}`,
+              cleared: true,
+            };
+        }
+      } catch (e) {
+        console.error("Failed to clear attempts", e && e.message);
+      }
+
+      res.json({ message: "Logged in successfully", user: req.session.user });
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -324,9 +334,18 @@ exports.login = async (req, res) => {
 
 // Logout
 exports.logout = (req, res) => {
+  const isProduction = process.env.NODE_ENV === "production";
+  
   req.session.destroy((err) => {
     if (err) return res.status(500).json({ message: "Logout failed" });
-    res.clearCookie("connect.sid");
+    
+    // Explicitly clear with matching options to ensure browser removes it
+    res.clearCookie("connect.sid", {
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
+      path: "/"
+    });
+    
     res.json({ message: "Logged out" });
   });
 };

@@ -2,7 +2,8 @@
 const Enrollment = require("../models/Enrollment");
 const Course = require("../models/Course");
 const mongoose = require("mongoose");
-const EnrollmentAnalytics = require("../models/EnrollmentAnalytics"); // Adjust the path as needed
+const EnrollmentAnalytics = require("../models/EnrollmentAnalytics");
+const cacheService = require("../services/cacheService");
 
 const recalculateCourseAverageRating = async (courseId) => {
   const stats = await Enrollment.aggregate([
@@ -210,6 +211,8 @@ exports.enroll = async (req, res) => {
       studentId,
     });
 
+    await cacheService.del(`student:enrollments:${studentId}`);
+
     await EnrollmentAnalytics.create({
       courseId,
       studentId,
@@ -248,10 +251,19 @@ exports.getEnrollment = async (req, res) => {
 
 // Get all enrolled courses (My Learning)
 exports.getMyEnrolledCourses = async (req, res) => {
+  const studentId = req.session.user.id;
+  const cacheKey = `student:enrollments:${studentId}`;
+  
   console.time("DB_Get_My_Courses");
   try {
+    const cachedData = await cacheService.get(cacheKey);
+    if (cachedData) {
+      console.timeEnd("DB_Get_My_Courses");
+      return res.json(cachedData);
+    }
+
     const enrollments = await Enrollment.find({
-      studentId: req.session.user.id,
+      studentId: studentId,
     })
       .populate({
         path: "courseId",
@@ -318,6 +330,7 @@ exports.getMyEnrolledCourses = async (req, res) => {
       });
     }
 
+    await cacheService.set(cacheKey, enrolledCoursesData, 600); // 10 minute cache
     res.json(enrolledCoursesData);
   } catch (err) {
     console.timeEnd("DB_Get_My_Courses");
@@ -386,6 +399,7 @@ exports.updateProgress = async (req, res) => {
 
     const updatedEnrollment = await computeEnrollmentResult(courseId, enrollment, course);
     await updatedEnrollment.save();
+    await cacheService.del(`student:enrollments:${req.session.user.id}`);
     console.timeEnd("DB_Update_Progress");
 
     res.json(updatedEnrollment);

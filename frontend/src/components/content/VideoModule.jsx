@@ -15,7 +15,16 @@ const VideoModule = ({
 
   const playerRef = useRef(null);
   const timerRef = useRef(null);
+  const videoRef = useRef(null); // Ref for direct video element
   const iframeId = `Youtubeer-${module.id}`; // Unique ID for the iframe
+
+  // Helper: Detect if URL is YouTube
+  const isYoutube = (url) => {
+    if (!url) return false;
+    return url.includes("youtube.com") || url.includes("youtu.be");
+  };
+
+  const isYT = isYoutube(module.videoLink);
 
   // 1. Calculate 70% threshold based on REAL duration
   const completionThreshold = duration > 0 ? duration * 0.7 : Infinity;
@@ -36,8 +45,10 @@ const VideoModule = ({
     return `${url}${separator}enablejsapi=1`;
   };
 
-  // Effect: Initialize YouTube Player and Sync
+  // Effect: Initialize YouTube Player (only if isYT)
   useEffect(() => {
+    if (!isYT) return;
+
     const checkYT = setInterval(() => {
       if (window.YT && window.YT.Player) {
         clearInterval(checkYT);
@@ -69,9 +80,9 @@ const VideoModule = ({
       // Note: We avoid destroying the player here to prevent iframe flickering on re-renders,
       // but in a production app you might want to handle cleanup strictly.
     };
-  }, [module.id]);
+  }, [module.id, isYT]);
 
-  // Polling logic to sync Time Bar with Video
+  // Polling logic for YouTube
   const startPolling = () => {
     stopPolling(); // Ensure no duplicates
     timerRef.current = setInterval(() => {
@@ -93,6 +104,21 @@ const VideoModule = ({
 
   const stopPolling = () => {
     if (timerRef.current) clearInterval(timerRef.current);
+  };
+
+  // Direct Video Event Handlers
+  const handleVideoMetadata = (e) => {
+    setDuration(e.target.duration);
+  };
+
+  const handleVideoTimeUpdate = (e) => {
+    const time = e.target.currentTime;
+    setCurrentTime(time);
+    
+    // Periodically update backend (every 10 seconds)
+    if (Math.floor(time) > 0 && Math.floor(time) % 10 === 0) {
+      onProgressUpdate(module.id, { timeSpent: Math.floor(time) });
+    }
   };
 
   // 3. Mark as complete if condition is met
@@ -123,14 +149,28 @@ const VideoModule = ({
       <p className="description-text">{module.description}</p>
 
       <div className="video-wrapper">
-        <iframe
-          id={iframeId}
-          title={module.title}
-          src={getEmbedUrl(module.videoLink)}
-          allowFullScreen
-          frameBorder="0"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        ></iframe>
+        {isYT ? (
+          <iframe
+            id={iframeId}
+            title={module.title}
+            src={getEmbedUrl(module.videoLink)}
+            allowFullScreen
+            frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          ></iframe>
+        ) : (
+          <video
+            ref={videoRef}
+            className="direct-video-player"
+            controls
+            onLoadedMetadata={handleVideoMetadata}
+            onTimeUpdate={handleVideoTimeUpdate}
+            style={{ width: "100%", borderRadius: "8px", background: "#000" }}
+          >
+            <source src={module.videoLink} type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
+        )}
       </div>
 
       <div className="module-progress-bar-container">

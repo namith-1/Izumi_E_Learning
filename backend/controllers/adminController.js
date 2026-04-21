@@ -5,6 +5,7 @@ const Course = require('../models/Course');
 const Enrollment = require('../models/Enrollment');
 const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
+const cacheService = require('../services/cacheService');
 
 // --- Hardcoded Admin Credentials and Mock ID ---
 const ADMIN_EMAIL = 'admin@izumi.com';
@@ -44,6 +45,10 @@ exports.login = async (req, res) => {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
+        if (user.isLocked) {
+            return res.status(403).json({ message: 'Account is locked. Please contact support.' });
+        }
+
         req.session.user = { id: user._id, role: actualRole, name: user.name, email: user.email };
         res.json({ message: 'Logged in successfully', user: req.session.user });
     } catch (err) {
@@ -53,8 +58,14 @@ exports.login = async (req, res) => {
 
 // 1. Get All Enrollments
 exports.getAllEnrollments = async (req, res) => {
+    const cacheKey = "admin:enrollments";
     console.time("DB_Admin_AllEnrollments");
     try {
+        const cached = await cacheService.get(cacheKey);
+        if (cached) {
+            console.timeEnd("DB_Admin_AllEnrollments");
+            return res.json(cached);
+        }
         const enrollments = await Enrollment.find()
             .populate({
                 path: 'courseId',
@@ -74,7 +85,8 @@ exports.getAllEnrollments = async (req, res) => {
             dateEnrolled: e.createdAt,
             modules_status: e.modules_status
         }));
-
+        
+        await cacheService.set(cacheKey, formattedEnrollments);
         res.json(formattedEnrollments);
     } catch (err) {
         console.timeEnd("DB_Admin_AllEnrollments");
@@ -82,10 +94,24 @@ exports.getAllEnrollments = async (req, res) => {
     }
 };
 
+const clearUserCache = async () => {
+    await cacheService.del("admin:users_analytics");
+};
+
+const clearCourseCache = async () => {
+    await cacheService.del("admin:courses");
+};
+
 // 2. Get All Users (Split by role + Analytics for Teachers)
 exports.getAllUsers = async (req, res) => {
+    const cacheKey = "admin:users_analytics";
     console.time("DB_Admin_AllUsers");
     try {
+        const cached = await cacheService.get(cacheKey);
+        if (cached) {
+            console.timeEnd("DB_Admin_AllUsers");
+            return res.json(cached);
+        }
         const students = await Student.find().select('-password').lean();
 
         // Complex Aggregation for Teachers to get Student Count
@@ -113,13 +139,16 @@ exports.getAllUsers = async (req, res) => {
                     specialization: 1,
                     // Count total enrollments associated with this teacher's courses
                     totalStudents: { $size: '$enrollments' },
-                    courseCount: { $size: '$courses' }
+                    courseCount: { $size: '$courses' },
+                    isLocked: { $ifNull: ['$isLocked', false] }
                 }
             }
         ]);
         console.timeEnd("DB_Admin_AllUsers");
 
-        res.json({ students, teachers });
+        const result = { students, teachers };
+        await cacheService.set(cacheKey, result);
+        res.json(result);
     } catch (err) {
         console.timeEnd("DB_Admin_AllUsers");
         res.status(500).json({ error: err.message });
@@ -139,6 +168,7 @@ exports.createReviewer = async (req, res) => {
         }
         const hashedPassword = await bcrypt.hash(password, 10);
         const reviewer = await Reviewer.create({ name, email, password: hashedPassword, specialization: specialization || '' });
+        await clearUserCache();
         res.status(201).json({ message: 'Reviewer account created.', reviewer: { _id: reviewer._id, name: reviewer.name, email: reviewer.email } });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -169,7 +199,7 @@ exports.deleteUser = async (req, res) => {
         } else if (role === 'student') {
             await Enrollment.deleteMany({ studentId: id });
         }
-
+        await clearUserCache();
         res.json({ message: 'User deleted successfully' });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -182,9 +212,16 @@ exports.updateUser = async (req, res) => {
     const { name, email } = req.body;
     try {
         const Model = getModel(role);
+        if (!Model) return res.status(400).json({ message: 'Invalid role' });
+        
         const updated = await Model.findByIdAndUpdate(id, { name, email }, { new: true }).select('-password').lean();
+        if (!updated) return res.status(404).json({ message: 'User not found' });
+        
         res.json(updated);
     } catch (err) {
+        if (err.code === 11000) {
+            return res.status(400).json({ message: 'Email already in use' });
+        }
         res.status(500).json({ error: err.message });
     }
 };
@@ -194,6 +231,7 @@ exports.deleteCourse = async (req, res) => {
     try {
         await Course.findByIdAndDelete(req.params.id);
         await Enrollment.deleteMany({ courseId: req.params.id });
+        await clearCourseCache();
         res.json({ message: 'Course deleted successfully' });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -202,8 +240,14 @@ exports.deleteCourse = async (req, res) => {
 
 // 6. Course CRUD - Get All (List for admin)
 exports.getAllCoursesAdmin = async (req, res) => {
+    const cacheKey = "admin:courses";
     console.time("DB_Admin_AllCourses");
     try {
+        const cached = await cacheService.get(cacheKey);
+        if (cached) {
+            console.timeEnd("DB_Admin_AllCourses");
+            return res.json(cached);
+        }
         const coursesWithAnalytics = await Course.aggregate([
             {
                 $lookup: {
@@ -257,7 +301,8 @@ exports.getAllCoursesAdmin = async (req, res) => {
                             initialValue: [],
                             in: { $concatArrays: ['$$value', '$$this'] }
                         }
-                    }
+                    },
+                    isFeatured: { $ifNull: ['$isFeatured', false] }
                 }
             },
             {
@@ -286,12 +331,14 @@ exports.getAllCoursesAdmin = async (req, res) => {
                                 in: '$$quizModule.quizScore'
                             }
                         }
-                    }
+                    },
+                    isFeatured: 1
                 }
             }
         ]);
         console.timeEnd("DB_Admin_AllCourses");
 
+        await cacheService.set(cacheKey, coursesWithAnalytics);
         res.json(coursesWithAnalytics);
     } catch (err) {
         console.timeEnd("DB_Admin_AllCourses");
@@ -379,9 +426,72 @@ exports.getTeacherCoursesByEmail = async (req, res) => {
         ]);
 
         res.json({
-            teacher: { name: teacher.name, email: teacher.email, _id: teacher._id },
+            teacher: { name: teacher.name, email: teacher.email, _id: teacher._id, isLocked: teacher.isLocked },
             courses: courses
         });
+    } catch (err) {
+        console.timeEnd("DB_Admin_LookupEmail");
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// 10. Force Update Course Status
+exports.updateCourseStatusAdmin = async (req, res) => {
+    try {
+        const { status } = req.body;
+        const updated = await Course.findByIdAndUpdate(
+            req.params.id,
+            { approvalStatus: status, reviewedAt: new Date(), reviewerId: req.session.user.id },
+            { new: true }
+        ).lean();
+        await clearCourseCache();
+        res.json(updated);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// 11. Toggle Featured Status
+exports.toggleCourseFeatured = async (req, res) => {
+    try {
+        const course = await Course.findById(req.params.id);
+        if (!course) return res.status(404).json({ message: 'Course not found' });
+        course.isFeatured = !course.isFeatured;
+        await course.save();
+        await clearCourseCache();
+        res.json({ isFeatured: course.isFeatured });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// 12. Reset User Password
+exports.resetUserPassword = async (req, res) => {
+    const { role, id } = req.params;
+    try {
+        const Model = getModel(role);
+        if (!Model) return res.status(400).json({ message: 'Invalid role' });
+        const temporaryPassword = await bcrypt.hash('Izumi@123', 10);
+        await Model.findByIdAndUpdate(id, { password: temporaryPassword });
+        await clearUserCache();
+        res.json({ message: 'Password reset to default (Izumi@123) successfully' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// 13. Toggle User Lock
+exports.toggleUserLock = async (req, res) => {
+    const { role, id } = req.params;
+    try {
+        const Model = getModel(role);
+        if (!Model) return res.status(400).json({ message: 'Invalid role' });
+        const user = await Model.findById(id);
+        if (!user) return res.status(404).json({ message: 'User not found' });
+        user.isLocked = !user.isLocked;
+        await user.save();
+        await clearUserCache();
+        res.json({ isLocked: user.isLocked });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

@@ -67,7 +67,11 @@ const Signup = () => {
             </button>
           </div>
 
-          {error && <div className="alert-error">{error}</div>}
+          {error && (
+            <div className="alert-error">
+              {typeof error === "object" ? error.message || "An unexpected error occurred" : error}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit}>
             <div className="input-group">

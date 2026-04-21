@@ -118,6 +118,11 @@ export const checkAuthStatus = createAsyncThunk(
       const data = await apiRequest("/auth/me", "GET");
       return data.user;
     } catch (err) {
+      // SILENT AUTH: If not logged in (401), just return null.
+      // This prevents "Unauthorized" error alerts on the first visit.
+      if (err.status === 401) {
+        return null;
+      }
       return rejectWithValue(err.message);
     }
   },
@@ -140,12 +145,14 @@ const authSlice = createSlice({
   name: "auth",
   initialState: {
     user: null,
-    loading: true,
+    loading: true, // true because we always checkAuthStatus on load
     error: null,
+    errorDetail: null,
   },
   reducers: {
     clearAuthErrors: (state) => {
       state.error = null;
+      state.errorDetail = null;
     },
   },
   extraReducers: (builder) => {
@@ -153,6 +160,7 @@ const authSlice = createSlice({
       .addCase(registerUser.pending, (state) => {
         state.loading = true;
         state.error = null;
+        state.errorDetail = null;
       })
       .addCase(registerUser.fulfilled, (state, action) => {
         state.loading = false;
@@ -160,11 +168,14 @@ const authSlice = createSlice({
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload;
+        // Ensure error is ALWAYS a string for safe rendering
+        state.error = action.payload?.message || action.payload || "Registration failed";
+        state.errorDetail = action.payload;
       })
       .addCase(loginUser.pending, (state) => {
         state.loading = true;
         state.error = null;
+        state.errorDetail = null;
       })
       .addCase(loginUser.fulfilled, (state, action) => {
         state.loading = false;
@@ -172,10 +183,14 @@ const authSlice = createSlice({
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload;
+        // String for display, object for logic
+        state.error = action.payload?.message || action.payload || "Login failed";
+        state.errorDetail = action.payload;
       })
       .addCase(logoutUser.fulfilled, (state) => {
         state.user = null;
+        state.error = null;
+        state.errorDetail = null;
       })
       .addCase(checkAuthStatus.pending, (state) => {
         state.loading = true;
@@ -189,7 +204,6 @@ const authSlice = createSlice({
         state.user = null;
       })
       .addCase(updateStudentProfile.fulfilled, (state, action) => {
-        // Update user state with new name and profilePic path
         state.user = action.payload;
       });
   },
@@ -203,9 +217,23 @@ export const { clearAuthErrors } = authSlice.actions;
 
 export const fetchAllCourses = createAsyncThunk(
   "courses/fetchAll",
-  async (_, { rejectWithValue }) => {
+  async ({ page = 1, limit = 100, append = false } = {}, { rejectWithValue }) => {
     try {
-      return await apiRequest("/courses", "GET");
+      const data = await apiRequest(`/courses?page=${page}&limit=${limit}`, "GET");
+      return { courses: data, append, page };
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  },
+);
+
+export const searchCourses = createAsyncThunk(
+  "courses/search",
+  async ({ q, page = 1, limit = 12, append = false } = {}, { rejectWithValue }) => {
+    try {
+      const data = await apiRequest(`/courses/search?q=${q}&page=${page}&limit=${limit}`, "GET");
+      // Meilisearch returns { hits: [], ... }
+      return { courses: data.hits || [], append, page, q };
     } catch (err) {
       return rejectWithValue(err.message);
     }
@@ -260,8 +288,12 @@ const courseSlice = createSlice({
   name: "courses",
   initialState: {
     list: [],
+    hasMore: true,
+    currentPage: 1,
+    lastSearchQuery: "",
     currentCourse: null,
     loading: false,
+    loadingMore: false, // NEW: Lock for infinite scroll
     error: null,
     analyticsData: [],
   },
@@ -269,19 +301,59 @@ const courseSlice = createSlice({
     clearCurrentCourse: (state) => {
       state.currentCourse = null;
     },
+    resetCourseList: (state) => {
+      state.list = [];
+      state.currentPage = 1;
+      state.hasMore = true;
+      state.lastSearchQuery = "";
+      state.loadingMore = false;
+    }
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchAllCourses.pending, (state) => {
-        state.loading = true;
+      .addCase(fetchAllCourses.pending, (state, action) => {
+        const isAppend = action.meta.arg?.append;
+        state.loading = !isAppend;
+        state.loadingMore = isAppend;
         state.error = null;
       })
       .addCase(fetchAllCourses.fulfilled, (state, action) => {
         state.loading = false;
-        state.list = action.payload;
+        state.loadingMore = false;
+        const { courses, append, page } = action.payload;
+        if (append) {
+          state.list = [...state.list, ...courses];
+        } else {
+          state.list = courses;
+        }
+        state.currentPage = page;
+        state.hasMore = courses.length === 100; 
+        state.lastSearchQuery = "";
       })
       .addCase(fetchAllCourses.rejected, (state, action) => {
         state.loading = false;
+        state.loadingMore = false;
+        state.error = action.payload;
+      })
+      .addCase(searchCourses.pending, (state, action) => {
+        const isAppend = action.meta.arg?.append;
+        state.loading = !isAppend;
+        state.loadingMore = isAppend;
+        state.error = null;
+      })
+      .addCase(searchCourses.fulfilled, (state, action) => {
+        state.loading = false;
+        state.loadingMore = false;
+        const { courses, q } = action.payload;
+        // Reverted to 'Load All' for search: Results replace the list and don't paginate
+        state.list = courses;
+        state.hasMore = false; 
+        state.currentPage = 1;
+        state.lastSearchQuery = q;
+      })
+      .addCase(searchCourses.rejected, (state, action) => {
+        state.loading = false;
+        state.loadingMore = false;
         state.error = action.payload;
       })
       .addCase(fetchCourseById.pending, (state) => {
@@ -320,7 +392,7 @@ const courseSlice = createSlice({
   },
 });
 
-export const { clearCurrentCourse } = courseSlice.actions;
+export const { clearCurrentCourse, resetCourseList } = courseSlice.actions;
 
 // ==========================================
 // 4. ENROLLMENT (Thunks & Slice)
@@ -394,6 +466,20 @@ export const fetchEnrolledCourses = createAsyncThunk(
       return rejectWithValue(err.message);
     }
   },
+  {
+    condition: (_, { getState }) => {
+      const { enrollment } = getState();
+      const CACHE_TTL = 300000; // 5 minutes
+      const isCacheValid =
+        enrollment.enrolledList.length > 0 &&
+        enrollment.lastEnrolledFetch &&
+        Date.now() - enrollment.lastEnrolledFetch < CACHE_TTL;
+
+      if (isCacheValid) {
+        return false; // Skip the fetch
+      }
+    },
+  },
 );
 
 export const submitCourseRating = createAsyncThunk(
@@ -425,6 +511,7 @@ const enrollmentSlice = createSlice({
   initialState: {
     currentEnrollment: undefined,
     enrolledList: [],
+    lastEnrolledFetch: null, // Timestamp for caching
     loading: false,
     error: null,
   },
@@ -443,6 +530,7 @@ const enrollmentSlice = createSlice({
       .addCase(enrollInCourse.fulfilled, (state, action) => {
         state.loading = false;
         state.currentEnrollment = action.payload;
+        state.lastEnrolledFetch = null; // Invalidate cache on new enrollment
       })
       .addCase(enrollInCourse.rejected, (state, action) => {
         state.loading = false;
@@ -471,6 +559,7 @@ const enrollmentSlice = createSlice({
       .addCase(fetchEnrolledCourses.fulfilled, (state, action) => {
         state.loading = false;
         state.enrolledList = action.payload;
+        state.lastEnrolledFetch = Date.now(); // Update cache timestamp
       })
       .addCase(fetchEnrolledCourses.rejected, (state, action) => {
         state.loading = false;
@@ -479,6 +568,7 @@ const enrollmentSlice = createSlice({
       })
       .addCase(updateProgress.fulfilled, (state, action) => {
         state.currentEnrollment = action.payload;
+        state.lastEnrolledFetch = null; // Invalidate cache on progress update
       })
       .addCase(submitCourseRating.pending, (state) => {
         state.loading = true;
@@ -488,6 +578,7 @@ const enrollmentSlice = createSlice({
         state.loading = false;
         if (action.payload?.enrollment) {
           state.currentEnrollment = action.payload.enrollment;
+          state.lastEnrolledFetch = null; // Invalidate cache on rating
         }
       })
       .addCase(submitCourseRating.rejected, (state, action) => {
@@ -690,6 +781,54 @@ export const updateCourseAdmin = createAsyncThunk(
   },
 );
 
+export const forceUpdateCourseStatus = createAsyncThunk(
+  "admin/forceUpdateStatus",
+  async ({ id, status }, { rejectWithValue }) => {
+    try {
+      return await apiRequest(`/admin/courses/${id}/status`, "PATCH", {
+        status,
+      });
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  },
+);
+
+export const toggleCourseFeatured = createAsyncThunk(
+  "admin/toggleFeatured",
+  async (id, { rejectWithValue }) => {
+    try {
+      const res = await apiRequest(`/admin/courses/${id}/toggle-featured`, "PATCH");
+      return { id, isFeatured: res.isFeatured };
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  },
+);
+
+export const resetUserPassword = createAsyncThunk(
+  "admin/resetPassword",
+  async ({ role, id }, { rejectWithValue }) => {
+    try {
+      return await apiRequest(`/admin/users/${role}/${id}/reset-password`, "POST");
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  },
+);
+
+export const toggleUserLockAccount = createAsyncThunk(
+  "admin/toggleLock",
+  async ({ role, id }, { rejectWithValue }) => {
+    try {
+      const res = await apiRequest(`/admin/users/${role}/${id}/toggle-lock`, "PATCH");
+      return { role, id, isLocked: res.isLocked };
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  },
+);
+
 export const fetchStudentEnrollmentByEmail = createAsyncThunk(
   "admin/lookupStudent",
   async (email, { rejectWithValue }) => {
@@ -781,6 +920,26 @@ const adminSlice = createSlice({
           (c) => c._id === updatedCourse._id,
         );
         if (index !== -1) state.courses[index] = updatedCourse;
+      })
+      .addCase(forceUpdateCourseStatus.fulfilled, (state, action) => {
+        const updated = action.payload;
+        const idx = state.courses.findIndex((c) => c._id === updated._id);
+        if (idx !== -1) state.courses[idx] = { ...state.courses[idx], ...updated };
+      })
+      .addCase(toggleCourseFeatured.fulfilled, (state, action) => {
+        const { id, isFeatured } = action.payload;
+        const idx = state.courses.findIndex((c) => c._id === id);
+        if (idx !== -1) state.courses[idx].isFeatured = isFeatured;
+      })
+      .addCase(toggleUserLockAccount.fulfilled, (state, action) => {
+        const { role, id, isLocked } = action.payload;
+        if (role === "student") {
+          const idx = state.students.findIndex((u) => u._id === id);
+          if (idx !== -1) state.students[idx].isLocked = isLocked;
+        } else if (role === "teacher") {
+          const idx = state.teachers.findIndex((u) => u._id === id);
+          if (idx !== -1) state.teachers[idx].isLocked = isLocked;
+        }
       })
       .addCase(fetchStudentEnrollmentByEmail.pending, (state) => {
         state.lookupLoading = true;

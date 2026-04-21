@@ -120,8 +120,8 @@ const AnalyticsDashboard = () => {
                         <div className="stat-icon"><Users size={24} /></div>
                         <div className="stat-content">
                             <h3>Total Students</h3>
-                            <p className="stat-value">{overview.totalStudents}</p>
-                            {overview.growth && getTrendIndicator(overview.growth.students, overview.totalStudents - overview.growth.students)}
+                            <p className="stat-value">{overview.totalStudents || 0}</p>
+                            {overview.growth && getTrendIndicator(overview.growth.students, (overview.totalStudents || 0) - overview.growth.students)}
                         </div>
                     </div>
 
@@ -129,8 +129,8 @@ const AnalyticsDashboard = () => {
                         <div className="stat-icon"><GraduationCap size={24} /></div>
                         <div className="stat-content">
                             <h3>Total Instructors</h3>
-                            <p className="stat-value">{overview.totalInstructors}</p>
-                            {overview.growth && getTrendIndicator(overview.growth.instructors, overview.totalInstructors - overview.growth.instructors)}
+                            <p className="stat-value">{overview.totalInstructors || 0}</p>
+                            {overview.growth && getTrendIndicator(overview.growth.instructors, (overview.totalInstructors || 0) - overview.growth.instructors)}
                         </div>
                     </div>
 
@@ -138,8 +138,8 @@ const AnalyticsDashboard = () => {
                         <div className="stat-icon"><BookOpen size={24} /></div>
                         <div className="stat-content">
                             <h3>Total Courses</h3>
-                            <p className="stat-value">{overview.totalCourses}</p>
-                            {overview.growth && getTrendIndicator(overview.growth.courses, overview.totalCourses - overview.growth.courses)}
+                            <p className="stat-value">{overview.totalCourses || 0}</p>
+                            {overview.growth && getTrendIndicator(overview.growth.courses, (overview.totalCourses || 0) - overview.growth.courses)}
                         </div>
                     </div>
 
@@ -147,7 +147,7 @@ const AnalyticsDashboard = () => {
                         <div className="stat-icon"><Award size={24} /></div>
                         <div className="stat-content">
                             <h3>Completion Rate</h3>
-                            <p className="stat-value">{overview.completionRate}%</p>
+                            <p className="stat-value">{overview.completionRate || 0}%</p>
                             <span className="stat-label">Platform Average</span>
                         </div>
                     </div>

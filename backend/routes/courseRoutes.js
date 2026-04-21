@@ -15,6 +15,7 @@ const courseUpload = require("../middleware/courseUpload");
  *       200: { description: Courses list }
  */
 router.get("/", courseController.getAllCourses); // Public catalog
+router.get("/search", courseController.searchCourses); // Search endpoint
 /**
  * @swagger
  * /api/courses/analytics:

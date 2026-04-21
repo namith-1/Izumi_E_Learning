@@ -161,7 +161,7 @@ const CourseViewer = () => {
         setPaymentStatus("success");
 
         await new Promise((resolve) => {
-          redirectTimeoutRef.current = window.setTimeout(resolve, 5000);
+          redirectTimeoutRef.current = window.setTimeout(resolve, 100);
         });
 
         redirectTimeoutRef.current = null;

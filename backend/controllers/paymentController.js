@@ -3,6 +3,7 @@ const Transaction = require("../models/Transaction");
 const Course = require("../models/Course");
 const Enrollment = require("../models/Enrollment");
 const EnrollmentAnalytics = require("../models/EnrollmentAnalytics");
+const cacheService = require("../services/cacheService");
 
 const REF_PREFIX = "TXN";
 const buildReference = () =>
@@ -62,6 +63,9 @@ exports.checkoutStudentPayment = async (req, res) => {
     });
 
     const enrollment = await Enrollment.create({ courseId, studentId });
+    // Invalidate caches to ensure the frontend sees the new enrollment immediately
+    await cacheService.del(`student:enrollments:${studentId}`);
+    
     await EnrollmentAnalytics.create({
       courseId,
       studentId,
@@ -199,9 +203,13 @@ exports.getStudentPaymentSummary = async (req, res) => {
 
 exports.getTeacherTransactions = async (req, res) => {
   try {
-    if (req.session?.user?.role !== "teacher")
+    let teacherId = req.session.user.id;
+    if (req.session?.user?.role === "admin" && req.query.instructorId) {
+      teacherId = req.query.instructorId;
+    } else if (req.session?.user?.role !== "teacher" && req.session?.user?.role !== "admin") {
       return deny(res, "Teachers only.");
-    const txns = await Transaction.find({ teacherId: req.session.user.id })
+    }
+    const txns = await Transaction.find({ teacherId })
       .populate("courseId", "title subject")
       .populate("studentId", "name email")
       .sort({ createdAt: -1 });
@@ -213,11 +221,15 @@ exports.getTeacherTransactions = async (req, res) => {
 
 exports.getTeacherTransactionById = async (req, res) => {
   try {
-    if (req.session?.user?.role !== "teacher")
+    let teacherId = req.session.user.id;
+    if (req.session?.user?.role === "admin" && req.query.instructorId) {
+      teacherId = req.query.instructorId;
+    } else if (req.session?.user?.role !== "teacher" && req.session?.user?.role !== "admin") {
       return deny(res, "Teachers only.");
+    }
     const txn = await Transaction.findOne({
       _id: req.params.id,
-      teacherId: req.session.user.id,
+      teacherId,
     })
       .populate("courseId", "title subject")
       .populate("studentId", "name email");
@@ -231,14 +243,18 @@ exports.getTeacherTransactionById = async (req, res) => {
 
 exports.updateTeacherTransactionStatus = async (req, res) => {
   try {
-    if (req.session?.user?.role !== "teacher")
+    let teacherId = req.session.user.id;
+    if (req.session?.user?.role === "admin" && req.query.instructorId) {
+      teacherId = req.query.instructorId;
+    } else if (req.session?.user?.role !== "teacher" && req.session?.user?.role !== "admin") {
       return deny(res, "Teachers only.");
+    }
     const { payoutStatus, notes } = req.body;
     const update = {};
     if (payoutStatus) update.payoutStatus = payoutStatus;
     if (notes !== undefined) update.notes = notes;
     const txn = await Transaction.findOneAndUpdate(
-      { _id: req.params.id, teacherId: req.session.user.id },
+      { _id: req.params.id, teacherId },
       update,
       { new: true },
     );
@@ -252,9 +268,13 @@ exports.updateTeacherTransactionStatus = async (req, res) => {
 
 exports.getTeacherPaymentSummary = async (req, res) => {
   try {
-    if (req.session?.user?.role !== "teacher")
+    let teacherId = req.session.user.id;
+    if (req.session?.user?.role === "admin" && req.query.instructorId) {
+      teacherId = req.query.instructorId;
+    } else if (req.session?.user?.role !== "teacher" && req.session?.user?.role !== "admin") {
       return deny(res, "Teachers only.");
-    const teacherObjectId = toObjectId(req.session.user.id);
+    }
+    const teacherObjectId = toObjectId(teacherId);
     if (!teacherObjectId) {
       return res.status(400).json({ message: "Invalid teacher id." });
     }

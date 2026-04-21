@@ -4,10 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import {
     fetchAllAdminData, deleteUserAdmin, deleteCourseAdmin, updateCourseAdmin,
     fetchStudentEnrollmentByEmail, fetchTeacherCoursesByEmail, clearLookup,
+    forceUpdateCourseStatus, toggleCourseFeatured, resetUserPassword, toggleUserLockAccount,
     BACKEND_URL
 } from '../store';
 import {
-    Users, BookOpen, BarChart3, Loader2, Trash2, Edit, Save, X, Search, Eye, Shield, UserPlus, DollarSign, Terminal
+    Users, BookOpen, BarChart3, Loader2, Trash2, Edit, Save, X, Search, Eye, Shield, UserPlus, DollarSign, Terminal,
+    Star, Lock, Unlock, Key
 } from 'lucide-react';
 import ProfileDropdown from '../components/ProfileDropdown';
 import AnalyticsDashboard from '../components/analytics/AnalyticsDashboard';
@@ -112,6 +114,28 @@ const AdminDashboard = () => {
         dispatch(updateCourseAdmin({ id, data: courseEditData })).then(() => setIsEditingCourse(null));
     };
 
+    const handleForceStatus = (id, status) => {
+        if (window.confirm(`Force change status to ${status}?`)) {
+            dispatch(forceUpdateCourseStatus({ id, status }));
+        }
+    };
+
+    const handleToggleFeatured = (id) => {
+        dispatch(toggleCourseFeatured(id));
+    };
+
+    const handleResetPass = (role, id) => {
+        if (window.confirm("Reset user password to default 'Izumi@123'?")) {
+            dispatch(resetUserPassword({ role, id })).then((res) => {
+                if (!res.error) alert("Password reset successfully!");
+            });
+        }
+    };
+
+    const handleToggleLock = (role, id) => {
+        dispatch(toggleUserLockAccount({ role, id }));
+    };
+
     const LookupResults = () => {
         if (lookupLoading) return <div className="p-4 text-center"><Loader2 className="animate-spin inline" /> Loading details...</div>;
         if (lookupError) return <div className="p-4 text-center text-red-500 bg-red-50 border border-red-200 rounded">{lookupError}</div>;
@@ -205,7 +229,13 @@ const AdminDashboard = () => {
                                     <td>{t.courseCount || 0}</td>
                                     <td className="flex gap-2">
                                         <button onClick={() => handleLookup('teacher', t.email)} className="btn-action-edit" title="View All Courses">
-                                            <Eye size={16} /> View Courses
+                                            <Eye size={16} />
+                                        </button>
+                                        <button onClick={() => handleToggleLock('teacher', t._id)} className={t.isLocked ? "btn-action-save" : "btn-action-edit"} title={t.isLocked ? "Unlock Instructor" : "Lock Instructor"}>
+                                            {t.isLocked ? <Unlock size={16} /> : <Lock size={16} />}
+                                        </button>
+                                        <button onClick={() => handleResetPass('teacher', t._id)} className="btn-action-edit" title="Reset Password">
+                                            <Key size={16} />
                                         </button>
                                         <button onClick={() => handleDelete('teacher', t._id)} className="btn-action-delete" title="Ban Instructor">
                                             <Trash2 size={16} />
@@ -248,7 +278,13 @@ const AdminDashboard = () => {
                                     <td>{s.email}</td>
                                     <td className="flex gap-2">
                                         <button onClick={() => handleLookup('student', s.email)} className="btn-action-edit" title="View Progress">
-                                            <Eye size={16} /> View Progress
+                                            <Eye size={16} />
+                                        </button>
+                                        <button onClick={() => handleToggleLock('student', s._id)} className={s.isLocked ? "btn-action-save" : "btn-action-edit"} title={s.isLocked ? "Unlock Student" : "Lock Student"}>
+                                            {s.isLocked ? <Unlock size={16} /> : <Lock size={16} />}
+                                        </button>
+                                        <button onClick={() => handleResetPass('student', s._id)} className="btn-action-edit" title="Reset Password">
+                                            <Key size={16} />
                                         </button>
                                         <button onClick={() => handleDelete('student', s._id)} className="btn-action-delete">
                                             <Trash2 size={16} />
@@ -311,6 +347,20 @@ const AdminDashboard = () => {
                                             <td>{c.totalStudentsRegistered}</td>
                                             <td>{c.averageQuizScore ? c.averageQuizScore.toFixed(1) + '%' : 'N/A'}</td>
                                             <td className="flex gap-1">
+                                                <button onClick={() => handleToggleFeatured(c._id)} className={`btn-action-edit ${c.isFeatured ? 'text-yellow-500' : 'text-gray-400'}`} title="Toggle Featured">
+                                                    <Star size={16} fill={c.isFeatured ? "currentColor" : "none"} />
+                                                </button>
+                                                <select 
+                                                    className="status-filter py-1 px-2 text-xs" 
+                                                    value={c.approvalStatus} 
+                                                    onChange={(e) => handleForceStatus(c._id, e.target.value)}
+                                                >
+                                                    <option value="draft">Draft</option>
+                                                    <option value="pending">Pending</option>
+                                                    <option value="approved">Approved</option>
+                                                    <option value="rejected">Rejected</option>
+                                                    <option value="revision-requested">Revision</option>
+                                                </select>
                                                 <button onClick={() => { setIsEditingCourse(c._id); setCourseEditData(c); }} className="btn-action-edit"><Edit size={16} /></button>
                                                 <button onClick={() => handleDelete('course', c._id)} className="btn-action-delete"><Trash2 size={16} /></button>
                                             </td>

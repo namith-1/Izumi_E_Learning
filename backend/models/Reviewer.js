@@ -6,6 +6,7 @@ const reviewerSchema = new mongoose.Schema(
         email: { type: String, required: true, unique: true },
         password: { type: String, required: true },
         specialization: { type: String, default: "" }, // Subject-area expertise
+        isLocked: { type: Boolean, default: false },
     },
     { timestamps: true },
 );

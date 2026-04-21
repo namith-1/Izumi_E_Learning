@@ -46,7 +46,11 @@ const AdminLogin = () => {
             <p>Sign in with your administrator account</p>
           </div>
 
-          {error && <div className="error-msg">{error}</div>}
+          {error && (
+            <div className="error-msg">
+              {typeof error === "object" ? error.message || "An unexpected error occurred" : error}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit}>
             <div className="form-group">

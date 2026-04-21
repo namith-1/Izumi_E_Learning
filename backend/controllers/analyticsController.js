@@ -131,34 +131,44 @@ exports.getCourseTimeAnalytics = async (req, res) => {
 exports.getAdminOverview = async (req, res) => {
     console.time("DB_Analytics_Overview");
     try {
-        const [totalStudents, totalInstructors, totalCourses, totalEnrollments] = await Promise.all([
+        const [totalStudents, totalInstructors, totalCourses, totalEnrollments, completedEnrollments] = await Promise.all([
             Student.countDocuments(),
             Teacher.countDocuments(),
             Course.countDocuments(),
-            Enrollment.countDocuments()
+            Enrollment.countDocuments(),
+            Enrollment.countDocuments({ completionStatus: 'completed' })
         ]);
 
         const last30d = new Date();
         last30d.setDate(last30d.getDate() - 30);
 
-        const [newStudents, newInstructors, newCourses] = await Promise.all([
+        const [newStudents, newInstructors, newCourses, newEnrollments, newCompletedEnrollments] = await Promise.all([
             Student.countDocuments({ createdAt: { $gte: last30d } }),
             Teacher.countDocuments({ createdAt: { $gte: last30d } }),
-            Course.countDocuments({ createdAt: { $gte: last30d } })
+            Course.countDocuments({ createdAt: { $gte: last30d } }),
+            Enrollment.countDocuments({ createdAt: { $gte: last30d } }),
+            Enrollment.countDocuments({ completionStatus: 'completed', updatedAt: { $gte: last30d } })
         ]);
         console.timeEnd("DB_Analytics_Overview");
 
+        const completionRate = totalEnrollments > 0 ? parseFloat(((completedEnrollments / totalEnrollments) * 100).toFixed(1)) : 0;
+        const prevEnrollments = totalEnrollments - newEnrollments;
+        const prevCompleted = completedEnrollments - newCompletedEnrollments;
+        const prevCompletionRate = prevEnrollments > 0 ? parseFloat(((prevCompleted / prevEnrollments) * 100).toFixed(1)) : 0;
+
         res.json({
-            totals: {
-                students: totalStudents,
-                instructors: totalInstructors,
-                courses: totalCourses,
-                enrollments: totalEnrollments
-            },
-            growth30d: {
+            totalStudents,
+            totalInstructors,
+            totalCourses,
+            totalEnrollments,
+            completedEnrollments,
+            completionRate,
+            growth: {
                 students: newStudents, 
                 instructors: newInstructors,
-                courses: newCourses
+                courses: newCourses,
+                enrollments: newEnrollments,
+                completionRate: parseFloat((completionRate - prevCompletionRate).toFixed(1))
             }
         });
     } catch (err) {
@@ -768,7 +778,10 @@ exports.getInstructorAnalytics = async (req, res) => {
 
 exports.getInstructorStudentAnalytics = async (req, res) => {
     try {
-        const instructorId = new mongoose.Types.ObjectId(req.session.user.id);
+        let instructorId = new mongoose.Types.ObjectId(req.session.user.id);
+        if (req.session.user.role === 'admin' && req.query.instructorId) {
+            instructorId = new mongoose.Types.ObjectId(req.query.instructorId);
+        }
         const courses = await Course.find({ teacherId: instructorId }, 'title _id').lean();
         const courseIds = courses.map(c => c._id);
         const courseMap = courses.reduce((acc, c) => { acc[c._id.toString()] = c.title; return acc; }, {});
