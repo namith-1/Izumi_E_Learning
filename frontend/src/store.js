@@ -286,16 +286,10 @@ export const fetchCourseAnalytics = createAsyncThunk(
 
 const courseSlice = createSlice({
   name: "courses",
-  initialState: {
-    list: [],
-    hasMore: true,
-    currentPage: 1,
-    lastSearchQuery: "",
-    currentCourse: null,
-    loading: false,
     loadingMore: false, // NEW: Lock for infinite scroll
     error: null,
     analyticsData: [],
+    lastFetched: null,
   },
   reducers: {
     clearCurrentCourse: (state) => {
@@ -329,6 +323,7 @@ const courseSlice = createSlice({
         state.currentPage = page;
         state.hasMore = courses.length === 100; 
         state.lastSearchQuery = "";
+        state.lastFetched = Date.now();
       })
       .addCase(fetchAllCourses.rejected, (state, action) => {
         state.loading = false;
@@ -350,6 +345,7 @@ const courseSlice = createSlice({
         state.hasMore = false; 
         state.currentPage = 1;
         state.lastSearchQuery = q;
+        state.lastFetched = Date.now();
       })
       .addCase(searchCourses.rejected, (state, action) => {
         state.loading = false;

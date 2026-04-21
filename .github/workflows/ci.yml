@@ -74,7 +74,7 @@ jobs:
           VITE_API_BASE_URL: https://izumi-e-learning.onrender.com/api
 
   deploy:
-    needs: [backend-tests]
+    needs: [backend-tests, frontend-build]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:

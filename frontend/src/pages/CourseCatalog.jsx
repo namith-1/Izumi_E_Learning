@@ -16,6 +16,7 @@ const CourseCatalog = () => {
     hasMore,
     currentPage,
     lastSearchQuery,
+    lastFetched, // Add this
   } = useSelector((state) => state.courses);
   const { user } = useSelector((state) => state.auth);
 
@@ -23,11 +24,15 @@ const CourseCatalog = () => {
   const observer = useRef();
   const sentinelRef = useRef();
 
-  // 1. Initial Fetch
+  // 1. Initial Fetch with 15s Browser Cache (Redux-based)
   useEffect(() => {
-    dispatch(resetCourseList());
-    dispatch(fetchAllCourses({ page: 1 }));
-  }, [dispatch]);
+    const isFresh = courses.length > 0 && (Date.now() - lastFetched < 15000);
+    
+    if (!isFresh) {
+      dispatch(resetCourseList());
+      dispatch(fetchAllCourses({ page: 1 }));
+    }
+  }, [dispatch, courses.length, lastFetched]);
 
   // 2. Infinite Scroll Observer (Sentinel based)
   useEffect(() => {
