@@ -225,6 +225,18 @@ export const fetchAllCourses = createAsyncThunk(
       return rejectWithValue(err.message);
     }
   },
+  {
+    condition: (args = {}, { getState }) => {
+      const { courses } = getState();
+      const isAppend = args?.append === true;
+
+      // STRICT BLOCK: If we're not appending, and we already have data, BLOCK the call.
+      if (!isAppend && courses.list?.length > 0 && courses.lastFetched) {
+        console.log("[Cache] Blocking redundant course fetch.");
+        return false;
+      }
+    },
+  },
 );
 
 export const searchCourses = createAsyncThunk(
@@ -284,10 +296,32 @@ export const fetchCourseAnalytics = createAsyncThunk(
   },
 );
 
+// Helper to load/save catalog cache
+const CAT_CACHE_KEY = "izumi_catalog_cache";
+const loadCatalogCache = () => {
+  try {
+    const cached = sessionStorage.getItem(CAT_CACHE_KEY);
+    return cached ? JSON.parse(cached) : null;
+  } catch (e) {
+    return null;
+  }
+};
+
+const saveCatalogCache = (list) => {
+  try {
+    sessionStorage.setItem(
+      CAT_CACHE_KEY,
+      JSON.stringify({ list, timestamp: Date.now() }),
+    );
+  } catch (e) {}
+};
+
+const initialCatalog = loadCatalogCache();
+
 const courseSlice = createSlice({
   name: "courses",
   initialState: {
-    list: [],
+    list: initialCatalog?.list || [],
     hasMore: true,
     currentPage: 1,
     lastSearchQuery: "",
@@ -296,7 +330,7 @@ const courseSlice = createSlice({
     loadingMore: false, // NEW: Lock for infinite scroll
     error: null,
     analyticsData: [],
-    lastFetched: null,
+    lastFetched: initialCatalog?.timestamp || null,
   },
   reducers: {
     clearCurrentCourse: (state) => {
@@ -328,9 +362,10 @@ const courseSlice = createSlice({
           state.list = courses;
         }
         state.currentPage = page;
-        state.hasMore = courses.length === 100; 
+        state.hasMore = courses.length === 100;
         state.lastSearchQuery = "";
         state.lastFetched = Date.now();
+        saveCatalogCache(state.list);
       })
       .addCase(fetchAllCourses.rejected, (state, action) => {
         state.loading = false;
@@ -349,10 +384,11 @@ const courseSlice = createSlice({
         const { courses, q } = action.payload;
         // Reverted to 'Load All' for search: Results replace the list and don't paginate
         state.list = courses;
-        state.hasMore = false; 
+        state.hasMore = false;
         state.currentPage = 1;
         state.lastSearchQuery = q;
         state.lastFetched = Date.now();
+        // We don't save search results to the permanent catalog cache to keep it clean
       })
       .addCase(searchCourses.rejected, (state, action) => {
         state.loading = false;
@@ -472,14 +508,12 @@ export const fetchEnrolledCourses = createAsyncThunk(
   {
     condition: (_, { getState }) => {
       const { enrollment } = getState();
-      const CACHE_TTL = 300000; // 5 minutes
+      // STRICT CACHE: Only re-fetch if list is empty or explicitly invalidated (lastEnrolledFetch is null)
       const isCacheValid =
-        enrollment.enrolledList.length > 0 &&
-        enrollment.lastEnrolledFetch &&
-        Date.now() - enrollment.lastEnrolledFetch < CACHE_TTL;
+        enrollment.enrolledList.length > 0 && enrollment.lastEnrolledFetch;
 
       if (isCacheValid) {
-        return false; // Skip the fetch
+        return false; // Skip the network request
       }
     },
   },
@@ -698,6 +732,16 @@ export const fetchAllTeachers = createAsyncThunk(
     } catch {
       return rejectWithValue(null);
     }
+  },
+  {
+    condition: (_, { getState }) => {
+      const { teachers } = getState();
+      // If we already have teacher entities, don't fetch again
+      if (Object.keys(teachers.entities).length > 0) {
+        console.log("[Cache] Blocking redundant teacher fetch.");
+        return false;
+      }
+    },
   },
 );
 

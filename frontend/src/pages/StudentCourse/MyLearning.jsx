@@ -77,14 +77,17 @@ const MyLearning = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
-  const { enrolledList, loading, error } = useSelector(
+  const { enrolledList, lastEnrolledFetch, loading, error } = useSelector(
     (state) => state.enrollment,
   );
   const allCourses = useSelector((state) => state.courses.list);
 
   useEffect(() => {
-    dispatch(fetchEnrolledCourses());
-  }, [dispatch]);
+    // Only fetch if we don't have a list or if the cache was invalidated (null timestamp)
+    if (enrolledList.length === 0 || !lastEnrolledFetch) {
+      dispatch(fetchEnrolledCourses());
+    }
+  }, [dispatch, enrolledList.length, lastEnrolledFetch]);
 
   const handleViewCourse = (courseId) => {
     navigate(`/student-dashboard/courses/${courseId}`);

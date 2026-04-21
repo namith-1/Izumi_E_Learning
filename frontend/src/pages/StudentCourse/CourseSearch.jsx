@@ -11,7 +11,7 @@ const CourseSearch = () => {
   const apiBase = BACKEND_URL;
 
   // Get data from Redux store
-  const { list: allCourses, loading: coursesLoading } = useSelector(
+  const { list: allCourses, lastFetched, loading: coursesLoading } = useSelector(
     (state) => state.courses,
   );
   const { entities: teacherEntities, loading: teachersLoading } = useSelector(
@@ -23,10 +23,15 @@ const CourseSearch = () => {
 
   // 1. Fetch data when component mounts
   useEffect(() => {
-    // Fetch courses AND teachers
-    dispatch(fetchAllCourses());
-    dispatch(fetchAllTeachers());
-  }, [dispatch]);
+    // Only fetch courses if we don't have them yet or the cache is empty
+    if (allCourses.length === 0 || !lastFetched) {
+      dispatch(fetchAllCourses());
+    }
+    // For teachers, we'll keep a simple check if the entities object is empty
+    if (Object.keys(teacherEntities).length === 0) {
+      dispatch(fetchAllTeachers());
+    }
+  }, [dispatch, allCourses.length, lastFetched, teacherEntities]);
 
   const loading = coursesLoading || teachersLoading;
 
