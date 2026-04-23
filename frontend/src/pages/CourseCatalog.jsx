@@ -162,10 +162,14 @@ const CourseCatalog = () => {
   };
 
   const handleEnroll = async (id) => {
-    if (!user) return alert("Please log in to enroll.");
+    if (!user) return navigate("/login");
     const r = await dispatch(enrollInCourse({ courseId: id, paymentMethod: "card" }));
-    if (enrollInCourse.fulfilled.match(r)) { alert("Enrolled!"); navigate(`/student-dashboard/courses/${id}`); }
-    else alert(`Enrollment failed: ${r.payload}`);
+    if (enrollInCourse.fulfilled.match(r)) {
+      navigate(`/student-dashboard/courses/${id}`);
+    } else {
+      // Show inline error without alert — log only
+      console.error("Enrollment failed:", r.payload);
+    }
   };
 
   // Recommended based on user interests

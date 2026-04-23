@@ -362,6 +362,16 @@ const courseSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      // Clear course cache on logout so next user gets fresh data
+      .addCase(logoutUser.fulfilled, (state) => {
+        state.list = [];
+        state.currentPage = 1;
+        state.hasMore = true;
+        state.lastSearchQuery = "";
+        state.lastFetched = null;
+        state.isSessionInitialized = false;
+        try { sessionStorage.removeItem(CAT_CACHE_KEY); } catch (e) {}
+      })
       .addCase(fetchAllCourses.pending, (state, action) => {
         const isAppend = action.meta.arg?.append;
         state.loading = !isAppend;
@@ -577,6 +587,28 @@ const enrollmentSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      // ── On logout: wipe enrolled cache so next user starts clean ──────────
+      .addCase(logoutUser.fulfilled, (state) => {
+        state.enrolledList = [];
+        state.currentEnrollment = undefined;
+        state.isSessionInitialized = false;
+        state.lastEnrolledFetch = null;
+        state.error = null;
+        try { sessionStorage.removeItem(ENROLLED_CACHE_KEY); } catch (e) {}
+      })
+      // ── On login: bust cache so fresh fetch always runs for new user ───────
+      .addCase(loginUser.fulfilled, (state) => {
+        state.enrolledList = [];
+        state.isSessionInitialized = false;
+        state.lastEnrolledFetch = null;
+        try { sessionStorage.removeItem(ENROLLED_CACHE_KEY); } catch (e) {}
+      })
+      .addCase(registerUser.fulfilled, (state) => {
+        state.enrolledList = [];
+        state.isSessionInitialized = false;
+        state.lastEnrolledFetch = null;
+        try { sessionStorage.removeItem(ENROLLED_CACHE_KEY); } catch (e) {}
+      })
       .addCase(enrollInCourse.pending, (state) => {
         state.loading = true;
         state.error = null;
