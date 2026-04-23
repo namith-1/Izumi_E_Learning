@@ -41,7 +41,7 @@ const COURSE_DATA_PATH = "local_course_draft";
 const API_BASE = BACKEND_URL;
 
 const URL_REGEX =
-  /^(https?:\/\/)?([\\da-z.-]+)\.([a-z.]{2,6})(\/[\\w .-]*)*\/?$/;
+  /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&/=]*)$/;
 
 const generateId = () => Date.now() + Math.random().toString(36).substr(2, 9);
 
@@ -57,6 +57,9 @@ const createNewModule = (type = "text", parentId = null) => ({
   text: type === "text" ? "Start writing your content here..." : "",
   videoLink: type === "video" ? "" : "",
   quizData: { questions: [] },
+  isGraded: type === "quiz",
+  weight: 0,
+  passingScore: 70,
   children: [],
 });
 
@@ -79,11 +82,9 @@ const initialCourseStructure = {
 
 // ─── Helper: compute total weight assigned to graded modules ─────────────────
 const computeWeightTotal = (modules) => {
+  if (!modules) return 0;
   return Object.values(modules)
-    .filter(
-      (m) =>
-        m && m.isGraded !== false && (m.isGraded === true || m.type === "quiz"),
-    )
+    .filter((m) => m && m.isGraded)
     .reduce((sum, m) => sum + (Number(m.weight) || 0), 0);
 };
 
@@ -1138,87 +1139,81 @@ const CourseEditor = () => {
 
   // ─── Validation ──────────────────────────────────────────────────────────────
   const validateEntireCourse = () => {
+    console.log("DEBUG: Validating entire course...");
     const errors = {};
 
-    if (!courseStructure.courseTitle.trim())
-      errors.courseTitle = "Course Title is required.";
-    if (!courseStructure.subject.trim())
-      errors.subject = "Subject is required.";
-    if (courseStructure.price < 0 || isNaN(courseStructure.price))
-      errors.price = "Price must be a non-negative number.";
+    try {
+      if (!courseStructure.courseTitle || !courseStructure.courseTitle.trim())
+        errors.courseTitle = "Course Title is required.";
+      if (!courseStructure.subject || !courseStructure.subject.trim())
+        errors.subject = "Subject is required.";
+      if (courseStructure.price < 0 || isNaN(courseStructure.price))
+        errors.price = "Price must be a non-negative number.";
 
-    const allModulesList = Object.values(allModules);
-    const moduleIssues = [];
+      const allModulesList = Object.values(allModules || {});
+      const moduleIssues = [];
 
-    for (const mod of allModulesList) {
-      if (!mod || !mod.id) continue;
-      if (!mod.title || !mod.title.trim())
-        moduleIssues.push(
-          `Module "${mod.id.substring(0, 8)}..." has no title.`,
-        );
-      if (
-        mod.type === "video" &&
-        (!mod.videoLink || !URL_REGEX.test(mod.videoLink))
-      )
-        moduleIssues.push(
-          `"${mod.title || "Untitled"}" (video) needs a valid URL.`,
-        );
-      if (
-        mod.type === "quiz" &&
-        (!mod.quizData?.questions || mod.quizData.questions.length === 0)
-      )
-        moduleIssues.push(
-          `"${mod.title || "Untitled"}" (quiz) has no questions.`,
-        );
+      for (const mod of allModulesList) {
+        if (!mod || !mod.id) continue;
+        if (!mod.title || !mod.title.trim())
+          moduleIssues.push(
+            `Module "${mod.id.substring(0, 8)}..." has no title.`,
+          );
+        if (
+          mod.type === "video" &&
+          (!mod.videoLink || typeof mod.videoLink !== "string" || !URL_REGEX.test(mod.videoLink))
+        )
+          moduleIssues.push(
+            `"${mod.title || "Untitled"}" (video) needs a valid URL.`,
+          );
+        if (
+          mod.type === "quiz" &&
+          (!mod.quizData?.questions || mod.quizData.questions.length === 0)
+        )
+          moduleIssues.push(
+            `"${mod.title || "Untitled"}" (quiz) has no questions.`,
+          );
+      }
+      if (moduleIssues.length > 0) errors.moduleIssues = moduleIssues;
+
+      const policy = courseStructure.passingPolicy;
+      if (policy?.mode === "weighted") {
+        const weightTotal = computeWeightTotal(courseStructure.modules || {});
+        if (weightTotal > 0 && Math.abs(weightTotal - 100) > 0.01)
+          errors.weightWarning = `Graded module weights sum to ${weightTotal.toFixed(0)}, not 100. Scores will be auto-normalised.`;
+      }
+    } catch (err) {
+      console.error("DEBUG: Validation crash:", err);
+      errors.critical = "Validation crashed: " + err.message;
     }
-    if (moduleIssues.length > 0) errors.moduleIssues = moduleIssues;
-
-    const policy = courseStructure.passingPolicy;
-    if (policy?.mode === "weighted") {
-      const weightTotal = computeWeightTotal(courseStructure.modules);
-      if (weightTotal > 0 && Math.abs(weightTotal - 100) > 0.01)
-        errors.weightWarning = `Graded module weights sum to ${weightTotal.toFixed(0)}, not 100. Scores will be auto-normalised.`;
-    }
-
-    if (!selectedModule.title.trim())
-      errors.moduleTitle = "Module Title is required.";
-    if (
-      selectedModule.type === "video" &&
-      (!selectedModule.videoLink || !URL_REGEX.test(selectedModule.videoLink))
-    )
-      errors.videoLink = "A valid Video URL is required.";
-    if (
-      selectedModule.type === "quiz" &&
-      (!selectedModule.quizData?.questions ||
-        selectedModule.quizData.questions.length === 0)
-    )
-      errors.quizData = "Quiz must have at least one question.";
 
     setValidationErrors(errors);
     return errors;
   };
 
-  // ─── Publish / Update ────────────────────────────────────────────────────────
-  const handlePublishCourse = async () => {
+  const handlePublishCourse = async (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     const errors = validateEntireCourse();
     const blockingKeys = Object.keys(errors).filter(
       (k) => k !== "weightWarning",
     );
 
     if (blockingKeys.length > 0) {
-      let msg = "Please fix these issues before publishing:\n\n";
+      let msg = "Cannot publish course yet. Please fix the following issues:\n\n";
+      if (errors.critical) msg += `• CRITICAL: ${errors.critical}\n`;
       if (errors.courseTitle) msg += `• ${errors.courseTitle}\n`;
       if (errors.subject) msg += `• ${errors.subject}\n`;
+      if (errors.price) msg += `• ${errors.price}\n`;
       if (errors.moduleIssues) {
-        msg += "\nModule issues:\n";
+        msg += "\nModule specific issues:\n";
         errors.moduleIssues.forEach((issue) => {
           msg += `• ${issue}\n`;
         });
       }
-      if (errors.moduleTitle)
-        msg += `• Current module: ${errors.moduleTitle}\n`;
-      if (errors.videoLink) msg += `• Current module: ${errors.videoLink}\n`;
-      if (errors.quizData) msg += `• Current module: ${errors.quizData}\n`;
+      
       alert(msg);
       return;
     }
@@ -1250,16 +1245,12 @@ const CourseEditor = () => {
           try {
             payload.imageUrl = await uploadImageToServer(selectedImageFile);
             setImagePreviewUrl(payload.imageUrl);
-          } catch {
+          } catch (err) {
             alert("Image upload failed. Please try again.");
             setIsSaving(false);
             return;
           }
         }
-
-        // Note: video files are uploaded immediately on selection (inside VideoUploader),
-        // so by publish time courseStructure already holds the final Cloudinary URL.
-        // No extra upload step needed here.
 
         let result;
         if (isEditing) {
@@ -1286,7 +1277,7 @@ const CourseEditor = () => {
         }
       } catch (e) {
         console.error(e);
-        alert(`An error occurred during ${actionText.toLowerCase()}.`);
+        alert(`An error occurred during ${actionText.toLowerCase()}: ${e.message}`);
       } finally {
         setIsSaving(false);
       }
@@ -1312,111 +1303,20 @@ const CourseEditor = () => {
       <div className="module-tree-sidebar">
         <div className="editor-header">
           <h2>Course Builder</h2>
-          <Settings
-            size={18}
-            className="icon-btn"
-            onClick={() => handleSelectModule(courseStructure.rootModule.id)}
-          />
-        </div>
-
-        <div className="save-course-bar">
-          <div className="input-group">
-            <label className="image-upload-label">Course Image</label>
-            <div className="image-upload-row">
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => handleImageSelect(e.target.files[0])}
-              />
-              {imagePreviewUrl && (
-                <img
-                  src={imagePreviewUrl}
-                  alt="preview"
-                  className="image-preview-small"
-                />
-              )}
-            </div>
-          </div>
-
-          <div className="input-group">
-            <input
-              type="text"
-              className={`sidebar-input ${validationErrors.courseTitle ? "input-error" : ""}`}
-              placeholder="Course Title *"
-              value={courseStructure.courseTitle}
-              onChange={(e) =>
-                handleCourseMetaChange("courseTitle", e.target.value)
-              }
-            />
-            {validationErrors.courseTitle && (
-              <span className="error-tooltip">
-                {validationErrors.courseTitle}
+          <div style={{ display: "flex", gap: "8px" }}>
+            {lastSaved && (
+              <span style={{ fontSize: "11px", color: "#94a3b8", alignSelf: "center" }}>
+                Saved {new Date(lastSaved).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </span>
             )}
-          </div>
-
-          <div className="input-group">
-            <label
-              style={{
-                fontSize: "12px",
-                color: "#6b7280",
-                marginBottom: "4px",
-                display: "block",
-              }}
-            >
-              Course Price ($)
-            </label>
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              className={`sidebar-input ${validationErrors.price ? "input-error" : ""}`}
-              placeholder="0.00 (Free)"
-              value={courseStructure.price}
-              onChange={(e) => handleCourseMetaChange("price", e.target.value)}
+            <Settings
+              size={18}
+              className="icon-btn"
+              onClick={() => handleSelectModule(courseStructure.rootModule.id)}
             />
-            {validationErrors.price && (
-              <span className="error-tooltip">{validationErrors.price}</span>
-            )}
           </div>
-
-          <div className="input-group">
-            <input
-              type="text"
-              className={`sidebar-input ${validationErrors.subject ? "input-error" : ""}`}
-              placeholder="Subject *"
-              value={courseStructure.subject}
-              onChange={(e) =>
-                handleCourseMetaChange("subject", e.target.value)
-              }
-            />
-            {validationErrors.subject && (
-              <span className="error-tooltip">{validationErrors.subject}</span>
-            )}
-          </div>
-
-          <button
-            onClick={handlePublishCourse}
-            disabled={isSaving}
-            className="btn-publish-course"
-          >
-            <Save size={16} /> {publishButtonText}
-          </button>
-
-          <GradingPolicyPanel
-            policy={courseStructure.passingPolicy || DEFAULT_PASSING_POLICY}
-            modules={courseStructure.modules}
-            onChange={(field, val) =>
-              setCourseStructure((prev) => ({
-                ...prev,
-                passingPolicy: {
-                  ...(prev.passingPolicy || DEFAULT_PASSING_POLICY),
-                  [field]: val,
-                },
-              }))
-            }
-          />
         </div>
+
 
         <div className="tree-container">
           <ul className="module-tree-list">
@@ -1430,209 +1330,163 @@ const CourseEditor = () => {
             />
           </ul>
         </div>
+
+        <div className="save-course-bar" style={{ borderTop: "1px solid #e2e8f0", borderBottom: "none", flexDirection: "column", padding: "12px 20px" }}>
+          {Object.keys(validationErrors).length > 0 && (
+            <div className="validation-summary-sidebar">
+              <AlertCircle size={14} />
+              <span>Please fix issues to publish</span>
+            </div>
+          )}
+          <button
+            onClick={handlePublishCourse}
+            disabled={isSaving}
+            className="btn-publish-course"
+            style={{ width: "100%" }}
+          >
+            {isSaving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
+            {publishButtonText}
+          </button>
+        </div>
       </div>
 
       {/* EDITOR AREA */}
       <div className="module-editor-content">
-        <div
-          className="course-image-preview-banner"
-          style={{
-            height: "420px",
-            marginBottom: "18px",
-            backgroundColor: "#f3f4f6",
-            backgroundImage: imagePreviewUrl
-              ? `url(${(imagePreviewUrl || "").startsWith("http") ? imagePreviewUrl : `${API_BASE}${imagePreviewUrl}`})`
-              : "none",
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            borderRadius: "6px",
-          }}
-        />
         <div className="module-editor-card">
           <div className="card-header">
             <h2>{isIntroModuleForm ? "Course Settings" : "Edit Module"}</h2>
-            <span className="module-id-badge">ID: {selectedModule.title}</span>
+            <span className="module-id-badge">
+              {isIntroModuleForm ? "Root Module" : `Type: ${selectedModule.type.toUpperCase()}`}
+            </span>
           </div>
 
-          <div className="form-field">
-            <label>
-              Title <span className="required-star">*</span>
-            </label>
-            <input
-              type="text"
-              className={validationErrors.moduleTitle ? "input-error" : ""}
-              value={selectedModule.title}
-              onChange={(e) => handleModuleFormChange("title", e.target.value)}
-            />
-            {validationErrors.moduleTitle && (
-              <span className="error-text">
-                <AlertCircle size={12} /> {validationErrors.moduleTitle}
-              </span>
-            )}
-          </div>
-
-          {!isIntroModuleForm ? (
-            <>
-              {/* Per-module grading settings */}
-              {(selectedModule.type === "quiz" ||
-                selectedModule.type === "video" ||
-                selectedModule.type === "text") && (
-                <div
-                  style={{
-                    background: "#f0fdf4",
-                    border: "1px solid #bbf7d0",
-                    borderRadius: 8,
-                    padding: "12px 14px",
-                    marginBottom: 16,
-                  }}
-                >
-                  <h5
-                    style={{
-                      margin: "0 0 10px",
-                      fontSize: 13,
-                      color: "#166534",
-                      fontWeight: 700,
-                    }}
-                  >
-                    Module Grading
-                  </h5>
-                  <label
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      fontSize: 13,
-                      marginBottom: 8,
-                      cursor: "pointer",
-                    }}
-                  >
+          {isIntroModuleForm && (
+            <div className="course-settings-intro">
+              <div className="course-settings-image-section">
+                <img
+                  src={imagePreviewUrl || "https://via.placeholder.com/280x180?text=No+Image"}
+                  alt="Course Preview"
+                  className="image-preview-large"
+                />
+                <div className="image-upload-controls">
+                  <h4 style={{ margin: 0, fontSize: "16px", color: "#1e293b" }}>Course Cover Image</h4>
+                  <p style={{ margin: 0, fontSize: "13px", color: "#64748b" }}>
+                    This image will be shown in the course catalog.
+                  </p>
+                  <label className="image-upload-btn">
+                    Choose Image
                     <input
-                      type="checkbox"
-                      checked={selectedModule.isGraded !== false}
-                      onChange={(e) =>
-                        handleModuleFormChange("isGraded", e.target.checked)
-                      }
+                      type="file"
+                      accept="image/*"
+                      style={{ display: "none" }}
+                      onChange={(e) => handleImageSelect(e.target.files[0])}
                     />
-                    <span>Count toward course grade</span>
                   </label>
-                  {selectedModule.isGraded !== false && (
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr 1fr",
-                        gap: 10,
-                        marginTop: 6,
-                      }}
-                    >
-                      <div>
-                        <label
-                          style={{
-                            fontSize: 12,
-                            color: "#6b7280",
-                            display: "block",
-                            marginBottom: 4,
-                          }}
-                        >
-                          Weight (%)
-                        </label>
-                        <input
-                          type="number"
-                          min={0}
-                          max={100}
-                          placeholder="e.g. 25"
-                          value={selectedModule.weight ?? ""}
-                          onChange={(e) =>
-                            handleModuleFormChange(
-                              "weight",
-                              e.target.value === ""
-                                ? null
-                                : Number(e.target.value),
-                            )
-                          }
-                          style={{
-                            width: "100%",
-                            padding: "5px 8px",
-                            borderRadius: 6,
-                            border: "1px solid #d1d5db",
-                            fontSize: 13,
-                          }}
-                        />
-                      </div>
-                      <div>
-                        <label
-                          style={{
-                            fontSize: 12,
-                            color: "#6b7280",
-                            display: "block",
-                            marginBottom: 4,
-                          }}
-                        >
-                          Passing Score (%)
-                        </label>
-                        <input
-                          type="number"
-                          min={0}
-                          max={100}
-                          placeholder="e.g. 60"
-                          value={selectedModule.passingScore ?? ""}
-                          onChange={(e) =>
-                            handleModuleFormChange(
-                              "passingScore",
-                              e.target.value === ""
-                                ? null
-                                : Number(e.target.value),
-                            )
-                          }
-                          style={{
-                            width: "100%",
-                            padding: "5px 8px",
-                            borderRadius: 6,
-                            border: "1px solid #d1d5db",
-                            fontSize: 13,
-                          }}
-                        />
-                      </div>
-                      {selectedModule.type === "quiz" && (
-                        <div style={{ gridColumn: "span 2" }}>
-                          <label
-                            style={{
-                              fontSize: 12,
-                              color: "#6b7280",
-                              display: "block",
-                              marginBottom: 4,
-                            }}
-                          >
-                            Max Attempts (blank = unlimited)
-                          </label>
-                          <input
-                            type="number"
-                            min={1}
-                            placeholder="Unlimited"
-                            value={selectedModule.maxAttempts ?? ""}
-                            onChange={(e) =>
-                              handleModuleFormChange(
-                                "maxAttempts",
-                                e.target.value === ""
-                                  ? null
-                                  : Number(e.target.value),
-                              )
-                            }
-                            style={{
-                              width: "100%",
-                              padding: "5px 8px",
-                              borderRadius: 6,
-                              border: "1px solid #d1d5db",
-                              fontSize: 13,
-                            }}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  )}
                 </div>
-              )}
+              </div>
 
-              <div className="form-grid">
+              <div className="form-grid" style={{ gridTemplateColumns: "2fr 1fr", gap: "20px" }}>
+                <div className="form-field">
+                  <label>Course Title <span className="required-star">*</span></label>
+                  <input
+                    type="text"
+                    className={validationErrors.courseTitle ? "input-error" : ""}
+                    placeholder="Enter a catchy title..."
+                    value={courseStructure.courseTitle}
+                    onChange={(e) => handleCourseMetaChange("courseTitle", e.target.value)}
+                  />
+                  {validationErrors.courseTitle && <span className="error-text">{validationErrors.courseTitle}</span>}
+                </div>
+                <div className="form-field">
+                  <label>Course Price ($)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    className={validationErrors.price ? "input-error" : ""}
+                    placeholder="0.00 (Free)"
+                    value={courseStructure.price}
+                    onChange={(e) => handleCourseMetaChange("price", e.target.value)}
+                  />
+                  {validationErrors.price && <span className="error-text">{validationErrors.price}</span>}
+                </div>
+              </div>
+
+              <div className="form-field">
+                <label>Subject / Category <span className="required-star">*</span></label>
+                <input
+                  type="text"
+                  className={validationErrors.subject ? "input-error" : ""}
+                  placeholder="e.g. Computer Science, Art, Business..."
+                  value={courseStructure.subject}
+                  onChange={(e) => handleCourseMetaChange("subject", e.target.value)}
+                />
+                {validationErrors.subject && <span className="error-text">{validationErrors.subject}</span>}
+              </div>
+
+              <div className="form-field">
+                <label>Course Description</label>
+                <textarea
+                  rows={4}
+                  placeholder="Tell students what they will learn..."
+                  value={courseStructure.courseDescription}
+                  onChange={(e) => handleCourseMetaChange("courseDescription", e.target.value)}
+                  style={{ resize: "vertical" }}
+                />
+              </div>
+
+              <div style={{ marginTop: "20px" }}>
+                <GradingPolicyPanel
+                  policy={courseStructure.passingPolicy || DEFAULT_PASSING_POLICY}
+                  modules={courseStructure.modules}
+                  onChange={(field, val) =>
+                    setCourseStructure((prev) => ({
+                      ...prev,
+                      passingPolicy: {
+                        ...(prev.passingPolicy || DEFAULT_PASSING_POLICY),
+                        [field]: val,
+                      },
+                    }))
+                  }
+                />
+                {validationErrors.weightWarning && (
+                  <div className="error-banner" style={{ marginTop: "12px" }}>
+                    <AlertCircle size={16} /> {validationErrors.weightWarning}
+                  </div>
+                )}
+              </div>
+              
+              <div className="editor-footer">
+                <button
+                  className="btn-add-child"
+                  onClick={() => handleAddModule(selectedModuleId)}
+                >
+                  <Plus size={18} /> Add First Module
+                </button>
+              </div>
+            </div>
+          )}
+
+          {!isIntroModuleForm && (
+            <>
+              <div className="form-field">
+                <label>
+                  Module Title <span className="required-star">*</span>
+                </label>
+                <input
+                  type="text"
+                  className={validationErrors.moduleTitle ? "input-error" : ""}
+                  value={selectedModule.title}
+                  onChange={(e) => handleModuleFormChange("title", e.target.value)}
+                />
+                {validationErrors.moduleTitle && (
+                  <span className="error-text">
+                    <AlertCircle size={14} /> {validationErrors.moduleTitle}
+                  </span>
+                )}
+              </div>
+
+              <div className="form-grid" style={{ gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
                 <div className="form-field">
                   <label>Type</label>
                   <select
@@ -1658,71 +1512,140 @@ const CourseEditor = () => {
                   </select>
                 </div>
                 <div className="form-field">
-                  <label>Description</label>
+                  <label>Short Description</label>
                   <input
                     type="text"
-                    value={selectedModule.description}
+                    value={selectedModule.description || ""}
                     onChange={(e) =>
                       handleModuleFormChange("description", e.target.value)
                     }
-                    placeholder="Short summary..."
+                    placeholder="Briefly describe this module..."
                   />
                 </div>
               </div>
 
-              {/* Text module */}
+              {/* Per-module grading settings */}
+              {(selectedModule.type === "quiz" ||
+                selectedModule.type === "video" ||
+                selectedModule.type === "text") && (
+                <div
+                  style={{
+                    background: "#f8fafc",
+                    border: "1px solid #e2e8f0",
+                    borderRadius: 12,
+                    padding: "16px",
+                    marginBottom: 20,
+                  }}
+                >
+                  <h5 style={{ margin: "0 0 12px", fontSize: 14, color: "#1e293b", fontWeight: 700 }}>
+                    Module Grading
+                  </h5>
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      fontSize: 14,
+                      marginBottom: 12,
+                      cursor: "pointer",
+                      fontWeight: 500,
+                      color: "#475569"
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedModule.isGraded !== false}
+                      onChange={(e) =>
+                        handleModuleFormChange("isGraded", e.target.checked)
+                      }
+                      style={{ width: "auto" }}
+                    />
+                    <span>Count toward course grade</span>
+                  </label>
+                  {selectedModule.isGraded !== false && (
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: 15,
+                        marginTop: 10,
+                      }}
+                    >
+                      <div className="form-field" style={{ marginBottom: 0 }}>
+                        <label style={{ fontSize: 12, color: "#64748b" }}>Weight (%)</label>
+                        <input
+                          type="number"
+                          min={0}
+                          max={100}
+                          placeholder="e.g. 25"
+                          value={selectedModule.weight ?? ""}
+                          onChange={(e) =>
+                            handleModuleFormChange(
+                              "weight",
+                              e.target.value === ""
+                                ? null
+                                : Number(e.target.value),
+                            )
+                          }
+                        />
+                      </div>
+                      <div className="form-field" style={{ marginBottom: 0 }}>
+                        <label style={{ fontSize: 12, color: "#64748b" }}>Passing Score (%)</label>
+                        <input
+                          type="number"
+                          min={0}
+                          max={100}
+                          placeholder="e.g. 60"
+                          value={selectedModule.passingScore ?? ""}
+                          onChange={(e) =>
+                            handleModuleFormChange(
+                              "passingScore",
+                              e.target.value === ""
+                                ? null
+                                : Number(e.target.value),
+                            )
+                          }
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {selectedModule.type === "text" && (
                 <div className="form-field">
-                  <label>Content</label>
+                  <label>Content (Markdown supported)</label>
                   <textarea
-                    rows="12"
-                    value={selectedModule.text}
-                    onChange={(e) =>
-                      handleModuleFormChange("text", e.target.value)
-                    }
+                    rows={12}
+                    value={selectedModule.text || ""}
+                    onChange={(e) => handleModuleFormChange("text", e.target.value)}
+                    placeholder="Write your module content here..."
                   />
                 </div>
               )}
 
-              {/* ── Video module — now uses VideoUploader ── */}
               {selectedModule.type === "video" && (
                 <div className="form-field">
-                  <label>
-                    Video <span className="required-star">*</span>
-                  </label>
+                  <label>Video Content</label>
                   <VideoUploader
-                    // key forces a fresh instance when switching to a different module
                     key={selectedModuleId}
-                    currentUrl={selectedModule.videoLink || ""}
-                    onVideoReady={(url) => {
-                      handleModuleFormChange("videoLink", url);
-                      // Clear any stale validation error for this field
-                      if (validationErrors.videoLink) {
-                        setValidationErrors((prev) => {
-                          const n = { ...prev };
-                          delete n.videoLink;
-                          return n;
-                        });
-                      }
-                    }}
-                    onError={(msg) => console.error("Video upload error:", msg)}
+                    currentUrl={selectedModule.videoLink}
+                    onVideoReady={(url) => handleModuleFormChange("videoLink", url)}
+                    onError={(msg) => alert(msg)}
                   />
                   {validationErrors.videoLink && (
-                    <span className="error-text" style={{ marginTop: 6 }}>
-                      <AlertCircle size={12} /> {validationErrors.videoLink}
+                    <span className="error-text">
+                      <AlertCircle size={14} /> {validationErrors.videoLink}
                     </span>
                   )}
                 </div>
               )}
 
-              {/* Quiz module */}
               {selectedModule.type === "quiz" && (
                 <div className="form-field">
                   <QuizBuilder
                     quizData={selectedModule.quizData || { questions: [] }}
-                    onChange={(newData) =>
-                      handleModuleFormChange("quizData", newData)
-                    }
+                    onChange={(newData) => handleModuleFormChange("quizData", newData)}
                   />
                   {validationErrors.quizData && (
                     <div className="error-banner">
@@ -1731,45 +1654,31 @@ const CourseEditor = () => {
                   )}
                 </div>
               )}
-            </>
-          ) : (
-            <div className="form-field">
-              <label>Course Description</label>
-              <textarea
-                rows="6"
-                value={courseStructure.courseDescription}
-                onChange={(e) =>
-                  handleCourseMetaChange("courseDescription", e.target.value)
-                }
-                placeholder="Describe the course..."
-              />
-            </div>
-          )}
 
-          <div className="editor-footer">
-            <button
-              className="btn-add-child"
-              onClick={() => handleAddModule(selectedModuleId)}
-            >
-              <Plus size={16} /> Add Sub-Module
-            </button>
-            {!isIntroModuleForm && (
-              <button
-                className="btn-delete-module"
-                onClick={() => handleDeleteModule(selectedModuleId)}
-              >
-                <Trash2 size={16} /> Delete
-              </button>
-            )}
-            <div className="autosave-status">
-              <Clock size={14} />
-              <span>
-                {isSaving
-                  ? "Saving..."
-                  : `Draft saved: ${lastSaved ? new Date(lastSaved).toLocaleTimeString() : "Just now"}`}
-              </span>
-            </div>
-          </div>
+              <div className="editor-footer">
+                <button
+                  className="btn-add-child"
+                  onClick={() => handleAddModule(selectedModuleId)}
+                >
+                  <Plus size={18} /> Add Sub-Module
+                </button>
+                <button
+                  className="btn-delete-module"
+                  onClick={() => handleDeleteModule(selectedModuleId)}
+                >
+                  <Trash2 size={18} /> Delete Module
+                </button>
+                <div className="autosave-status">
+                  <Clock size={16} />
+                  <span>
+                    {isSaving
+                      ? "Saving..."
+                      : `Draft saved: ${lastSaved ? new Date(lastSaved).toLocaleTimeString() : "Just now"}`}
+                  </span>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
