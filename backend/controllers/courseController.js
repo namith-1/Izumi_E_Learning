@@ -207,16 +207,23 @@ exports.createCourse = async (req, res) => {
   }
 };
 
-// Get All Courses (Catalog) - RELAXED & HIGH-LIMIT
+// Get All Courses (Catalog) — supports optional ?subjects=Math,Science preference filter
 exports.getAllCourses = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 100; // Boosted from 12 to 100 for instant load
-    const skip = (page - 1) * limit;
+    const page  = parseInt(req.query.page)  || 1;
+    const limit = parseInt(req.query.limit) || 100;
+    const skip  = (page - 1) * limit;
 
-    // Cache key now includes the higher limit
-    const cacheKey = `courses:catalog:p${page}:l${limit}`;
-    const cachedData = await cacheService.get(cacheKey);
+    // Optional preference filter: ?subjects=Math,Physics
+    const subjectsParam = req.query.subjects;
+    const subjectList   = subjectsParam
+      ? subjectsParam.split(",").map((s) => s.trim()).filter(Boolean)
+      : [];
+
+    // Cache key includes subjects so different preference sets are cached separately
+    const subjectsKey = subjectList.length ? subjectList.sort().join("|") : "all";
+    const cacheKey    = `courses:catalog:p${page}:l${limit}:s${subjectsKey}`;
+    const cachedData  = await cacheService.get(cacheKey);
     if (cachedData) return res.json(cachedData);
 
     const pipeline = [];
@@ -233,6 +240,15 @@ exports.getAllCourses = async (req, res) => {
       });
     }
 
+    // Apply subject filter if preferences were provided
+    if (subjectList.length > 0) {
+      pipeline.push({
+        $match: {
+          subject: { $in: subjectList.map((s) => new RegExp(`^${s}$`, "i")) },
+        },
+      });
+    }
+
     pipeline.push({ $project: { modules: 0 } });
 
     pipeline.push(
@@ -245,26 +261,15 @@ exports.getAllCourses = async (req, res) => {
         },
       },
       {
-        // preserveNullAndEmptyArrays ensures course isn't dropped if teacher profile is missing
-        $unwind: {
-          path: "$teacherDetails",
-          preserveNullAndEmptyArrays: true
-        },
+        $unwind: { path: "$teacherDetails", preserveNullAndEmptyArrays: true },
       },
       {
         $project: {
-          _id: 1,
-          title: 1,
-          description: 1,
-          subject: 1,
-          imageUrl: 1,
-          rating: 1,
-          createdAt: 1,
-          teacherId: 1,
+          _id: 1, title: 1, description: 1, subject: 1,
+          imageUrl: 1, rating: 1, createdAt: 1, teacherId: 1,
           approvalStatus: 1,
-          // Fallback name if teacher details are missing
           instructorName: { $ifNull: ["$teacherDetails.name", "Izumi Instructor"] },
-          rootModule: 1,
+          rootModule: 1, price: 1,
         },
       },
       { $sort: { createdAt: -1 } },
@@ -273,7 +278,7 @@ exports.getAllCourses = async (req, res) => {
     );
 
     const courses = await Course.aggregate(pipeline);
-    await cacheService.set(cacheKey, courses, 600); 
+    await cacheService.set(cacheKey, courses, 600);
     res.json(courses);
   } catch (err) {
     res.status(500).json({ error: err.message });

@@ -217,9 +217,11 @@ export const { clearAuthErrors } = authSlice.actions;
 
 export const fetchAllCourses = createAsyncThunk(
   "courses/fetchAll",
-  async ({ page = 1, limit = 100, append = false } = {}, { rejectWithValue }) => {
+  async ({ page = 1, limit = 100, append = false, subjects = [] } = {}, { rejectWithValue }) => {
     try {
-      const data = await apiRequest(`/courses?page=${page}&limit=${limit}`, "GET");
+      let url = `/courses?page=${page}&limit=${limit}`;
+      if (subjects.length > 0) url += `&subjects=${subjects.join(",")}`;
+      const data = await apiRequest(url, "GET");
       return { courses: data, append, page };
     } catch (err) {
       return rejectWithValue(err.message);

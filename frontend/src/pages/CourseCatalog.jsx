@@ -4,7 +4,7 @@ import React, { useEffect, useState, useRef, useMemo, useCallback } from "react"
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, Link } from "react-router-dom";
 import {
-  fetchAllCourses, enrollInCourse, searchCourses, resetCourseList, BACKEND_URL,
+  fetchAllCourses, searchCourses, resetCourseList, BACKEND_URL,
 } from "../store";
 import {
   BookOpen, User, Zap, Search, Loader2, Star, X, ChevronRight, Sliders, Grid, Map,
@@ -24,7 +24,7 @@ const StarRating = ({ rating }) => (
 );
 
 // ── Course card (same style as before) ───────────────────────────────────────
-const CourseCard = ({ course, onEnroll, user }) => {
+const CourseCard = ({ course, onView }) => {
   const rawImg = course.imageUrl || `https://picsum.photos/seed/${course._id}/400/200`;
   const imgUrl = rawImg.startsWith("http") ? rawImg : `${BACKEND_URL}${rawImg}`;
   return (
@@ -48,12 +48,10 @@ const CourseCard = ({ course, onEnroll, user }) => {
           </span>
         </div>
         <button
-          onClick={() => onEnroll(course._id)}
+          onClick={() => onView(course._id)}
           className="btn-action btn-enroll"
-          disabled={!user}
-          title={!user ? "Log in to enroll" : "Enroll now"}
         >
-          Enroll Now
+          View & Enroll
         </button>
       </div>
     </div>
@@ -107,6 +105,11 @@ const CourseCatalog = () => {
   const observerRef  = useRef();
   const debounceRef  = useRef();
 
+  // Compute user interests once
+  const userInterests = useMemo(() =>
+    (user?.interests || []).map((s) => s.trim()).filter(Boolean),
+  [user]);
+
   // Fetch subject tree once
   useEffect(() => {
     fetch(`${API}/subjects`, { credentials: "include" })
@@ -115,11 +118,15 @@ const CourseCatalog = () => {
       .catch(() => {});
   }, []);
 
-  // Fetch courses
+  // Fetch preference courses — only if user has interests set
   useEffect(() => {
-    const fresh = courses.length > 0 && Date.now() - lastFetched < 15000;
-    if (!fresh) { dispatch(resetCourseList()); dispatch(fetchAllCourses({ page: 1 })); }
-  }, []); // eslint-disable-line
+    if (userInterests.length === 0) return; // no preferences → don't fetch
+    const fresh = courses.length > 0 && Date.now() - lastFetched < 300_000; // 5 min cache
+    if (!fresh) {
+      dispatch(resetCourseList());
+      dispatch(fetchAllCourses({ page: 1, subjects: userInterests }));
+    }
+  }, [userInterests.join(",")]); // eslint-disable-line
 
   // Infinite scroll (quick mode only)
   useEffect(() => {
@@ -145,31 +152,28 @@ const CourseCatalog = () => {
         dispatch(searchCourses({ q: searchTerm.trim(), page: 1 }));
       }, 300);
     } else {
-      // Cleared — go back to recommendations
-      dispatch(resetCourseList());
-      dispatch(fetchAllCourses({ page: 1 }));
+      // Search cleared — go back to preference courses
+      if (userInterests.length > 0) {
+        dispatch(resetCourseList());
+        dispatch(fetchAllCourses({ page: 1, subjects: userInterests }));
+      } else {
+        dispatch(resetCourseList());
+      }
     }
     return () => clearTimeout(debounceRef.current);
   }, [searchTerm, dispatch]); // eslint-disable-line
 
   const handleSearch = (e) => {
     e.preventDefault();
-    // Instant fire on form submit (don't wait for debounce)
     clearTimeout(debounceRef.current);
     dispatch(resetCourseList());
     if (searchTerm.trim()) dispatch(searchCourses({ q: searchTerm.trim(), page: 1 }));
-    else dispatch(fetchAllCourses({ page: 1 }));
+    else if (userInterests.length > 0) dispatch(fetchAllCourses({ page: 1, subjects: userInterests }));
   };
 
-  const handleEnroll = async (id) => {
-    if (!user) return navigate("/login");
-    const r = await dispatch(enrollInCourse({ courseId: id, paymentMethod: "card" }));
-    if (enrollInCourse.fulfilled.match(r)) {
-      navigate(`/student-dashboard/courses/${id}`);
-    } else {
-      // Show inline error without alert — log only
-      console.error("Enrollment failed:", r.payload);
-    }
+  // Navigate to the course detail/enroll page (CourseViewer handles the actual enrollment)
+  const handleViewCourse = (id) => {
+    navigate(`/student-dashboard/courses/${id}`);
   };
 
   // Recommended based on user interests
@@ -186,15 +190,9 @@ const CourseCatalog = () => {
     }
   }, [courses, sortBy]);
 
-  // When search is active → show all results.
-  // When no search → show only courses matching student's interests (personalised default).
-  const displayCourses = useMemo(() => {
-    if (isSearchActive) return sorted; // full results, no interest filter
-    if (userInterests.size === 0) return sorted; // no preferences set → show all
-    return sorted.filter((c) => userInterests.has((c.subject || "").toLowerCase()));
-  }, [sorted, isSearchActive, userInterests]);
-
-  const hasInterests = userInterests.size > 0;
+  // Backend already filters by preference — no client-side interest filter needed
+  const displayCourses = sorted;
+  const hasInterests = userInterests.length > 0;
 
   return (
     <div>
@@ -298,68 +296,78 @@ const CourseCatalog = () => {
       {/* ── QUICK MODE ── */}
       {mode === "quick" && (
         <div>
-          {loading ? (
-            <div style={{ display: "flex", justifyContent: "center", padding: 60 }}>
-              <Loader2 size={28} style={{ animation: "spin 1s linear infinite", color: "#6366f1" }} />
+          {/* No preferences empty state — shown immediately, no fetch */}
+          {!isSearchActive && !hasInterests && (
+            <div style={{ textAlign: "center", padding: "60px 24px" }}>
+              <div style={{ fontSize: 52, marginBottom: 16 }}>🎯</div>
+              <h2 style={{ fontSize: 18, fontWeight: 700, color: "#1f2937", margin: "0 0 8px" }}>
+                No recommendations yet
+              </h2>
+              <p style={{ fontSize: 13, color: "#6b7280", maxWidth: 340, margin: "0 auto 20px" }}>
+                Set your topic interests in Settings and we'll show you matching courses here.
+                Use the search bar above to explore all courses anytime.
+              </p>
+              <button onClick={() => navigate("/student-dashboard/settings")}
+                style={{ background: "#6366f1", color: "white", border: "none",
+                  borderRadius: 10, padding: "10px 22px", fontWeight: 700,
+                  fontSize: 13, cursor: "pointer" }}>
+                Set Interests in Settings
+              </button>
             </div>
-          ) : (
-            <>
-              {/* Section heading */}
-              {isSearchActive ? (
-                <h2 style={{ fontSize: 15, fontWeight: 700, color: "#1f2937", margin: "0 0 14px",
-                  display: "flex", alignItems: "center", gap: 8 }}>
-                  🔍 Search Results
-                  <span style={{ fontSize: 11, fontWeight: 400, color: "#6b7280",
-                    background: "#f3f4f6", borderRadius: 10, padding: "2px 8px" }}>
-                    {displayCourses.length} found
-                  </span>
-                </h2>
-              ) : hasInterests ? (
-                <h2 style={{ fontSize: 15, fontWeight: 700, color: "#1f2937", margin: "0 0 14px",
-                  display: "flex", alignItems: "center", gap: 8 }}>
-                  ✨ Recommended for You
-                  <span style={{ fontSize: 11, fontWeight: 400, color: "#6b7280",
-                    background: "#f3f4f6", borderRadius: 10, padding: "2px 8px" }}>
-                    Based on your interests
-                  </span>
-                </h2>
-              ) : (
-                <h2 style={{ fontSize: 15, fontWeight: 700, color: "#1f2937", margin: "0 0 14px" }}>
-                  All Courses
-                </h2>
-              )}
+          )}
 
-              {/* No interests set hint */}
-              {!isSearchActive && !hasInterests && (
-                <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 8,
-                  padding: "10px 14px", fontSize: 12, color: "#92400e", marginBottom: 16 }}>
-                  💡 Set topic preferences in <strong>Settings → Interests</strong> to get personalised recommendations.
-                </div>
-              )}
-
-              {/* No preference matches */}
-              {!isSearchActive && hasInterests && displayCourses.length === 0 && (
-                <div style={{ textAlign: "center", padding: 50, color: "#9ca3af" }}>
-                  <BookOpen size={34} style={{ opacity: 0.3, marginBottom: 10 }} />
-                  <p style={{ fontSize: 14 }}>No courses match your interests yet.</p>
-                  <p style={{ fontSize: 12 }}>Search to explore all courses, or update your interests in Settings.</p>
-                </div>
-              )}
-
-              {/* Search empty */}
-              {isSearchActive && displayCourses.length === 0 && (
-                <div style={{ textAlign: "center", padding: 50, color: "#9ca3af" }}>
-                  <BookOpen size={34} style={{ opacity: 0.3, marginBottom: 10 }} />
-                  <p style={{ fontSize: 14 }}>No courses found. Try different keywords.</p>
-                </div>
-              )}
-
-              <div className="course-grid">
-                {displayCourses.map((c, i) => (
-                  <CourseCard key={c._id + i} course={c} onEnroll={handleEnroll} user={user} />
-                ))}
+          {(hasInterests || isSearchActive) && (
+            loading ? (
+              <div style={{ display: "flex", justifyContent: "center", padding: 60 }}>
+                <Loader2 size={28} style={{ animation: "spin 1s linear infinite", color: "#6366f1" }} />
               </div>
-            </>
+            ) : (
+              <>
+                {/* Section heading */}
+                {isSearchActive ? (
+                  <h2 style={{ fontSize: 15, fontWeight: 700, color: "#1f2937", margin: "0 0 14px",
+                    display: "flex", alignItems: "center", gap: 8 }}>
+                    🔍 Search Results
+                    <span style={{ fontSize: 11, fontWeight: 400, color: "#6b7280",
+                      background: "#f3f4f6", borderRadius: 10, padding: "2px 8px" }}>
+                      {displayCourses.length} found
+                    </span>
+                  </h2>
+                ) : (
+                  <h2 style={{ fontSize: 15, fontWeight: 700, color: "#1f2937", margin: "0 0 14px",
+                    display: "flex", alignItems: "center", gap: 8 }}>
+                    ✨ Recommended for You
+                    <span style={{ fontSize: 11, fontWeight: 400, color: "#6b7280",
+                      background: "#f3f4f6", borderRadius: 10, padding: "2px 8px" }}>
+                      Based on your interests
+                    </span>
+                  </h2>
+                )}
+
+                {/* No preference matches */}
+                {!isSearchActive && displayCourses.length === 0 && (
+                  <div style={{ textAlign: "center", padding: 50, color: "#9ca3af" }}>
+                    <BookOpen size={34} style={{ opacity: 0.3, marginBottom: 10 }} />
+                    <p style={{ fontSize: 14 }}>No courses match your interests yet.</p>
+                    <p style={{ fontSize: 12 }}>Search to explore all courses, or update your interests in Settings.</p>
+                  </div>
+                )}
+
+                {/* Search empty */}
+                {isSearchActive && displayCourses.length === 0 && (
+                  <div style={{ textAlign: "center", padding: 50, color: "#9ca3af" }}>
+                    <BookOpen size={34} style={{ opacity: 0.3, marginBottom: 10 }} />
+                    <p style={{ fontSize: 14 }}>No courses found. Try different keywords.</p>
+                  </div>
+                )}
+
+                <div className="course-grid">
+                  {displayCourses.map((c, i) => (
+                    <CourseCard key={c._id + i} course={c} onView={handleViewCourse} />
+                  ))}
+                </div>
+              </>
+            )
           )}
 
           <div ref={sentinelRef} style={{ height: 8 }} />
