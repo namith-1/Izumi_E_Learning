@@ -32,13 +32,6 @@ const runPreChecks = (course) => {
         issues.push("Course must have at least one content module (text, video, or quiz).");
     }
 
-    // Check quiz modules have questions
-    const quizModules = contentModules.filter((m) => m.type === "quiz");
-    for (const quiz of quizModules) {
-        if (!quiz.questions || quiz.questions.length === 0) {
-            issues.push(`Quiz module "${quiz.title}" has no questions.`);
-        }
-    }
 
     return issues;
 };

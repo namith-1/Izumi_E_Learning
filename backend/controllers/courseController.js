@@ -757,15 +757,65 @@ exports.getCourseAnalytics = async (req, res) => {
  */
 exports.searchCourses = async (req, res) => {
   const { q } = req.query;
+  if (!q?.trim()) return res.json({ hits: [] });
 
   try {
-    // Reverted to 'Load All' mode: fetching all results in a single call (up to 1,000)
-    const results = await searchService.search(q, {
-      limit: 1000,
-      offset: 0, 
-    });
-    res.json(results);
+    // Try Meilisearch first
+    const results = await searchService.search(q, { limit: 1000, offset: 0 });
+
+    if (results.hits && results.hits.length > 0) {
+      return res.json(results);
+    }
+
+    // ── Meilisearch empty or unavailable → MongoDB regex fallback ───────────
+    const regex = new RegExp(q.trim().split(/\s+/).join("|"), "i");
+
+    const courses = await Course.aggregate([
+      {
+        $match: {
+          $or: [
+            { approvalStatus: "approved" },
+            { approvalStatus: { $exists: false } },
+          ],
+        },
+      },
+      {
+        $lookup: {
+          from: "teachers",
+          localField: "teacherId",
+          foreignField: "_id",
+          as: "teacherDetails",
+        },
+      },
+      { $unwind: { path: "$teacherDetails", preserveNullAndEmptyArrays: true } },
+      {
+        $match: {
+          $or: [
+            { title:       { $regex: regex } },
+            { description: { $regex: regex } },
+            { subject:     { $regex: regex } },
+            { "teacherDetails.name": { $regex: regex } },
+          ],
+        },
+      },
+      {
+        $project: {
+          _id: 1, title: 1, description: 1, subject: 1,
+          imageUrl: 1, rating: 1, createdAt: 1, teacherId: 1,
+          approvalStatus: 1,
+          instructorName: { $ifNull: ["$teacherDetails.name", "Izumi Instructor"] },
+          rootModule: 1,
+          price: 1,
+        },
+      },
+      { $sort: { rating: -1, createdAt: -1 } },
+      { $limit: 100 },
+    ]);
+
+    // Return in same format as Meilisearch so frontend store works unchanged
+    res.json({ hits: courses });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
+

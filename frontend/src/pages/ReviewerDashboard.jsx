@@ -2,11 +2,13 @@
 import React from "react";
 import { useSelector } from "react-redux";
 import { Routes, Route, Link, Navigate, useLocation } from "react-router-dom";
-import { ClipboardList, History, Settings, BookOpen, Shield } from "lucide-react";
+import { ClipboardList, History, Settings, BookOpen, Shield, Tag } from "lucide-react";
 import ProfileDropdown from "../components/ProfileDropdown";
 import ReviewQueue from "./ReviewerCourse/ReviewQueue";
 import ReviewDetail from "./ReviewerCourse/ReviewDetail";
 import ReviewHistory from "./ReviewerCourse/ReviewHistory";
+import ReviewerProfileSettings from "./ReviewerCourse/ReviewerProfileSettings";
+import TopicProposals from "./ReviewerCourse/TopicProposals";
 import "../pages/css/StudentDashboard.css";
 
 const ReviewerDashboard = () => {
@@ -39,6 +41,20 @@ const ReviewerDashboard = () => {
                     >
                         <History size={18} /> History
                     </Link>
+
+                    <Link
+                        to="/reviewer-dashboard/topics"
+                        className={`nav-link-item ${isActive("/reviewer-dashboard/topics") ? "active" : ""}`}
+                    >
+                        <Tag size={18} /> Topic Proposals
+                    </Link>
+
+                    <Link
+                        to="/reviewer-dashboard/settings"
+                        className={`nav-link-item ${isActive("/reviewer-dashboard/settings") ? "active" : ""}`}
+                    >
+                        <Settings size={18} /> Settings
+                    </Link>
                 </nav>
 
                 <div className="nav-user-info">
@@ -52,6 +68,8 @@ const ReviewerDashboard = () => {
                     <Route index element={<ReviewQueue />} />
                     <Route path="history" element={<ReviewHistory />} />
                     <Route path="course/:courseId" element={<ReviewDetail />} />
+                    <Route path="topics" element={<TopicProposals />} />
+                    <Route path="settings" element={<ReviewerProfileSettings />} />
                     <Route path="*" element={<Navigate to="/reviewer-dashboard" replace />} />
                 </Routes>
             </main>

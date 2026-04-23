@@ -187,6 +187,17 @@
   width: 100%;
 }
 
+/* Fullscreen mode for course learning — no padding, full width */
+.student-main-content--fullscreen {
+  padding: 0;
+  max-width: 100%;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
 .dashboard-intro {
   margin-bottom: 2rem;
   padding-bottom: 1rem;
@@ -476,19 +487,15 @@
 
 /* --- Footer --- */
 .student-footer {
-  background-color: #1f2937;
-  color: #9ca3af;
-  padding: 1rem 2rem;
-  text-align: center;
-  font-size: 0.8rem;
-  margin-top: auto;
-  border-top: 1px solid #374151;
   display: flex;
-  justify-content: space-between;
-}
-
-.student-footer p {
-  margin: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 24px;
+  border-top: 1px solid #f1f5f9;
+  font-size: 11px;
+  color: #94a3b8;
+  background: transparent;
 }
 
 /* --- Course Viewer/Learn Styles --- */

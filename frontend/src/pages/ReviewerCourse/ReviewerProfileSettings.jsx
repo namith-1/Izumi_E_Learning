@@ -1,13 +1,14 @@
-// v1/frontend/src/pages/InstructorCourse/InstructorProfileSettings.jsx
+// frontend/src/pages/ReviewerCourse/ReviewerProfileSettings.jsx
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { User, Mail, Key } from "lucide-react";
 import { updateStudentProfile } from "../../store";
 import TopicPreferences from "../../components/TopicPreferences";
 
-const InstructorProfileSettings = () => {
+const ReviewerProfileSettings = () => {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
+
   const [formData, setFormData] = useState({
     name: user?.name || "",
     email: user?.email || "",
@@ -19,7 +20,6 @@ const InstructorProfileSettings = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Clear message after a short period
     if (message) {
       const timer = setTimeout(() => setMessage(null), 5000);
       return () => clearTimeout(timer);
@@ -47,7 +47,7 @@ const InstructorProfileSettings = () => {
     const payload = {
       name: formData.name,
       currentPassword: formData.password,
-      specialization,  // send specialization array
+      specialization, // reviewer specialization topics
     };
 
     if (formData.newPassword) {
@@ -55,7 +55,6 @@ const InstructorProfileSettings = () => {
     }
 
     try {
-      // Reusing updateStudentProfile as the backend route handles both roles
       const result = await dispatch(updateStudentProfile(payload));
       if (updateStudentProfile.fulfilled.match(result)) {
         setMessage({ type: "success", text: "Profile updated successfully!" });
@@ -78,7 +77,7 @@ const InstructorProfileSettings = () => {
       <div className="dashboard-intro">
         <h1>Profile Settings</h1>
         <p className="text-gray-600">
-          Update your account details and password.
+          Update your account details and review specializations.
         </p>
       </div>
 
@@ -144,12 +143,12 @@ const InstructorProfileSettings = () => {
             />
           </div>
 
-          {/* ── Teaching Topics ── */}
+          {/* ── Review Specializations ── */}
           <TopicPreferences
             selected={specialization}
             onChange={setSpecialization}
-            label="My Teaching Specializations"
-            description="Select the subjects you teach or are expert in (up to 8)."
+            label="My Review Specializations"
+            description="Select subjects you are qualified to review (up to 8)."
             max={8}
           />
 
@@ -162,4 +161,4 @@ const InstructorProfileSettings = () => {
   );
 };
 
-export default InstructorProfileSettings;
+export default ReviewerProfileSettings;

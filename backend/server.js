@@ -284,6 +284,20 @@ io.use((socket, next) => {
 // Register chat socket handlers
 registerChatHandlers(io);
 
+// ── Course group-chat rooms ───────────────────────────────────────────────────
+io.on("connection", (socket) => {
+  // Student/instructor joins a course chat room
+  socket.on("join-course-chat", (courseId) => {
+    socket.join(`course-chat-${courseId}`);
+  });
+  socket.on("leave-course-chat", (courseId) => {
+    socket.leave(`course-chat-${courseId}`);
+  });
+});
+
+// Make io available to route handlers (used by groupChatController)
+app.set("io", io);
+
 // 2. Global Middlewares
 connectDB();
 
@@ -328,6 +342,9 @@ app.use("/api/tests", require("./routes/testRoutes"));
 app.use("/api/chat", require("./routes/chatRoutes"));
 app.use("/api/review", require("./routes/reviewRoutes"));
 app.use("/api/payments", require("./routes/paymentRoutes"));
+app.use("/api/subjects", require("./routes/subjectRoutes"));
+app.use("/api/explore", require("./routes/exploreRoutes"));
+app.use("/api/group-chat", require("./routes/groupChatRoutes"));
 app.use("/uploads", (req, res, next) => {
   res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
   next();

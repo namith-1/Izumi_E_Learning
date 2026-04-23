@@ -13,6 +13,8 @@ import AdminLogin from "../pages/AdminLogin";
 import ReviewerDashboard from "../pages/ReviewerDashboard";
 import TestDashboard from "../pages/TestDashboard";
 import ApiDocs from "../pages/ApiDocs";
+import CourseCatalog from "../pages/CourseCatalog";
+import SubjectBrowsePage from "../pages/SubjectBrowsePage";
 
 const AppRoutes = () => {
   return (
@@ -95,6 +97,10 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+
+      {/* COURSE CATALOG — Public */}
+      <Route path="/catalog" element={<CourseCatalog />} />
+      <Route path="/catalog/subject/:slug" element={<SubjectBrowsePage />} />
 
       {/* API DOCUMENTATION - Public Access */}
       <Route path="/api-docs" element={<ApiDocs />} />

@@ -34,7 +34,11 @@ const ProfileDropdown = ({ user, currentPath }) => {
 
   // Determine the base dashboard path for dynamic navigation
   const basePath =
-    user?.role === "teacher" ? "/instructor-dashboard" : "/student-dashboard";
+    user?.role === "teacher"
+      ? "/instructor-dashboard"
+      : user?.role === "reviewer"
+      ? "/reviewer-dashboard"
+      : "/student-dashboard";
 
   // Check if the link to Profile Settings is the current active route
   const isSettingsActive = currentPath.includes("/settings");

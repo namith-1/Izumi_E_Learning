@@ -13,6 +13,7 @@ const studentSchema = new mongoose.Schema({
     profilePic: { type: String, default: '' },
     googleId: { type: String, default: null },
     isLocked: { type: Boolean, default: false },
+    interests: { type: [String], default: [] }, // Topic preferences
 }, { timestamps: true });
 
 module.exports = mongoose.model('Student', studentSchema);

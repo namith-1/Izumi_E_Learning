@@ -730,6 +730,46 @@ const CourseLearnPage = () => {
               renderTreeItem(childId),
             )}
           </ul>
+
+          {/* ── Instructor info ── */}
+          {(() => {
+            const instr =
+              (course.teacherId && typeof course.teacherId === "object")
+                ? course.teacherId
+                : null;
+            const instrName = instr?.name || "Instructor";
+            return (
+              <div style={{
+                margin: "auto 0 0", padding: "14px 12px",
+                borderTop: "1px solid #e5e7eb", marginTop: 16,
+              }}>
+                <p style={{ fontSize: 10, fontWeight: 700, color: "#9ca3af",
+                  textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 8px" }}>
+                  Your Instructor
+                </p>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{
+                    width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
+                    background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 15, fontWeight: 800, color: "white",
+                  }}>
+                    {instrName[0]?.toUpperCase()}
+                  </div>
+                  <div>
+                    <p style={{ fontWeight: 700, fontSize: 13, color: "#111827", margin: 0 }}>
+                      {instrName}
+                    </p>
+                    {instr?.specialization?.length > 0 && (
+                      <p style={{ fontSize: 10, color: "#9ca3af", margin: "2px 0 0" }}>
+                        {instr.specialization.slice(0, 2).join(" · ")}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
         </aside>
 
         {/* Right Content Area (Active Module) */}

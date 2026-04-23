@@ -31,6 +31,7 @@ import {
   X,
 } from "lucide-react";
 import QuizBuilder from "../../components/QuizBuilder";
+import SubjectPicker from "../../components/SubjectPicker";
 import { BACKEND_URL } from "../../store";
 import "../css/CourseEditor.css";
 
@@ -1166,13 +1167,7 @@ const CourseEditor = () => {
           moduleIssues.push(
             `"${mod.title || "Untitled"}" (video) needs a valid URL.`,
           );
-        if (
-          mod.type === "quiz" &&
-          (!mod.quizData?.questions || mod.quizData.questions.length === 0)
-        )
-          moduleIssues.push(
-            `"${mod.title || "Untitled"}" (quiz) has no questions.`,
-          );
+
       }
       if (moduleIssues.length > 0) errors.moduleIssues = moduleIssues;
 
@@ -1414,12 +1409,10 @@ const CourseEditor = () => {
 
               <div className="form-field">
                 <label>Subject / Category <span className="required-star">*</span></label>
-                <input
-                  type="text"
-                  className={validationErrors.subject ? "input-error" : ""}
-                  placeholder="e.g. Computer Science, Art, Business..."
+                <SubjectPicker
                   value={courseStructure.subject}
-                  onChange={(e) => handleCourseMetaChange("subject", e.target.value)}
+                  onChange={(name) => handleCourseMetaChange("subject", name)}
+                  error={validationErrors.subject}
                 />
                 {validationErrors.subject && <span className="error-text">{validationErrors.subject}</span>}
               </div>
@@ -1492,12 +1485,30 @@ const CourseEditor = () => {
                   <select
                     value={selectedModule.type}
                     onChange={(e) => {
-                      handleModuleFormChange("type", e.target.value);
-                      const def = createNewModule(e.target.value);
-                      handleModuleFormChange("text", def.text);
-                      handleModuleFormChange("videoLink", def.videoLink);
-                      if (e.target.value === "quiz")
-                        handleModuleFormChange("quizData", { questions: [] });
+                      const newType = e.target.value;
+                      // ── Batch ALL type-change field updates in ONE setCourseStructure call ──
+                      // Sequential handleModuleFormChange calls each read the SAME stale prev,
+                      // so only the last wins. We must merge everything at once.
+                      setCourseStructure((prev) => {
+                        const isRoot = selectedModuleId === prev.rootModule.id;
+                        const cur = isRoot ? prev.rootModule : prev.modules[selectedModuleId];
+                        if (!cur) return prev;
+                        const updated = {
+                          ...cur,
+                          type: newType,
+                          text:      newType === "text"  ? (cur.text  || "Start writing your content here...") : "",
+                          videoLink: newType === "video" ? (cur.videoLink || "") : "",
+                          // Only reset quizData when switching TO quiz for the first time
+                          quizData:  newType === "quiz"
+                            ? (cur.quizData?.questions?.length > 0 ? cur.quizData : { questions: [] })
+                            : cur.quizData,
+                        };
+                        const nextState = isRoot
+                          ? { ...prev, rootModule: updated }
+                          : { ...prev, modules: { ...prev.modules, [selectedModuleId]: updated } };
+                        saveDraft(nextState);
+                        return nextState;
+                      });
                       setValidationErrors((prev) => {
                         const n = { ...prev };
                         delete n.videoLink;

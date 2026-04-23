@@ -119,9 +119,11 @@ const Signup = () => {
           <div className="signup-footer">
             Already have an account? <Link to="/login" className="footer-link">Sign in</Link>
           </div>
-          <div className="oauth-section">
-            <GoogleOAuthButton /> 
+          {formData.role === 'student' && (
+            <div className="oauth-section">
+              <GoogleOAuthButton />
             </div>
+          )}
         </div>
       </div>
     </>

@@ -214,8 +214,13 @@ const CourseViewer = () => {
   // --- 5. RENDER CONTENT ---
   const isEnrolled = !!currentEnrollment;
 
-  const instructor = course.teacherId ? teacherEntities[course.teacherId] : null;
-  const instructorName = instructor ? instructor.name : "Unknown Instructor";
+  const instructor =
+    (course.teacherId && typeof course.teacherId === "object")
+      ? course.teacherId                                       // populated by API
+      : course.teacherId
+        ? teacherEntities?.[course.teacherId] || null          // from redux store
+        : null;
+  const instructorName = instructor?.name || "Unknown Instructor";
 
   const rootModule = course.rootModule || { id: "root", title: "Introduction" };
   const introModule = (course.modules && rootModule.id && course.modules[rootModule.id]) || rootModule;
@@ -318,6 +323,57 @@ const CourseViewer = () => {
             <div className="lesson-text">
               {introModule.text ||
                 "Welcome to the course! This is the introduction module. Enroll to start tracking your progress."}
+            </div>
+          </div>
+
+          {/* ── About the Instructor ── */}
+          <div style={{
+            marginTop: 32, background: "white", border: "1px solid #e5e7eb",
+            borderRadius: 14, padding: "20px 24px",
+            boxShadow: "0 1px 6px rgba(0,0,0,0.05)",
+          }}>
+            <h3 style={{ fontSize: 13, fontWeight: 700, color: "#6b7280",
+              textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 16px" }}>
+              About the Instructor
+            </h3>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
+              {/* Avatar */}
+              <div style={{
+                width: 54, height: 54, borderRadius: "50%", flexShrink: 0,
+                background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 22, fontWeight: 800, color: "white",
+              }}>
+                {instructorName[0]?.toUpperCase() || "?"}
+              </div>
+              <div style={{ flex: 1 }}>
+                <p style={{ fontWeight: 700, fontSize: 16, color: "#111827", margin: "0 0 2px" }}>
+                  {instructorName}
+                </p>
+                {instructor?.email && (
+                  <p style={{ fontSize: 12, color: "#9ca3af", margin: "0 0 10px" }}>
+                    {instructor.email}
+                  </p>
+                )}
+                {instructor?.specialization?.length > 0 && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {instructor.specialization.map((s) => (
+                      <span key={s} style={{
+                        background: "#ede9fe", color: "#5b21b6",
+                        fontSize: 11, fontWeight: 600, borderRadius: 10,
+                        padding: "2px 10px",
+                      }}>
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {(!instructor?.specialization?.length) && (
+                  <p style={{ fontSize: 13, color: "#6b7280", margin: 0 }}>
+                    Instructor at Izumi E-Learning
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </main>

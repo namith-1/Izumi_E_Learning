@@ -1,189 +1,376 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
+// frontend/src/pages/CourseCatalog.jsx
+// Embedded catalog — renders inside student-main-content, no full-page takeover.
+import React, { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
-import { fetchAllCourses, enrollInCourse, searchCourses, resetCourseList, BACKEND_URL } from "../store";
-import { BookOpen, User, Zap, CheckCircle, Search, Loader2 } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
+import {
+  fetchAllCourses, enrollInCourse, searchCourses, resetCourseList, BACKEND_URL,
+} from "../store";
+import {
+  BookOpen, User, Zap, Search, Loader2, Star, X, ChevronRight, Sliders, Grid, Map,
+} from "lucide-react";
 import "./css/CourseCatalog.css";
 
+const API = BACKEND_URL.replace(/\/$/, "") + "/api";
+
+// ── Star rating ───────────────────────────────────────────────────────────────
+const StarRating = ({ rating }) => (
+  <span style={{ display: "inline-flex", gap: 1, alignItems: "center" }}>
+    {[1,2,3,4,5].map((s) => (
+      <Star key={s} size={10} fill={rating >= s ? "#fbbf24" : "none"} stroke={rating >= s ? "#fbbf24" : "#d1d5db"} />
+    ))}
+    <span style={{ fontSize: 11, color: "#6b7280", marginLeft: 3 }}>{rating?.toFixed(1) || "New"}</span>
+  </span>
+);
+
+// ── Course card (same style as before) ───────────────────────────────────────
+const CourseCard = ({ course, onEnroll, user }) => {
+  const rawImg = course.imageUrl || `https://picsum.photos/seed/${course._id}/400/200`;
+  const imgUrl = rawImg.startsWith("http") ? rawImg : `${BACKEND_URL}${rawImg}`;
+  return (
+    <div className="course-card">
+      <div className="card-banner" style={{ backgroundImage: `url(${imgUrl})` }}>
+        <div className="card-icon-overlay"><BookOpen size={22} /></div>
+      </div>
+      <div className="card-content" style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+        <h2 className="card-title">{course.title}</h2>
+        <p className="card-description">
+          {(course.description || "").slice(0, 90)}{course.description?.length > 90 ? "…" : ""}
+        </p>
+        <div className="card-meta">
+          <span><Zap size={12} /> {course.subject}</span>
+          <span><User size={12} /> {course.instructorName || "Instructor"}</span>
+        </div>
+        <StarRating rating={course.rating} />
+        <div className="card-price-section">
+          <span className="card-price">
+            {course.price === 0 ? "Free" : `$${(course.price || 0).toFixed(2)}`}
+          </span>
+        </div>
+        <button
+          onClick={() => onEnroll(course._id)}
+          className="btn-action btn-enroll"
+          disabled={!user}
+          title={!user ? "Log in to enroll" : "Enroll now"}
+        >
+          Enroll Now
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ── Domain card for Browse mode ───────────────────────────────────────────────
+const DomainCard = ({ node }) => (
+  <Link to={`/student-dashboard/catalog/subject/${node.slug}`} style={{ textDecoration: "none" }}>
+    <div className="domain-card">
+      <div style={{ fontSize: 34, marginBottom: 8 }}>{node.emoji}</div>
+      <p style={{ fontWeight: 700, fontSize: 13, color: "#1f2937", margin: "0 0 4px" }}>{node.name}</p>
+      {node.children?.length > 0 && (
+        <p style={{ fontSize: 11, color: "#9ca3af", margin: "0 0 8px" }}>
+          {node.children.length} subject{node.children.length !== 1 ? "s" : ""}
+        </p>
+      )}
+      {node.children?.length > 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 3, marginBottom: 8 }}>
+          {node.children.slice(0, 3).map((c) => (
+            <span key={c._id} style={{ fontSize: 10, background: "#f5f3ff", color: "#6d28d9",
+              borderRadius: 10, padding: "2px 7px", fontWeight: 500 }}>
+              {c.name}
+            </span>
+          ))}
+          {node.children.length > 3 && (
+            <span style={{ fontSize: 10, color: "#9ca3af" }}>+{node.children.length - 3}</span>
+          )}
+        </div>
+      )}
+      <span style={{ fontSize: 12, color: "#6366f1", fontWeight: 600, display: "flex", alignItems: "center", gap: 3 }}>
+        Browse <ChevronRight size={12} />
+      </span>
+    </div>
+  </Link>
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
 const CourseCatalog = () => {
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
-  const {
-    list: courses,
-    loading,
-    loadingMore,
-    error,
-    hasMore,
-    currentPage,
-    lastSearchQuery,
-    lastFetched, // Add this
-  } = useSelector((state) => state.courses);
-  const { user } = useSelector((state) => state.auth);
+  const dispatch  = useDispatch();
+  const navigate  = useNavigate();
+  const { list: courses, loading, loadingMore, error, hasMore, currentPage, lastSearchQuery, lastFetched }
+    = useSelector((s) => s.courses);
+  const { user } = useSelector((s) => s.auth);
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const observer = useRef();
-  const sentinelRef = useRef();
+  const [mode,       setMode]   = useState("quick");   // "quick" | "browse"
+  const [searchTerm, setSearch] = useState("");
+  const [sortBy,     setSort]   = useState("newest");
+  const [tree,       setTree]   = useState([]);
+  const sentinelRef  = useRef();
+  const observerRef  = useRef();
+  const debounceRef  = useRef();
 
-  // 1. Initial Fetch with 15s Browser Cache (Redux-based)
+  // Fetch subject tree once
   useEffect(() => {
-    const isFresh = courses.length > 0 && (Date.now() - lastFetched < 15000);
-    
-    if (!isFresh) {
+    fetch(`${API}/subjects`, { credentials: "include" })
+      .then((r) => r.json())
+      .then((d) => setTree(Array.isArray(d) ? d : []))
+      .catch(() => {});
+  }, []);
+
+  // Fetch courses
+  useEffect(() => {
+    const fresh = courses.length > 0 && Date.now() - lastFetched < 15000;
+    if (!fresh) { dispatch(resetCourseList()); dispatch(fetchAllCourses({ page: 1 })); }
+  }, []); // eslint-disable-line
+
+  // Infinite scroll (quick mode only)
+  useEffect(() => {
+    if (mode !== "quick" || loading || loadingMore) return;
+    const obs = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && hasMore) {
+        const next = currentPage + 1;
+        if (lastSearchQuery) dispatch(searchCourses({ q: lastSearchQuery, page: next, append: true }));
+        else dispatch(fetchAllCourses({ page: next, append: true }));
+      }
+    }, { rootMargin: "300px" });
+    if (sentinelRef.current) obs.observe(sentinelRef.current);
+    observerRef.current = obs;
+    return () => observerRef.current?.disconnect();
+  }, [mode, loading, loadingMore, hasMore, currentPage, lastSearchQuery, dispatch]);
+
+  // Live search: debounce 300ms on every keystroke
+  useEffect(() => {
+    clearTimeout(debounceRef.current);
+    if (searchTerm.trim()) {
+      debounceRef.current = setTimeout(() => {
+        dispatch(resetCourseList());
+        dispatch(searchCourses({ q: searchTerm.trim(), page: 1 }));
+      }, 300);
+    } else {
+      // Cleared — go back to recommendations
       dispatch(resetCourseList());
       dispatch(fetchAllCourses({ page: 1 }));
     }
-  }, [dispatch, courses.length, lastFetched]);
+    return () => clearTimeout(debounceRef.current);
+  }, [searchTerm, dispatch]); // eslint-disable-line
 
-  // 2. Infinite Scroll Observer (Sentinel based)
-  useEffect(() => {
-    if (loading || loadingMore) return;
-
-    const currentObserver = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasMore) {
-          const nextPage = currentPage + 1;
-          if (lastSearchQuery) {
-            dispatch(searchCourses({ q: lastSearchQuery, page: nextPage, append: true }));
-          } else {
-            dispatch(fetchAllCourses({ page: nextPage, append: true }));
-          }
-        }
-      },
-      { rootMargin: "250px" } // Proactive loading
-    );
-
-    if (sentinelRef.current) {
-      currentObserver.observe(sentinelRef.current);
-    }
-
-    observer.current = currentObserver;
-
-    return () => {
-      if (observer.current) observer.current.disconnect();
-    };
-  }, [loading, loadingMore, hasMore, currentPage, lastSearchQuery, dispatch]);
-
-  // 3. Search Logic
   const handleSearch = (e) => {
     e.preventDefault();
+    // Instant fire on form submit (don't wait for debounce)
+    clearTimeout(debounceRef.current);
     dispatch(resetCourseList());
-    if (searchTerm.trim()) {
-      dispatch(searchCourses({ q: searchTerm, page: 1 }));
-    } else {
-      dispatch(fetchAllCourses({ page: 1 }));
-    }
+    if (searchTerm.trim()) dispatch(searchCourses({ q: searchTerm.trim(), page: 1 }));
+    else dispatch(fetchAllCourses({ page: 1 }));
   };
 
-  const handleEnroll = async (courseId) => {
+  const handleEnroll = async (id) => {
     if (!user) return alert("Please log in to enroll.");
-
-    try {
-      const resultAction = await dispatch(
-        enrollInCourse({ courseId, paymentMethod: "card" }),
-      );
-
-      if (enrollInCourse.fulfilled.match(resultAction)) {
-        alert(`Successfully enrolled in the course!`);
-        navigate(`/course/${courseId}`);
-      } else {
-        alert(`Enrollment failed: ${resultAction.payload}`);
-      }
-    } catch (err) {
-      console.error("Enrollment error:", err);
-      alert("An unknown error occurred during enrollment.");
-    }
+    const r = await dispatch(enrollInCourse({ courseId: id, paymentMethod: "card" }));
+    if (enrollInCourse.fulfilled.match(r)) { alert("Enrolled!"); navigate(`/student-dashboard/courses/${id}`); }
+    else alert(`Enrollment failed: ${r.payload}`);
   };
+
+  // Recommended based on user interests
+  const userInterests = useMemo(() =>
+    new Set((user?.interests || []).map((s) => s.toLowerCase())), [user]);
+
+  const isSearchActive = !!lastSearchQuery;
+
+  const sorted = useMemo(() => {
+    const list = [...courses];
+    switch (sortBy) {
+      case "rating": return list.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+      default:       return list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    }
+  }, [courses, sortBy]);
+
+  // When search is active → show all results.
+  // When no search → show only courses matching student's interests (personalised default).
+  const displayCourses = useMemo(() => {
+    if (isSearchActive) return sorted; // full results, no interest filter
+    if (userInterests.size === 0) return sorted; // no preferences set → show all
+    return sorted.filter((c) => userInterests.has((c.subject || "").toLowerCase()));
+  }, [sorted, isSearchActive, userInterests]);
+
+  const hasInterests = userInterests.size > 0;
 
   return (
-    <div className="catalog-container">
-      <header className="catalog-header">
-        <h1>Course Catalog</h1>
-        <p>Explore our library of expert-led courses.</p>
-
-        <form className="catalog-search-bar" onSubmit={handleSearch}>
-          <Search size={20} className="search-icon" />
+    <div>
+      {/* ── Search + mode toggle bar ── */}
+      <div style={{ marginBottom: 20 }}>
+        <form onSubmit={handleSearch}
+          style={{ display: "flex", background: "white", border: "1px solid #e5e7eb",
+            borderRadius: 10, overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+            marginBottom: 12 }}>
+          <span style={{ display: "flex", alignItems: "center", padding: "0 12px", color: "#9ca3af" }}>
+            <Search size={17} />
+          </span>
           <input
-            type="text"
-            placeholder="Search by title, subject, or instructor..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            type="text" value={searchTerm}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search courses, subjects, instructors…"
+            style={{ flex: 1, border: "none", outline: "none", fontSize: 14, color: "#111827", padding: "11px 0" }}
           />
-          <button type="submit">Search</button>
+          {searchTerm && (
+            <button type="button"
+              onClick={() => { setSearch(""); dispatch(resetCourseList()); dispatch(fetchAllCourses({ page: 1 })); }}
+              style={{ background: "none", border: "none", padding: "0 10px", cursor: "pointer", color: "#9ca3af" }}>
+              <X size={15} />
+            </button>
+          )}
+          <button type="submit"
+            style={{ padding: "0 20px", background: "#6366f1", color: "white",
+              border: "none", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+            Search
+          </button>
         </form>
-      </header>
 
-      {error && <div className="catalog-error">Error: {error}</div>}
+        {/* Mode toggle */}
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={() => setMode("quick")}
+            style={{ display: "flex", alignItems: "center", gap: 5, padding: "7px 16px",
+              borderRadius: 20, border: "1.5px solid " + (mode === "quick" ? "#6366f1" : "#e5e7eb"),
+              background: mode === "quick" ? "#ede9fe" : "white",
+              color: mode === "quick" ? "#4f46e5" : "#374151",
+              fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+            <Grid size={13} /> Quick Search
+          </button>
+          <button onClick={() => setMode("browse")}
+            style={{ display: "flex", alignItems: "center", gap: 5, padding: "7px 16px",
+              borderRadius: 20, border: "1.5px solid " + (mode === "browse" ? "#6366f1" : "#e5e7eb"),
+              background: mode === "browse" ? "#ede9fe" : "white",
+              color: mode === "browse" ? "#4f46e5" : "#374151",
+              fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+            <Map size={13} /> Browse by Subject
+          </button>
+          {sortBy !== "newest" || searchTerm ? (
+            <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}>
+              <Sliders size={12} style={{ color: "#9ca3af" }} />
+              <select value={sortBy} onChange={(e) => setSort(e.target.value)}
+                style={{ padding: "6px 10px", border: "1px solid #e5e7eb", borderRadius: 8,
+                  fontSize: 12, color: "#374151", background: "white", outline: "none", cursor: "pointer" }}>
+                <option value="newest">Newest</option>
+                <option value="rating">Top Rated</option>
 
-      <div className="course-grid">
-        {courses.map((course, index) => {
-          const rawImageUrl = course.imageUrl || `https://picsum.photos/seed/${course._id}/400/200`;
-          const imageUrl = rawImageUrl.startsWith("http")
-            ? rawImageUrl
-            : `${BACKEND_URL}${rawImageUrl}`;
-
-          return (
-            <div
-              key={course._id + index}
-              className="course-card"
-            >
-              <div
-                className="card-banner"
-                style={{ backgroundImage: `url(${imageUrl})` }}
-              >
-                <div className="card-icon-overlay">
-                  <BookOpen size={24} className="card-icon" />
-                </div>
-              </div>
-
-              <div className="card-content">
-                <h2 className="card-title">{course.title}</h2>
-                <p className="card-description">{course.description}</p>
-
-                <div className="card-meta">
-                  <span>
-                    <Zap size={14} /> {course.subject}
-                  </span>
-                  <span>
-                    <User size={14} /> {course.instructorName || "Instructor"}
-                  </span>
-                </div>
-
-                <div className="card-price-section">
-                  <span className="card-price">
-                    ${(course.price || 0).toFixed(2)}
-                  </span>
-                </div>
-
-                <button
-                  onClick={() => handleEnroll(course._id)}
-                  className="btn-action btn-enroll"
-                  disabled={!user}
-                >
-                  Enroll Now
-                </button>
-              </div>
+              </select>
             </div>
-          );
-        })}
-        {/* Sentinel element for Infinite Scroll */}
-        <div ref={sentinelRef} style={{ height: "10px", width: "100%" }} />
+          ) : (
+            <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}>
+              <Sliders size={12} style={{ color: "#9ca3af" }} />
+              <select value={sortBy} onChange={(e) => setSort(e.target.value)}
+                style={{ padding: "6px 10px", border: "1px solid #e5e7eb", borderRadius: 8,
+                  fontSize: 12, color: "#374151", background: "white", outline: "none", cursor: "pointer" }}>
+                <option value="newest">Newest</option>
+                <option value="rating">Top Rated</option>
+
+              </select>
+            </div>
+          )}
+        </div>
       </div>
 
-      {loadingMore && (
-        <div className="scroll-loading">
-          <Loader2 className="animate-spin" size={24} />
-          <span>Loading more courses...</span>
+      {error && (
+        <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8,
+          padding: "10px 14px", color: "#b91c1c", marginBottom: 16, fontSize: 13 }}>
+          Error: {error}
         </div>
       )}
 
-      {!hasMore && courses.length > 0 && (
-        <div className="end-of-results">
-          ✨ You've reached the end of the catalog!
+      {/* ── BROWSE MODE ── */}
+      {mode === "browse" && (
+        <div>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: "#1f2937", margin: "0 0 16px",
+            display: "flex", alignItems: "center", gap: 6 }}>
+            📚 Browse All Subject Areas
+          </h2>
+          {tree.length === 0 ? (
+            <p style={{ color: "#9ca3af", textAlign: "center", padding: 40 }}>Loading subjects…</p>
+          ) : (
+            <div className="domain-grid">
+              {tree.map((d) => <DomainCard key={d._id} node={d} />)}
+            </div>
+          )}
         </div>
       )}
 
-      {courses.length === 0 && !loading && (
-        <div className="end-of-results">No courses found matching your search.</div>
+      {/* ── QUICK MODE ── */}
+      {mode === "quick" && (
+        <div>
+          {loading ? (
+            <div style={{ display: "flex", justifyContent: "center", padding: 60 }}>
+              <Loader2 size={28} style={{ animation: "spin 1s linear infinite", color: "#6366f1" }} />
+            </div>
+          ) : (
+            <>
+              {/* Section heading */}
+              {isSearchActive ? (
+                <h2 style={{ fontSize: 15, fontWeight: 700, color: "#1f2937", margin: "0 0 14px",
+                  display: "flex", alignItems: "center", gap: 8 }}>
+                  🔍 Search Results
+                  <span style={{ fontSize: 11, fontWeight: 400, color: "#6b7280",
+                    background: "#f3f4f6", borderRadius: 10, padding: "2px 8px" }}>
+                    {displayCourses.length} found
+                  </span>
+                </h2>
+              ) : hasInterests ? (
+                <h2 style={{ fontSize: 15, fontWeight: 700, color: "#1f2937", margin: "0 0 14px",
+                  display: "flex", alignItems: "center", gap: 8 }}>
+                  ✨ Recommended for You
+                  <span style={{ fontSize: 11, fontWeight: 400, color: "#6b7280",
+                    background: "#f3f4f6", borderRadius: 10, padding: "2px 8px" }}>
+                    Based on your interests
+                  </span>
+                </h2>
+              ) : (
+                <h2 style={{ fontSize: 15, fontWeight: 700, color: "#1f2937", margin: "0 0 14px" }}>
+                  All Courses
+                </h2>
+              )}
+
+              {/* No interests set hint */}
+              {!isSearchActive && !hasInterests && (
+                <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 8,
+                  padding: "10px 14px", fontSize: 12, color: "#92400e", marginBottom: 16 }}>
+                  💡 Set topic preferences in <strong>Settings → Interests</strong> to get personalised recommendations.
+                </div>
+              )}
+
+              {/* No preference matches */}
+              {!isSearchActive && hasInterests && displayCourses.length === 0 && (
+                <div style={{ textAlign: "center", padding: 50, color: "#9ca3af" }}>
+                  <BookOpen size={34} style={{ opacity: 0.3, marginBottom: 10 }} />
+                  <p style={{ fontSize: 14 }}>No courses match your interests yet.</p>
+                  <p style={{ fontSize: 12 }}>Search to explore all courses, or update your interests in Settings.</p>
+                </div>
+              )}
+
+              {/* Search empty */}
+              {isSearchActive && displayCourses.length === 0 && (
+                <div style={{ textAlign: "center", padding: 50, color: "#9ca3af" }}>
+                  <BookOpen size={34} style={{ opacity: 0.3, marginBottom: 10 }} />
+                  <p style={{ fontSize: 14 }}>No courses found. Try different keywords.</p>
+                </div>
+              )}
+
+              <div className="course-grid">
+                {displayCourses.map((c, i) => (
+                  <CourseCard key={c._id + i} course={c} onEnroll={handleEnroll} user={user} />
+                ))}
+              </div>
+            </>
+          )}
+
+          <div ref={sentinelRef} style={{ height: 8 }} />
+          {loadingMore && (
+            <div style={{ display: "flex", justifyContent: "center", gap: 8, padding: 14,
+              color: "#6b7280", fontSize: 13 }}>
+              <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> Loading more…
+            </div>
+          )}
+          {!hasMore && displayCourses.length > 0 && (
+            <p style={{ textAlign: "center", padding: "14px 0", color: "#9ca3af", fontSize: 12 }}>
+              ✨ {isSearchActive ? `${displayCourses.length} results` : `${displayCourses.length} recommended courses`}
+            </p>
+          )}
+        </div>
       )}
     </div>
   );

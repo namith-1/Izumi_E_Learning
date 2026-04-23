@@ -1,11 +1,13 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
 import { Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
-import { BookOpen, Search, Layers, Gamepad2, Compass, CreditCard } from 'lucide-react';
+import { BookOpen, Search, Layers, Gamepad2, Compass, Settings } from 'lucide-react';
 import ProfileDropdown from '../components/ProfileDropdown'; 
 
 // Nested Route Imports
 import MyLearning from './StudentCourse/MyLearning'; 
+import CourseCatalog from './CourseCatalog';
+import SubjectBrowsePage from './SubjectBrowsePage';
 import CourseSearch from './StudentCourse/CourseSearch'; 
 import ProfileSettings from './StudentCourse/ProfileSettings'; 
 import CourseViewer from './StudentCourse/CourseViewer';
@@ -17,13 +19,16 @@ import './css/StudentDashboard.css';
 
 const StudentDashboard = () => {
   const { user } = useSelector((state) => state.auth);
-  const location = useLocation(); 
+  const location = useLocation();
+
+  // Hide chrome (navbar/footer) during immersive course learning
+  const isLearning = location.pathname.includes("/learn/module/");
 
   return (
     <div className="student-dash-layout">
       
-      {/* 1. Navigation Bar */}
-      <header className="student-navbar">
+      {/* 1. Navigation Bar — hidden during course learning */}
+      {!isLearning && <header className="student-navbar">
         <div className="nav-brand">
           <BookOpen size={24} />
           <span>Izumi Portal</span>
@@ -61,24 +66,26 @@ const StudentDashboard = () => {
           >
             <Gamepad2 size={18} /> Games
           </Link>
+
           <Link
-            to="/student-dashboard/payments"
-            className={`nav-link-item ${location.pathname.startsWith('/student-dashboard/payments') ? 'active' : ''}`}
+            to="/student-dashboard/settings"
+            className={`nav-link-item ${location.pathname.startsWith('/student-dashboard/settings') ? 'active' : ''}`}
           >
-            <CreditCard size={18} /> Payments
+            <Settings size={18} /> Settings
           </Link>
         </nav>
 
         <div className="nav-user-info">
           <ProfileDropdown user={user} currentPath={location.pathname} />
         </div>
-      </header>
+      </header>}
 
       {/* 2. Main Content Section */}
-      <main className="student-main-content">
+      <main className={`student-main-content${isLearning ? " student-main-content--fullscreen" : ""}`}>
         <Routes>
           <Route index element={<MyLearning />} /> 
-          <Route path="catalog" element={<CourseSearch />} />
+          <Route path="catalog" element={<CourseCatalog />} />
+          <Route path="catalog/subject/:slug" element={<SubjectBrowsePage />} />
           <Route path="explore" element={<Magazine />} /> {/* NEW ROUTE */}
           <Route path="games" element={<EducationalGames />} />
           <Route path="payments" element={<StudentPayments />} />
@@ -89,10 +96,12 @@ const StudentDashboard = () => {
         </Routes>
       </main>
 
-      {/* 3. Footer */}
-      <footer className="student-footer">
-        <p>&copy; {new Date().getFullYear()} Izumi Portal. All rights reserved.</p>
-      </footer>
+      {/* 3. Footer — hidden during course learning */}
+      {!isLearning && <footer className="student-footer">
+        <span>© {new Date().getFullYear()} Izumi Portal</span>
+        <span style={{ color: "#cbd5e1" }}>·</span>
+        <span>All rights reserved</span>
+      </footer>}
     </div>
   );
 };

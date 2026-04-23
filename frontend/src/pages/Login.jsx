@@ -189,10 +189,11 @@ const Login = () => {
             <Link to="/signup" className="link-text">
               Sign up
             </Link>
-            <GoogleOAuthButton /> 
+            {formData.role === "student" && <GoogleOAuthButton />}
           </div>
         </div>
       </div>
+
     </>
   );
 };

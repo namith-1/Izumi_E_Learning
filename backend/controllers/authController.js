@@ -422,14 +422,16 @@ exports.me = (req, res) => {
         .json({ user: null, message: "Invalid session role." });
     }
 
-    Model.findById(req.session.user.id)
-      .select("name email profilePic")
+        Model.findById(req.session.user.id)
+      .select("name email profilePic interests specialization")
       .then((userDoc) => {
         if (userDoc) {
           // Ensure the session user object is complete
           req.session.user.email = userDoc.email;
           req.session.user.name = userDoc.name;
           req.session.user.profilePic = userDoc.profilePic || "";
+          req.session.user.interests = userDoc.interests || [];
+          req.session.user.specialization = userDoc.specialization || [];
           res.json({ user: req.session.user });
         } else {
           res.status(404).json({ user: null });
@@ -448,7 +450,14 @@ exports.me = (req, res) => {
 // NEW: Update Profile
 exports.updateProfile = async (req, res) => {
   try {
-    const { name, currentPassword, newPassword } = req.body;
+    let { name, currentPassword, newPassword, interests, specialization } = req.body;
+    // FormData sends arrays as JSON strings — parse them
+    if (typeof interests === "string") {
+      try { interests = JSON.parse(interests); } catch { interests = undefined; }
+    }
+    if (typeof specialization === "string") {
+      try { specialization = JSON.parse(specialization); } catch { specialization = undefined; }
+    }
     const userId = req.session.user.id;
     const profilePicPath = req.file
       ? req.file.path
@@ -470,12 +479,14 @@ exports.updateProfile = async (req, res) => {
     const user = await Model.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    // 1. Verify current password
-    if (
-      !currentPassword ||
-      !(await bcrypt.compare(currentPassword, user.password))
-    ) {
-      return res.status(401).json({ message: "Invalid current password." });
+    // 1. Verify current password — skip if google user (no password)
+    if (!user.googleId) {
+      if (
+        !currentPassword ||
+        !(await bcrypt.compare(currentPassword, user.password))
+      ) {
+        return res.status(401).json({ message: "Invalid current password." });
+      }
     }
 
     // 2. Update name if provided
@@ -489,7 +500,17 @@ exports.updateProfile = async (req, res) => {
       req.session.user.profilePic = profilePicPath;
     }
 
-    // 3. Update password if new one is provided
+    // 3. Update topic preferences
+    if (role === "student" && Array.isArray(interests)) {
+      user.interests = interests;
+      req.session.user.interests = interests;
+    }
+    if ((role === "teacher" || role === "reviewer") && Array.isArray(specialization)) {
+      user.specialization = specialization;
+      req.session.user.specialization = specialization;
+    }
+
+    // 4. Update password if new one is provided
     if (newPassword && newPassword.length >= 6) {
       user.password = await bcrypt.hash(newPassword, 10);
     } else if (newPassword) {
@@ -510,6 +531,8 @@ exports.updateProfile = async (req, res) => {
         name: user.name,
         email: user.email,
         profilePic: user.profilePic || "",
+        interests: user.interests || [],
+        specialization: user.specialization || [],
       },
     });
   } catch (err) {

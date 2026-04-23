@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { User, Mail, Key, Camera, X } from "lucide-react";
+import { User, Mail, Key, Camera, X, CreditCard } from "lucide-react";
 import { updateStudentProfile, BACKEND_URL } from "../../store";
+import TopicPreferences from "../../components/TopicPreferences";
+import StudentPayments from "./StudentPayments";
 
 const ProfileSettings = () => {
   const dispatch = useDispatch();
@@ -19,12 +21,16 @@ const ProfileSettings = () => {
     [apiBase],
   );
 
+  const [activeTab, setActiveTab] = useState("profile"); // "profile" | "payments"
+
   const [formData, setFormData] = useState({
     name: user?.name || "",
     email: user?.email || "",
     password: "",
     newPassword: "",
   });
+
+  const [interests, setInterests] = useState(user?.interests || []);
 
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(
@@ -39,6 +45,7 @@ const ProfileSettings = () => {
       name: user?.name || "",
       email: user?.email || "",
     }));
+    setInterests(user?.interests || []);
 
     if (!selectedFile) {
       setPreviewUrl(buildProfileImageUrl(user?.profilePic));
@@ -74,6 +81,8 @@ const ProfileSettings = () => {
     data.append("currentPassword", formData.password);
     if (formData.newPassword) data.append("newPassword", formData.newPassword);
     if (selectedFile) data.append("profileImage", selectedFile);
+    // Interests sent as JSON string (FormData can only send strings)
+    data.append("interests", JSON.stringify(interests));
 
     try {
       const result = await dispatch(updateStudentProfile(data));
@@ -97,11 +106,35 @@ const ProfileSettings = () => {
   return (
     <div className="profile-settings-container">
       <div className="dashboard-intro">
-        <h1>Profile Settings</h1>
-        <p>Update your account details and profile photo.</p>
+        <h1>Settings</h1>
+        <p>Manage your profile and payment history.</p>
       </div>
 
-      <div className="profile-card">
+      {/* ── Tab strip ── */}
+      <div style={{ display: "flex", gap: 4, borderBottom: "2px solid #e5e7eb", marginBottom: 24 }}>
+        {[
+          { key: "profile",  label: "Profile",  icon: <User size={15} /> },
+          { key: "payments", label: "Payments", icon: <CreditCard size={15} /> },
+        ].map(({ key, label, icon }) => (
+          <button key={key} onClick={() => setActiveTab(key)}
+            style={{
+              display: "flex", alignItems: "center", gap: 6,
+              padding: "10px 20px", border: "none", background: "none", cursor: "pointer",
+              fontSize: 13, fontWeight: 700,
+              color: activeTab === key ? "#6366f1" : "#6b7280",
+              borderBottom: activeTab === key ? "2px solid #6366f1" : "2px solid transparent",
+              marginBottom: "-2px", transition: "color 0.15s",
+            }}>
+            {icon} {label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Payments tab ── */}
+      {activeTab === "payments" && <StudentPayments />}
+
+      {/* ── Profile tab ── */}
+      {activeTab === "profile" && <div className="profile-card">
         {message && (
           <div className={`message-box ${message.type}`}>{message.text}</div>
         )}
@@ -231,12 +264,22 @@ const ProfileSettings = () => {
             />
           </div>
 
+          {/* ── Topic Interests ── */}
+          <TopicPreferences
+            selected={interests}
+            onChange={setInterests}
+            label="My Learning Interests"
+            description="Select up to 10 topics — we'll personalise your course feed."
+            max={10}
+          />
+
           <button type="submit" disabled={loading} className="btn-save-profile">
             {loading ? "Saving..." : "Save Changes"}
           </button>
         </form>
-      </div>
+      </div>}
     </div>
+
   );
 };
 
