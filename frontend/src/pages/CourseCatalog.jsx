@@ -176,10 +176,6 @@ const CourseCatalog = () => {
     navigate(`/student-dashboard/courses/${id}`);
   };
 
-  // Recommended based on user interests
-  const userInterests = useMemo(() =>
-    new Set((user?.interests || []).map((s) => s.toLowerCase())), [user]);
-
   const isSearchActive = !!lastSearchQuery;
 
   const sorted = useMemo(() => {
