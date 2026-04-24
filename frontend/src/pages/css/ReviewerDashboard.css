@@ -7,7 +7,7 @@
     color: #6b7280;
 }
 
-.status-badge.pending {
+.status-badge.pending, .status-badge.awaited {
     background-color: #fef3c7;
     color: #92400e;
 }

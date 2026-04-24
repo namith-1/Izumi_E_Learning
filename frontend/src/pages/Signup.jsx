@@ -13,7 +13,11 @@ const Signup = () => {
     email: '',
     password: '',
     role: 'student',
+    resume: '',
+    linkedIn: '',
   });
+
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -21,6 +25,12 @@ const Signup = () => {
 
   useEffect(() => {
     if (user) {
+      if (user.role === 'teacher' && user.applicationStatus === 'pending') {
+        // Stay on page and show success modal
+        setShowSuccessModal(true);
+        return;
+      }
+      
       if (user.role === 'teacher') {
         navigate('/instructor-dashboard');
       } else {
@@ -35,14 +45,36 @@ const Signup = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const [resumeFile, setResumeFile] = useState(null);
+  const handleFileChange = (e) => {
+    setResumeFile(e.target.files[0]);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    dispatch(registerUser(formData));
+    if (formData.role === 'teacher' && !resumeFile) {
+        alert("Please upload your resume.");
+        return;
+    }
+
+    const data = new FormData();
+    data.append('name', formData.name);
+    data.append('email', formData.email);
+    data.append('password', formData.password);
+    data.append('role', formData.role);
+    data.append('linkedIn', formData.linkedIn);
+    
+    if (resumeFile) {
+        data.append('resumeFile', resumeFile);
+    }
+
+    dispatch(registerUser(data));
   };
 
   return (
     <> {/* Added fragment */}
       <UnauthenticatedNavbar /> {/* Added Navbar */}
+      {showSuccessModal && <SuccessModal />}
       <div className="signup-container">
         <div className="signup-card">
           <div className="signup-header">
@@ -110,6 +142,35 @@ const Signup = () => {
                 minLength="6"
               />
             </div>
+            
+            {formData.role === 'teacher' && (
+              <>
+                <div className="input-group">
+                  <label>LinkedIn Profile URL</label>
+                  <input
+                    type="url"
+                    name="linkedIn"
+                    className="styled-input"
+                    placeholder="https://linkedin.com/in/username"
+                    value={formData.linkedIn}
+                    onChange={handleChange}
+                    required={formData.role === 'teacher'}
+                  />
+                </div>
+
+                <div className="input-group">
+                  <label>Resume (PDF/DOCX)</label>
+                  <input
+                    type="file"
+                    name="resumeFile"
+                    className="styled-input"
+                    accept=".pdf,.docx,.doc,.jpg,.png,.jpeg"
+                    onChange={handleFileChange}
+                    required={formData.role === 'teacher'}
+                  />
+                </div>
+              </>
+            )}
 
             <button type="submit" className="btn-submit" disabled={loading}>
               {loading ? 'Creating Account...' : 'Sign Up'}
@@ -129,5 +190,30 @@ const Signup = () => {
     </>
   );
 };
+
+// Simple Modal Component
+const SuccessModal = ({ onClose }) => (
+  <div className="modal-overlay" style={{
+    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
+  }}>
+    <div className="signup-card" style={{ maxWidth: '400px', textAlign: 'center', padding: '40px' }}>
+      <div style={{ fontSize: '50px', marginBottom: '20px' }}>📩</div>
+      <h2 style={{ marginBottom: '15px' }}>Application Received!</h2>
+      <p style={{ color: '#6b7280', marginBottom: '25px', lineHeight: '1.6' }}>
+        Thank you for applying to be an instructor. Your application is now <strong>under review</strong>.
+        <br/><br/>
+        We will verify your credentials and send you an email once your account is approved.
+      </p>
+      <button 
+        className="btn-submit" 
+        onClick={() => window.location.href = '/login'}
+        style={{ width: '100%' }}
+      >
+        Back to Login
+      </button>
+    </div>
+  </div>
+);
 
 export default Signup;

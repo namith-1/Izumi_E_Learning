@@ -76,7 +76,9 @@ router.put(
  *     responses:
  *       201: { description: Registered }
  */
-router.post("/register", authController.register);
+const resumeUpload = require("../middleware/resumeMiddleware");
+
+router.post("/register", resumeUpload.single("resumeFile"), authController.register);
 /** @swagger
  * /api/auth/login:
  *   post:

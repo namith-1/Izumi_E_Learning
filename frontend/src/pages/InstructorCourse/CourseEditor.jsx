@@ -1254,7 +1254,14 @@ const CourseEditor = () => {
           );
           if (updateCourse.fulfilled.match(result)) {
             const ww = result.payload?.weightWarning;
-            alert(`Course updated successfully!${ww ? `\n\n⚠️ ${ww}` : ""}`);
+            const resubmitted = result.payload?.resubmitted;
+            if (resubmitted) {
+              alert(
+                `✅ Course updated!\n\n🔍 Since this course was previously approved, it has been automatically submitted for re-review.\n\nYou will receive an email once it's reviewed.${ww ? `\n\n⚠️ ${ww}` : ""}`
+              );
+            } else {
+              alert(`Course updated successfully!${ww ? `\n\n⚠️ ${ww}` : ""}`);
+            }
             navigate("/instructor-dashboard");
           } else {
             alert(`Update failed: ${result.payload}`);

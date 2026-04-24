@@ -27,7 +27,7 @@ const courseSchema = new mongoose.Schema(
     // ── Course Approval Workflow ─────────────────────────────────────────
     approvalStatus: {
       type: String,
-      enum: ["draft", "pending", "approved", "rejected", "revision-requested"],
+      enum: ["draft", "pending", "awaited", "approved", "rejected", "revision-requested"],
       default: "draft",
       index: true,
     },

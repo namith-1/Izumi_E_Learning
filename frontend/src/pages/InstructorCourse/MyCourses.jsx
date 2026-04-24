@@ -180,11 +180,65 @@ const MyCourses = () => {
                       width: "100%",
                     }}
                   >
-                    <span
-                      className={`status-badge ${course.approvalStatus || "draft"}`}
-                    >
-                      {course.approvalStatus || "draft"}
-                    </span>
+                    {/* Rich 3-state status display */}
+                    {(() => {
+                      const status = course.approvalStatus;
+                      // Was previously approved, then updated → re-review
+                      const wasUpdated = status === "awaited" && course.updatedAt && course.submittedAt &&
+                        new Date(course.updatedAt) > new Date(course.createdAt + 5000);
+                      
+                      if (status === "approved") {
+                        return (
+                          <span style={{
+                            display: "inline-flex", alignItems: "center", gap: 6,
+                            background: "#d1fae5", color: "#065f46", padding: "4px 10px",
+                            borderRadius: 20, fontSize: "0.75rem", fontWeight: 700,
+                          }}>
+                            ✅ Approved & Live
+                          </span>
+                        );
+                      } else if (status === "awaited") {
+                        return (
+                          <span style={{
+                            display: "inline-flex", alignItems: "center", gap: 6,
+                            background: "#fef3c7", color: "#92400e", padding: "4px 10px",
+                            borderRadius: 20, fontSize: "0.75rem", fontWeight: 700,
+                          }}>
+                            🔍 Awaiting Review
+                          </span>
+                        );
+                      } else if (status === "rejected") {
+                        return (
+                          <span style={{
+                            display: "inline-flex", alignItems: "center", gap: 6,
+                            background: "#fee2e2", color: "#991b1b", padding: "4px 10px",
+                            borderRadius: 20, fontSize: "0.75rem", fontWeight: 700,
+                          }}>
+                            ❌ Rejected
+                          </span>
+                        );
+                      } else if (status === "revision-requested") {
+                        return (
+                          <span style={{
+                            display: "inline-flex", alignItems: "center", gap: 6,
+                            background: "#fff7ed", color: "#c2410c", padding: "4px 10px",
+                            borderRadius: 20, fontSize: "0.75rem", fontWeight: 700,
+                          }}>
+                            ✏️ Revision Needed
+                          </span>
+                        );
+                      } else {
+                        return (
+                          <span style={{
+                            display: "inline-flex", alignItems: "center", gap: 6,
+                            background: "#f3f4f6", color: "#6b7280", padding: "4px 10px",
+                            borderRadius: 20, fontSize: "0.75rem", fontWeight: 700,
+                          }}>
+                            📝 Draft
+                          </span>
+                        );
+                      }
+                    })()}
 
                     <div style={{ display: "flex", gap: 6 }}>
                       <button

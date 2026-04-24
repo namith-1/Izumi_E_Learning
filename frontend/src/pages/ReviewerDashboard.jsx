@@ -2,13 +2,14 @@
 import React from "react";
 import { useSelector } from "react-redux";
 import { Routes, Route, Link, Navigate, useLocation } from "react-router-dom";
-import { ClipboardList, History, Settings, BookOpen, Shield, Tag } from "lucide-react";
+import { ClipboardList, History, Settings, BookOpen, Shield, Tag, Users } from "lucide-react";
 import ProfileDropdown from "../components/ProfileDropdown";
 import ReviewQueue from "./ReviewerCourse/ReviewQueue";
 import ReviewDetail from "./ReviewerCourse/ReviewDetail";
 import ReviewHistory from "./ReviewerCourse/ReviewHistory";
 import ReviewerProfileSettings from "./ReviewerCourse/ReviewerProfileSettings";
 import TopicProposals from "./ReviewerCourse/TopicProposals";
+import TeacherApplications from "./ReviewerCourse/TeacherApplications";
 import "../pages/css/StudentDashboard.css";
 
 const ReviewerDashboard = () => {
@@ -50,6 +51,13 @@ const ReviewerDashboard = () => {
                     </Link>
 
                     <Link
+                        to="/reviewer-dashboard/instructors"
+                        className={`nav-link-item ${isActive("/reviewer-dashboard/instructors") ? "active" : ""}`}
+                    >
+                        <Users size={18} /> Instructors
+                    </Link>
+
+                    <Link
                         to="/reviewer-dashboard/settings"
                         className={`nav-link-item ${isActive("/reviewer-dashboard/settings") ? "active" : ""}`}
                     >
@@ -69,6 +77,7 @@ const ReviewerDashboard = () => {
                     <Route path="history" element={<ReviewHistory />} />
                     <Route path="course/:courseId" element={<ReviewDetail />} />
                     <Route path="topics" element={<TopicProposals />} />
+                    <Route path="instructors" element={<TeacherApplications />} />
                     <Route path="settings" element={<ReviewerProfileSettings />} />
                     <Route path="*" element={<Navigate to="/reviewer-dashboard" replace />} />
                 </Routes>

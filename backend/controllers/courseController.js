@@ -533,8 +533,25 @@ exports.updateCourse = async (req, res) => {
       updatePayload.passingPolicy = passingPolicy;
     }
 
-    const updatedCourse = await Course.findOneAndUpdate(
-      { _id: req.params.id, teacherId: req.session.user.id },
+    // Find the current course first to check its approval status
+    const existingCourse = await Course.findOne({
+      _id: req.params.id,
+      teacherId: req.session.user.id,
+    });
+
+    if (!existingCourse) {
+      return res.status(403).json({ message: "Not authorized or course not found" });
+    }
+
+    // If a previously approved course is being updated, mark it for re-review
+    if (["approved"].includes(existingCourse.approvalStatus)) {
+      updatePayload.approvalStatus = "awaited";
+      updatePayload.submittedAt = new Date();
+      updatePayload.reviewedAt = null;
+    }
+
+    const updatedCourse = await Course.findByIdAndUpdate(
+      req.params.id,
       updatePayload,
       { new: true },
     );
@@ -553,7 +570,12 @@ exports.updateCourse = async (req, res) => {
     // Sync to Search Engine
     await searchService.syncCourse(updatedCourse);
     
-    res.json({ ...updatedCourse.toObject(), weightWarning });
+    const resubmitted = updatePayload.approvalStatus === "awaited";
+    res.json({ 
+      ...updatedCourse.toObject(), 
+      weightWarning,
+      resubmitted, // flag so frontend can show a notice
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

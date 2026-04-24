@@ -145,4 +145,46 @@ router.post("/course/:id/reject", isReviewer, reviewController.rejectCourse);
  */
 router.post("/course/:id/request-revision", isReviewer, reviewController.requestRevision);
 
+// ── Instructor application endpoints ──────────────────────────────────
+/** @swagger
+ * /api/review/teachers/pending:
+ *   get:
+ *     summary: Get pending instructor applications
+ *     tags: [Review]
+ *     security: [{ sessionAuth: [] }]
+ *     responses:
+ *       200: { description: Instructor list }
+ */
+router.get("/teachers/pending", isReviewer, reviewController.getPendingTeachers);
+/** @swagger
+ * /api/review/teachers/{id}/approve:
+ *   post:
+ *     summary: Approve instructor application
+ *     tags: [Review]
+ *     security: [{ sessionAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200: { description: Approved }
+ */
+router.post("/teachers/:id/approve", isReviewer, reviewController.approveTeacher);
+/** @swagger
+ * /api/review/teachers/{id}/reject:
+ *   post:
+ *     summary: Reject instructor application
+ *     tags: [Review]
+ *     security: [{ sessionAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200: { description: Rejected }
+ */
+router.post("/teachers/:id/reject", isReviewer, reviewController.rejectTeacher);
+
 module.exports = router;

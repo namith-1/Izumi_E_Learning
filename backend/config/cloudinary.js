@@ -25,8 +25,18 @@ const courseStorage = new CloudinaryStorage({
   },
 });
 
+const resumeStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'izumi/resumes',
+    allowed_formats: ['pdf', 'docx', 'doc', 'jpg', 'png', 'jpeg'],
+    resource_type: 'auto',
+  },
+});
+
 module.exports = {
   cloudinary,
   profileStorage,
   courseStorage,
+  resumeStorage,
 };

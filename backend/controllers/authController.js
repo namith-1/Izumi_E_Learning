@@ -105,10 +105,26 @@ exports.register = async (req, res) => {
       name,
       email,
       password: hashedPassword,
+      resume: role === "teacher" ? (req.file ? req.file.path : req.body.resume) : undefined,
+      linkedIn: role === "teacher" ? req.body.linkedIn : undefined,
+      applicationStatus: role === "teacher" ? "pending" : undefined,
     });
 
-    // Auto-login after register
-    // SECURITY: Regenerate session to prevent fixation and account bleeding
+    // For teachers, do not auto-login. Tell them their application is pending.
+    if (role === "teacher") {
+      return res.status(201).json({
+        message: "Registration successful. Your application is pending review by our team.",
+        user: {
+          id: newUser._id,
+          role: role,
+          name: newUser.name,
+          email: newUser.email,
+          applicationStatus: "pending"
+        }
+      });
+    }
+
+    // Auto-login after register for other roles (students, reviewers if allowed)
     req.session.regenerate((err) => {
       if (err) return res.status(500).json({ error: "Session regeneration failed" });
 
@@ -268,6 +284,15 @@ exports.login = async (req, res) => {
 
     if (user.isLocked) {
       return res.status(403).json({ message: "Account is locked. Please contact support." });
+    }
+
+    // Check application status for teachers
+    if (actualRole === "teacher" && user.applicationStatus !== "approved") {
+      if (user.applicationStatus === "pending") {
+        return res.status(403).json({ message: "Your application is still pending review." });
+      } else if (user.applicationStatus === "rejected") {
+        return res.status(403).json({ message: "Your application has been rejected. Please contact support." });
+      }
     }
 
     // Save session (Only for student/teacher here, admin is handled above)
