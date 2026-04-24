@@ -83,16 +83,46 @@ const TeacherApplications = () => {
                                             : "Not specified"}
                                     </td>
                                     <td>
-                                        <div style={{ display: "flex", gap: "10px" }}>
+                                        <div style={{ display: "flex", gap: "8px" }}>
                                             {app.linkedIn && (
-                                                <a href={app.linkedIn} target="_blank" rel="noopener noreferrer" className="nav-link-item" title="LinkedIn">
-                                                    <LinkIcon size={18} />
+                                                <a 
+                                                    href={app.linkedIn} 
+                                                    target="_blank" 
+                                                    rel="noopener noreferrer" 
+                                                    className="btn-action-edit" 
+                                                    style={{ 
+                                                        padding: "6px 10px", 
+                                                        fontSize: "0.75rem",
+                                                        backgroundColor: "#0077b5",
+                                                        color: "white",
+                                                        textDecoration: "none"
+                                                    }}
+                                                    title="View LinkedIn Profile"
+                                                >
+                                                    <LinkIcon size={14} /> LinkedIn
                                                 </a>
                                             )}
                                             {app.resume && (
-                                                <a href={app.resume} target="_blank" rel="noopener noreferrer" className="nav-link-item" title="Resume">
-                                                    <FileText size={18} />
+                                                <a 
+                                                    href={app.resume} 
+                                                    target="_blank" 
+                                                    rel="noopener noreferrer" 
+                                                    download={`Resume_${app.name.replace(/\s+/g, '_')}.pdf`}
+                                                    className="btn-action-edit" 
+                                                    style={{ 
+                                                        padding: "6px 10px", 
+                                                        fontSize: "0.75rem",
+                                                        backgroundColor: "#ef4444",
+                                                        color: "white",
+                                                        textDecoration: "none"
+                                                    }}
+                                                    title="Open or Download Resume"
+                                                >
+                                                    <FileText size={14} /> Resume
                                                 </a>
+                                            )}
+                                            {!app.resume && !app.linkedIn && (
+                                                <span style={{ fontSize: "0.85rem", color: "#9ca3af" }}>No credentials</span>
                                             )}
                                         </div>
                                     </td>
