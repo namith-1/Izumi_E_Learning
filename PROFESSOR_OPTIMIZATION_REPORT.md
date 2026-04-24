@@ -29,9 +29,17 @@ courseSchema.index({ title: "text", description: "text" });
 **Result**: Search operations are now resolved via the index rather than document scanning.
 
 ### B. Foreign Key Indexing (Joins)
-Lookups (`$lookup`) between `Enrollment`, `Course`, and `Teacher` were performing poorly. We applied single-field indexes to all relational keys.
-- **Indexed Fields**: `teacherId`, `courseId`, `studentId`, `reviewerId`.
-- **Result**: Data joins across collections are now O(1) or O(log N) complexity.
+Lookups (`$lookup`) between collections were performing poorly because join target fields weren't indexed.
+
+**Indexed Fields** (verified in source code):
+- **[Course](file:///backend/models/Course.js)**: `teacherId`, `subject`, `approvalStatus`, `reviewerId`
+- **[Enrollment](file:///backend/models/Enrollment.js)**: `courseId` + `studentId` (Unique), `studentId`
+- **[Transaction](file:///backend/models/Transaction.js)**: `courseId`, `studentId`, `teacherId`, `status`
+- **[Message](file:///backend/models/Message.js)**: `{ courseId, senderId, receiverId, createdAt }`
+- **[Reviewer](file:///backend/models/Reviewer.js)**: `email` (Unique)
+- **[Student](file:///backend/models/Student.js)** / **[Teacher](file:///backend/models/Teacher.js)**: `email`, `isLocked`
+
+**Result**: All `$lookup` joins now use index scans — O(log N) instead of O(N).
 
 ### C. Aggregation Pipeline Refactoring
 The `getCourseAnalytics` pipeline was identified as a bottleneck due to the use of the JavaScript-based `$function` operator.
