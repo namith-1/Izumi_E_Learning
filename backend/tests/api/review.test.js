@@ -66,14 +66,14 @@ describe("Review API (Comprehensive)", () => {
 
       const res = await request(app).post(`/api/review/submit/${course._id}`);
       expect(res.status).toBe(200);
-      expect(res.body.course.approvalStatus).toBe("pending");
+      expect(res.body.course.approvalStatus).toBe("awaited");
     });
 
-    test("POST /submit/:id - Fail on failed pre-checks (no content)", async () => {
+    test("POST /submit/:id - Fail on failed pre-checks (missing title)", async () => {
       const teacher = await Teacher.create({ name: "T1", email: "t@t.com", password: "p" });
       const course = await Course.create({ 
           ...createValidDraft(teacher._id), 
-          modules: { "r1": { id: "r1", type: "folder" } } // No content modules
+          title: " " // Invalid title
       });
       activeUser = { id: teacher._id, role: "teacher" };
 
@@ -84,19 +84,19 @@ describe("Review API (Comprehensive)", () => {
 
     test("GET /my-status - Teacher checks their own submissions", async () => {
       const teacher = await Teacher.create({ name: "T1", email: "t@t.com", password: "p" });
-      await Course.create({ ...createValidDraft(teacher._id), approvalStatus: "pending" });
+      await Course.create({ ...createValidDraft(teacher._id), approvalStatus: "awaited" });
 
       activeUser = { id: teacher._id, role: "teacher" };
       const res = await request(app).get("/api/review/my-status");
       expect(res.status).toBe(200);
-      expect(res.body[0].approvalStatus).toBe("pending");
+      expect(res.body[0].approvalStatus).toBe("awaited");
     });
   });
 
   describe("Reviewer Workflow", () => {
-    test("GET /queue - returns only pending courses", async () => {
+    test("GET /queue - returns only awaited courses", async () => {
       const teacher = await Teacher.create({ name: "T1", email: "t@t.com", password: "p" });
-      await Course.create({ ...createValidDraft(teacher._id), title: "Pending", approvalStatus: "pending" });
+      await Course.create({ ...createValidDraft(teacher._id), title: "Awaited", approvalStatus: "awaited" });
       await Course.create({ ...createValidDraft(teacher._id), title: "Draft", approvalStatus: "draft" });
 
       activeUser = { id: new mongoose.Types.ObjectId(), role: "reviewer" };
@@ -105,9 +105,9 @@ describe("Review API (Comprehensive)", () => {
       expect(res.body.length).toBe(1);
     });
 
-    test("POST /course/:id/approve - Successfully approves pending course", async () => {
+    test("POST /course/:id/approve - Successfully approves awaited course", async () => {
       const teacher = await Teacher.create({ name: "T1", email: "t@t.com", password: "p" });
-      const course = await Course.create({ ...createValidDraft(teacher._id), approvalStatus: "pending" });
+      const course = await Course.create({ ...createValidDraft(teacher._id), approvalStatus: "awaited" });
       const reviewerId = new mongoose.Types.ObjectId();
       activeUser = { id: reviewerId, role: "reviewer", name: "Reviewer 1" };
 
@@ -120,7 +120,7 @@ describe("Review API (Comprehensive)", () => {
     });
 
     test("POST /course/:id/reject - Fails without rejection note", async () => {
-      const course = await Course.create({ title: "C", subject: "S", teacherId: new mongoose.Types.ObjectId(), approvalStatus: "pending", rootModule: {id:"r"}, modules: {"r":{}} });
+      const course = await Course.create({ title: "C", subject: "S", teacherId: new mongoose.Types.ObjectId(), approvalStatus: "awaited", rootModule: {id:"r"}, modules: {"r":{}} });
       activeUser = { id: new mongoose.Types.ObjectId(), role: "reviewer" };
 
       const res = await request(app).post(`/api/review/course/${course._id}/reject`).send({});
@@ -129,13 +129,13 @@ describe("Review API (Comprehensive)", () => {
 
     test("GET /stats - Returns accurate platform review stats", async () => {
       await Course.create({ title: "A", subject: "S", teacherId: new mongoose.Types.ObjectId(), approvalStatus: "approved", rootModule: {id:"r"}, modules: {"r":{}} });
-      await Course.create({ title: "P", subject: "S", teacherId: new mongoose.Types.ObjectId(), approvalStatus: "pending", rootModule: {id:"r"}, modules: {"r":{}} });
+      await Course.create({ title: "P", subject: "S", teacherId: new mongoose.Types.ObjectId(), approvalStatus: "awaited", rootModule: {id:"r"}, modules: {"r":{}} });
 
       activeUser = { id: new mongoose.Types.ObjectId(), role: "reviewer" };
       const res = await request(app).get("/api/review/stats");
       expect(res.status).toBe(200);
       expect(res.body.approved).toBe(1);
-      expect(res.body.pending).toBe(1);
+      expect(res.body.pending).toBe(1); // Stats controller still uses 'pending' as key for awaited count
     });
   });
 
