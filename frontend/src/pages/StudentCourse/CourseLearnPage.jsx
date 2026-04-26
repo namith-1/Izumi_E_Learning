@@ -726,9 +726,6 @@ const CourseLearnPage = () => {
           </h2>
           <ul className="module-tree-list">
             {course?.rootModule?.id && renderTreeItem(course.rootModule.id)}
-            {(course?.rootModule?.children || []).map((childId) =>
-              renderTreeItem(childId),
-            )}
           </ul>
 
           {/* ── Instructor info ── */}

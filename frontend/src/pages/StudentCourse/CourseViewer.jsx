@@ -274,8 +274,17 @@ const CourseViewer = () => {
           </h2>
           <ul className="module-list">
             <li className="module-list-item active">
-              {introModule.title || "Course Introduction"}
+              <Play size={14} /> {introModule.title || "Course Introduction"}
             </li>
+            {rootModule.children && rootModule.children.map((childId) => {
+              const mod = course.modules[childId];
+              if (!mod) return null;
+              return (
+                <li key={childId} className="module-list-item" style={{ paddingLeft: 28, fontSize: 13, color: "#64748b" }}>
+                  {mod.title}
+                </li>
+              );
+            })}
           </ul>
 
           {/* Button based on Enrollment Status */}

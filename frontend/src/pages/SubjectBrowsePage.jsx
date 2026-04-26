@@ -158,15 +158,8 @@ const SubjectBrowsePage = () => {
     return () => { if (observerRef.current) observerRef.current.disconnect(); };
   }, [loading, loadingMore, hasMore, currentPage, dispatch]);
 
-  const handleEnroll = async (courseId) => {
-    if (!user) return alert("Please log in to enroll.");
-    const r = await dispatch(enroll({ courseId, paymentMethod: "card" }));
-    if (enroll.fulfilled.match(r)) {
-      alert("Enrolled!");
-      navigate(`/student-dashboard/courses/${courseId}`);
-    } else {
-      alert(`Enrollment failed: ${r.payload}`);
-    }
+  const handleEnroll = (courseId) => {
+    navigate(`/student-dashboard/courses/${courseId}`);
   };
 
   // Filter courses by selected subject node + optional child filter
