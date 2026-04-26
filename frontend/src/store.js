@@ -298,6 +298,26 @@ export const fetchCourseAnalytics = createAsyncThunk(
   },
 );
 
+export const fetchSubjectTree = createAsyncThunk(
+  "courses/fetchSubjects",
+  async (_, { rejectWithValue }) => {
+    try {
+      return await apiRequest("/subjects", "GET");
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  },
+  {
+    condition: (_, { getState }) => {
+      const { courses } = getState();
+      // Block if we already have the tree and session is initialized
+      if (courses.isSessionInitialized && courses.subjectTree?.length > 0) {
+        return false;
+      }
+    }
+  }
+);
+
 // Helper to load/save catalog cache
 const CAT_CACHE_KEY = "izumi_catalog_cache";
 const loadCatalogCache = () => {
@@ -347,6 +367,7 @@ const courseSlice = createSlice({
     loadingMore: false,
     error: null,
     analyticsData: [],
+    subjectTree: [],
     lastFetched: initialCatalog?.timestamp || null,
     isSessionInitialized: false, // Flag: true after very first successful fetch of the session
   },
@@ -454,8 +475,10 @@ const courseSlice = createSlice({
       })
       .addCase(fetchCourseAnalytics.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload;
         state.analyticsData = [];
+      })
+      .addCase(fetchSubjectTree.fulfilled, (state, action) => {
+        state.subjectTree = Array.isArray(action.payload) ? action.payload : [];
       });
   },
 });

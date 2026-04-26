@@ -13,11 +13,13 @@ const TextModule = ({ module, onComplete, isCompleted, isProcessing }) => {
             <h3 className="module-content-header"><FileText size={20} /> {module.title}</h3>
             
             <div className="text-content-area">
-                <p className="description-text">{module.description}</p>
+                {module.description && <p className="description-text">{module.description}</p>}
                 <div 
                     className="lesson-markdown"
                     // In a real application, you would use a markdown parser here:
-                    dangerouslySetInnerHTML={{ __html: module.text }} 
+                    dangerouslySetInnerHTML={{ 
+                        __html: module.text || (module.type === 'intro' ? 'Welcome to the course! Use the navigation on the left to explore the modules.' : 'No content available for this module.') 
+                    }} 
                 />
             </div>
             

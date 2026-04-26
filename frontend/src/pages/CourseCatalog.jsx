@@ -2,12 +2,12 @@
 // Embedded catalog — renders inside student-main-content, no full-page takeover.
 import React, { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import {
-  fetchAllCourses, searchCourses, resetCourseList, BACKEND_URL,
+  fetchAllCourses, searchCourses, resetCourseList, fetchSubjectTree, BACKEND_URL,
 } from "../store";
 import {
-  BookOpen, User, Zap, Search, Loader2, Star, X, ChevronRight, Sliders, Grid, Map,
+  BookOpen, User, Zap, Search, Loader2, Star, X, ChevronRight, Sliders, Grid, Map, ArrowLeft,
 } from "lucide-react";
 import "./css/CourseCatalog.css";
 
@@ -93,40 +93,43 @@ const DomainCard = ({ node }) => (
 const CourseCatalog = () => {
   const dispatch  = useDispatch();
   const navigate  = useNavigate();
-  const { list: courses, loading, loadingMore, error, hasMore, currentPage, lastSearchQuery, lastFetched }
+  const { list: courses, loading, loadingMore, error, hasMore, currentPage, lastSearchQuery, lastFetched, isSessionInitialized, subjectTree: tree }
     = useSelector((s) => s.courses);
   const { user } = useSelector((s) => s.auth);
 
+  const [searchParams, setSearchParams] = useSearchParams();
+  const queryFromUrl = searchParams.get("q") || "";
+
   const [mode,       setMode]   = useState("quick");   // "quick" | "browse"
-  const [searchTerm, setSearch] = useState("");
+  const [searchTerm, setSearch] = useState(queryFromUrl);
   const [sortBy,     setSort]   = useState("newest");
-  const [tree,       setTree]   = useState([]);
   const sentinelRef  = useRef();
   const observerRef  = useRef();
-  const debounceRef  = useRef();
+  const lastSyncedUrl = useRef(queryFromUrl);
 
   // Compute user interests once
   const userInterests = useMemo(() =>
     (user?.interests || []).map((s) => s.trim()).filter(Boolean),
   [user]);
 
-  // Fetch subject tree once
+  // Fetch subject tree once (session-cached in Redux)
   useEffect(() => {
-    fetch(`${API}/subjects`, { credentials: "include" })
-      .then((r) => r.json())
-      .then((d) => setTree(Array.isArray(d) ? d : []))
-      .catch(() => {});
-  }, []);
+    dispatch(fetchSubjectTree());
+  }, [dispatch]);
 
   // Fetch preference courses — only if user has interests set
   useEffect(() => {
     if (userInterests.length === 0) return; // no preferences → don't fetch
+    
+    // If we already have data in this session, skip the initial fetch
+    if (isSessionInitialized && courses.length > 0) return;
+
     const fresh = courses.length > 0 && Date.now() - lastFetched < 300_000; // 5 min cache
     if (!fresh) {
-      dispatch(resetCourseList());
+      // NOTE: We no longer call resetCourseList() here so that the store's 'condition' can block redundant fetches correctly.
       dispatch(fetchAllCourses({ page: 1, subjects: userInterests }));
     }
-  }, [userInterests.join(",")]); // eslint-disable-line
+  }, [userInterests.join(","), isSessionInitialized]); // eslint-disable-line
 
   // Infinite scroll (quick mode only)
   useEffect(() => {
@@ -143,32 +146,57 @@ const CourseCatalog = () => {
     return () => observerRef.current?.disconnect();
   }, [mode, loading, loadingMore, hasMore, currentPage, lastSearchQuery, dispatch]);
 
-  // Live search: debounce 300ms on every keystroke
+  // 1. Sync search input with URL
   useEffect(() => {
-    clearTimeout(debounceRef.current);
-    if (searchTerm.trim()) {
-      debounceRef.current = setTimeout(() => {
+    // If URL changed externally (e.g. Back button), sync it to the input field
+    if (queryFromUrl !== lastSyncedUrl.current) {
+      setSearch(queryFromUrl);
+      lastSyncedUrl.current = queryFromUrl;
+    }
+  }, [queryFromUrl]);
+
+  // 2. Debounce local search input to the URL
+  useEffect(() => {
+    // If input matches URL, nothing to do
+    if (searchTerm.trim() === queryFromUrl) return;
+
+    const timer = setTimeout(() => {
+      const nextQuery = searchTerm.trim();
+      lastSyncedUrl.current = nextQuery; // Mark as synced so effect #1 doesn't override
+      if (nextQuery) setSearchParams({ q: nextQuery });
+      else setSearchParams({});
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm, queryFromUrl, setSearchParams]);
+
+  // 3. Fetch data based on the URL query (Single Source of Truth)
+  useEffect(() => {
+    if (queryFromUrl) {
+      // Avoid redundant search if we already have the results for this query
+      if (queryFromUrl !== lastSearchQuery) {
         dispatch(resetCourseList());
-        dispatch(searchCourses({ q: searchTerm.trim(), page: 1 }));
-      }, 300);
+        dispatch(searchCourses({ q: queryFromUrl, page: 1 }));
+      }
     } else {
-      // Search cleared — go back to preference courses
-      if (userInterests.length > 0) {
+      // No search query — show recommendations or all courses
+      if (lastSearchQuery || (!isSessionInitialized && courses.length === 0)) {
         dispatch(resetCourseList());
-        dispatch(fetchAllCourses({ page: 1, subjects: userInterests }));
-      } else {
-        dispatch(resetCourseList());
+        if (userInterests.length > 0) {
+          dispatch(fetchAllCourses({ page: 1, subjects: userInterests }));
+        } else {
+          dispatch(fetchAllCourses({ page: 1 }));
+        }
       }
     }
-    return () => clearTimeout(debounceRef.current);
-  }, [searchTerm, dispatch]); // eslint-disable-line
+  }, [queryFromUrl, dispatch, userInterests.length]);
 
   const handleSearch = (e) => {
     e.preventDefault();
-    clearTimeout(debounceRef.current);
-    dispatch(resetCourseList());
-    if (searchTerm.trim()) dispatch(searchCourses({ q: searchTerm.trim(), page: 1 }));
-    else if (userInterests.length > 0) dispatch(fetchAllCourses({ page: 1, subjects: userInterests }));
+    const nextQuery = searchTerm.trim();
+    lastSyncedUrl.current = nextQuery;
+    if (nextQuery) setSearchParams({ q: nextQuery });
+    else setSearchParams({});
   };
 
   // Navigate to the course detail/enroll page (CourseViewer handles the actual enrollment)
@@ -209,7 +237,7 @@ const CourseCatalog = () => {
           />
           {searchTerm && (
             <button type="button"
-              onClick={() => { setSearch(""); dispatch(resetCourseList()); dispatch(fetchAllCourses({ page: 1 })); }}
+              onClick={() => { setSearch(""); setSearchParams({}); }}
               style={{ background: "none", border: "none", padding: "0 10px", cursor: "pointer", color: "#9ca3af" }}>
               <X size={15} />
             </button>
@@ -321,14 +349,27 @@ const CourseCatalog = () => {
               <>
                 {/* Section heading */}
                 {isSearchActive ? (
-                  <h2 style={{ fontSize: 15, fontWeight: 700, color: "#1f2937", margin: "0 0 14px",
-                    display: "flex", alignItems: "center", gap: 8 }}>
-                    🔍 Search Results
-                    <span style={{ fontSize: 11, fontWeight: 400, color: "#6b7280",
-                      background: "#f3f4f6", borderRadius: 10, padding: "2px 8px" }}>
-                      {displayCourses.length} found
-                    </span>
-                  </h2>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+                    <button 
+                      onClick={() => { setSearch(""); setSearchParams({}); }}
+                      style={{ 
+                        background: "#f1f5f9", border: "none", borderRadius: "50%", 
+                        width: 28, height: 28, display: "flex", alignItems: "center", 
+                        justifyContent: "center", cursor: "pointer", color: "#64748b" 
+                      }}
+                      title="Clear search and go back"
+                    >
+                      <ArrowLeft size={16} />
+                    </button>
+                    <h2 style={{ fontSize: 15, fontWeight: 700, color: "#1f2937", margin: 0,
+                      display: "flex", alignItems: "center", gap: 8 }}>
+                      🔍 Search Results
+                      <span style={{ fontSize: 11, fontWeight: 400, color: "#6b7280",
+                        background: "#f3f4f6", borderRadius: 10, padding: "2px 8px" }}>
+                        {displayCourses.length} found
+                      </span>
+                    </h2>
+                  </div>
                 ) : (
                   <h2 style={{ fontSize: 15, fontWeight: 700, color: "#1f2937", margin: "0 0 14px",
                     display: "flex", alignItems: "center", gap: 8 }}>

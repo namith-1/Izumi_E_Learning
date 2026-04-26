@@ -15,6 +15,7 @@ import {
   fetchAllCourses as fetchCourses,
   enrollInCourse as enroll,
   resetCourseList as resetList,
+  fetchSubjectTree,
   BACKEND_URL as BURL,
 } from "../store";
 
@@ -95,12 +96,11 @@ const SubjectBrowsePage = () => {
   const { slug } = useParams();
   const navigate  = useNavigate();
   const dispatch  = useDispatch();
-  const { list: allCourses, loading, loadingMore, hasMore, currentPage, lastFetched }
+  const { list: allCourses, loading, loadingMore, hasMore, currentPage, lastFetched, subjectTree: tree }
     = useSelector((s) => s.courses);
   const { user } = useSelector((s) => s.auth);
 
-  const [tree,       setTree]       = useState([]);
-  const [treeLoad,   setTreeLoad]   = useState(true);
+  const [treeLoad,   setTreeLoad]   = useState(false);
   const [node,       setNode]       = useState(null);      // current subject node
   const [ancestors,  setAncestors]  = useState([]);        // breadcrumb chain
   const [activeChild,setActiveChild]= useState(null);      // selected child filter
@@ -108,13 +108,10 @@ const SubjectBrowsePage = () => {
   const sentinelRef = useRef();
   const observerRef = useRef();
 
-  // Fetch subject tree
+  // Fetch subject tree once (session-cached in Redux)
   useEffect(() => {
-    fetch(`${API}/subjects`, { credentials: "include" })
-      .then((r) => r.json())
-      .then((d) => { setTree(Array.isArray(d) ? d : []); setTreeLoad(false); })
-      .catch(() => setTreeLoad(false));
-  }, []);
+    dispatch(fetchSubjectTree());
+  }, [dispatch]);
 
   // Find node + build ancestor breadcrumb whenever slug or tree changes
   useEffect(() => {
@@ -140,9 +137,8 @@ const SubjectBrowsePage = () => {
 
   // Fetch all courses (uses redux cache)
   useEffect(() => {
-    const isFresh = allCourses.length > 0 && (Date.now() - lastFetched < 15000);
+    const isFresh = allCourses.length > 0 && (Date.now() - lastFetched < 300_000); // 5 min cache
     if (!isFresh) {
-      dispatch(resetList());
       dispatch(fetchCourses({ page: 1 }));
     }
   }, [dispatch, allCourses.length, lastFetched]);
@@ -212,27 +208,41 @@ const SubjectBrowsePage = () => {
     <div>
       {/* ── Breadcrumb + title (inline, no full-page header) ── */}
       <div style={{ marginBottom: 18 }}>
-        {/* Breadcrumb */}
-        <nav style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12,
-          color: "#9ca3af", marginBottom: 10, flexWrap: "wrap" }}>
-          <button onClick={() => navigate("/student-dashboard/catalog")}
-            style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12,
-              color: "#6366f1", fontWeight: 600, padding: 0, display: "flex", alignItems: "center", gap: 3 }}>
-            <Home size={12} /> Catalog
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+          <button 
+            onClick={() => navigate(-1)}
+            style={{ 
+              background: "#f1f5f9", border: "none", borderRadius: "50%", 
+              width: 32, height: 32, display: "flex", alignItems: "center", 
+              justifyContent: "center", cursor: "pointer", color: "#64748b" 
+            }}
+            title="Go Back"
+          >
+            <ArrowLeft size={18} />
           </button>
-          {ancestors.map((anc) => (
-            <React.Fragment key={anc._id}>
-              <ChevronRight size={11} />
-              <button onClick={() => navigate(`/student-dashboard/catalog/subject/${anc.slug}`)}
-                style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12,
-                  color: "#6366f1", padding: 0 }}>
-                {anc.emoji} {anc.name}
-              </button>
-            </React.Fragment>
-          ))}
-          <ChevronRight size={11} />
-          <span style={{ color: "#374151", fontWeight: 600 }}>{node.emoji} {node.name}</span>
-        </nav>
+          
+          {/* Breadcrumb */}
+          <nav style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12,
+            color: "#9ca3af", flexWrap: "wrap" }}>
+            <button onClick={() => navigate("/student-dashboard/catalog")}
+              style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12,
+                color: "#6366f1", fontWeight: 600, padding: 0, display: "flex", alignItems: "center", gap: 3 }}>
+              <Home size={12} /> Catalog
+            </button>
+            {ancestors.map((anc) => (
+              <React.Fragment key={anc._id}>
+                <ChevronRight size={11} />
+                <button onClick={() => navigate(`/student-dashboard/catalog/subject/${anc.slug}`)}
+                  style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12,
+                    color: "#6366f1", padding: 0 }}>
+                  {anc.emoji} {anc.name}
+                </button>
+              </React.Fragment>
+            ))}
+            <ChevronRight size={11} />
+            <span style={{ color: "#374151", fontWeight: 600 }}>{node.emoji} {node.name}</span>
+          </nav>
+        </div>
 
         {/* Title row */}
         <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>

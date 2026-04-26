@@ -16,7 +16,7 @@ import {
   resetEnrollment,
   BACKEND_URL,
 } from "../../store";
-import { BookOpen, Layers, Clock, Loader2, User, Play } from "lucide-react";
+import { BookOpen, Layers, Clock, Loader2, User, Play, ArrowLeft } from "lucide-react";
 import PaymentModal from "../../components/PaymentModal";
 
 const CourseViewer = () => {
@@ -80,16 +80,9 @@ const CourseViewer = () => {
   const getFirstModuleId = useCallback(() => {
     if (!course || !course.rootModule) return "root";
 
-    const rootId = course.rootModule.id;
-    if (course.rootModule.children && course.rootModule.children.length > 0) {
-      // NOTE: Using your specific module ID structure (the first child)
-      // Hardcoding a specific ID would break flexibility. We use the first module ID dynamically.
-      // If you need a hardcoded module ID (e.g., 1764632801910.2048), you must ensure it is the first child.
-
-      // Using a dynamic check to ensure the feature is generally useful:
-      return course.rootModule.children[0];
-    }
-    return rootId;
+    // Return the root module ID (Course Introduction) instead of skipping to the first child.
+    // This ensures students see the intro first.
+    return course.rootModule.id;
   }, [course]);
 
   // ** NEW EFFECT FOR AUTOMATIC REDIRECT **
@@ -238,6 +231,18 @@ const CourseViewer = () => {
 
   return (
     <div className="course-viewer-layout">
+      {/* Back Button */}
+      <button 
+        onClick={() => navigate(-1)}
+        style={{ 
+          display: "flex", alignItems: "center", gap: 8, background: "none", 
+          border: "none", color: "#6366f1", fontWeight: 700, fontSize: 14, 
+          cursor: "pointer", marginBottom: 16, padding: 0 
+        }}
+      >
+        <ArrowLeft size={18} /> Back to Results
+      </button>
+
       {/* Background Image Header */}
       <div
         className="course-header-banner"
@@ -317,10 +322,26 @@ const CourseViewer = () => {
         <main className="module-content-area">
           <h2 className="module-title">{introModule.title}</h2>
           <div className="intro-module-content">
-            <p className="intro-description">
+            <p className="intro-description" style={{ fontSize: "1.1rem", color: "#4b5563", marginBottom: "1.5rem" }}>
               {introModule.description || course.description}
             </p>
-            <div className="lesson-text">
+            
+            {/* ── What you will learn ── */}
+            {course.whatULearning && course.whatULearning.length > 0 && (
+              <div style={{ marginBottom: 24, padding: "20px", background: "#f8fafc", borderRadius: 12, border: "1px solid #e2e8f0" }}>
+                <h3 style={{ fontSize: 16, fontWeight: 700, color: "#1f2937", marginBottom: 12 }}>What you will learn</h3>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 20px" }}>
+                  {course.whatULearning.map((item, idx) => (
+                    <div key={idx} style={{ display: "flex", alignItems: "flex-start", gap: 10, fontSize: 14, color: "#475569" }}>
+                      <span style={{ color: "#10b981", fontWeight: 900 }}>✓</span>
+                      <span>{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="lesson-text" style={{ lineHeight: "1.7", color: "#374151" }}>
               {introModule.text ||
                 "Welcome to the course! This is the introduction module. Enroll to start tracking your progress."}
             </div>
