@@ -8,6 +8,7 @@ import {
 import "../css/AdminDashboard.css";
 import "../css/ReviewerDashboard.css";
 import { BACKEND_URL } from "../../store";
+import { marked } from 'marked';
 
 const BASE_URL = `${BACKEND_URL}/api`;
 
@@ -82,13 +83,15 @@ const ModuleCard = ({ mod }) => {
 
                     {/* Text content */}
                     {(mod.type === "text" || mod.type === "intro") && mod.text && (
-                        <div style={{
-                            background: "white", border: "1px solid #e5e7eb", borderRadius: 6,
-                            padding: "12px 14px", fontSize: "0.85rem", color: "#374151",
-                            lineHeight: 1.7, whiteSpace: "pre-wrap", maxHeight: 300, overflowY: "auto",
-                        }}>
-                            {mod.text}
-                        </div>
+                        <div 
+                            className="markdown-content"
+                            style={{
+                                background: "white", border: "1px solid #e5e7eb", borderRadius: 6,
+                                padding: "12px 14px", fontSize: "0.85rem", color: "#374151",
+                                lineHeight: 1.7, wordBreak: "break-word", maxHeight: 300, overflowY: "auto",
+                            }}
+                            dangerouslySetInnerHTML={{ __html: marked.parse(mod.text) }}
+                        />
                     )}
 
                     {/* Video */}

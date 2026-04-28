@@ -1,5 +1,6 @@
 import React from 'react';
 import { CheckCircle, FileText } from 'lucide-react';
+import { marked } from 'marked';
 
 const TextModule = ({ module, onComplete, isCompleted, isProcessing }) => {
     // Handler must use the provided onComplete function to update enrollment status
@@ -15,10 +16,10 @@ const TextModule = ({ module, onComplete, isCompleted, isProcessing }) => {
             <div className="text-content-area">
                 {module.description && <p className="description-text">{module.description}</p>}
                 <div 
-                    className="lesson-markdown"
-                    // In a real application, you would use a markdown parser here:
+                    className="lesson-markdown markdown-content"
+                    style={{ wordBreak: "break-word", lineHeight: "1.7", color: "#374151" }}
                     dangerouslySetInnerHTML={{ 
-                        __html: module.text || (module.type === 'intro' ? 'Welcome to the course! Use the navigation on the left to explore the modules.' : 'No content available for this module.') 
+                        __html: marked.parse(module.text || (module.type === 'intro' ? 'Welcome to the course! Use the navigation on the left to explore the modules.' : 'No content available for this module.')) 
                     }} 
                 />
             </div>

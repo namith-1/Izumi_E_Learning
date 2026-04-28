@@ -80,11 +80,11 @@ exports.submitForReview = async (req, res) => {
 // GET /api/review/my-status — Instructor sees approval status of their courses
 exports.getMyCoursesStatus = async (req, res) => {
     try {
-        let query = { teacherId: req.session.user.id };
+        let query = { teacherId: req.session.user.id, isDeleted: { $ne: true } };
         if (req.session.user.role === 'admin' && req.query.instructorId) {
-            query = { teacherId: req.query.instructorId };
+            query = { teacherId: req.query.instructorId, isDeleted: { $ne: true } };
         } else if (req.session.user.role === 'admin') {
-            query = {}; // Admin sees all if no specific instructor selected
+            query = { isDeleted: { $ne: true } }; // Admin sees all if no specific instructor selected
         }
         const courses = await Course.find(query)
             .select("title subject approvalStatus submittedAt reviewedAt reviewNotes")
@@ -132,7 +132,7 @@ exports.addInstructorNote = async (req, res) => {
 // GET /api/review/queue — Pending courses awaiting review
 exports.getReviewQueue = async (req, res) => {
     try {
-        const courses = await Course.find({ approvalStatus: { $in: ["pending", "awaited"] } })
+        const courses = await Course.find({ approvalStatus: { $in: ["pending", "awaited"] }, isDeleted: { $ne: true } })
             .select("title description subject teacherId submittedAt imageUrl reviewNotes approvalStatus")
             .populate("teacherId", "name email")
             .sort({ submittedAt: 1 }); // oldest first (FIFO)
@@ -148,6 +148,7 @@ exports.getReviewHistory = async (req, res) => {
         const courses = await Course.find({
             reviewerId: req.session.user.id,
             approvalStatus: { $in: ["approved", "rejected", "revision-requested"] },
+            isDeleted: { $ne: true },
         })
             .select("title subject approvalStatus reviewedAt teacherId")
             .populate("teacherId", "name")

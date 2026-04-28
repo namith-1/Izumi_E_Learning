@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { fetchAllCourses, fetchInstructorAnalytics, BACKEND_URL } from "../../store";
-import { Loader2, Send, AlertCircle } from "lucide-react";
+import { Loader2, Send, AlertCircle, Trash2 } from "lucide-react";
 import "../css/ReviewerDashboard.css"; // for status-badge styles
 
 // Helper to calculate completion percentage for a single course
@@ -98,6 +98,25 @@ const MyCourses = () => {
       setSubmitError({ [courseId]: ["Network error."] });
     }
     setSubmitting(null);
+  };
+
+  const handleDeleteCourse = async (courseId) => {
+    if (!window.confirm("Are you sure you want to delete this course? Enrolled students will lose access and it will be removed from the catalog.")) return;
+    
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/courses/${courseId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (res.ok) {
+        dispatch(fetchAllCourses());
+      } else {
+        const data = await res.json();
+        alert(data.message || "Failed to delete course.");
+      }
+    } catch (err) {
+      alert("Network error while deleting course.");
+    }
   };
 
   return (
@@ -262,6 +281,21 @@ const MyCourses = () => {
                         }}
                       >
                         Preview
+                      </button>
+                      <button
+                        className="btn-browse"
+                        onClick={() => handleDeleteCourse(course._id)}
+                        style={{
+                          backgroundColor: "#ef4444",
+                          fontSize: 12,
+                          padding: "6px 12px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                        title="Delete Course"
+                      >
+                        <Trash2 size={14} />
                       </button>
                     </div>
                   </div>

@@ -68,6 +68,11 @@ const courseSchema = new mongoose.Schema(
     // ── Promotional Features ──────────────────────────────────────────────────
     isFeatured: { type: Boolean, default: false, index: true },
     // ────────────────────────────────────────────────────────────────────────
+
+    // ── Soft Delete ─────────────────────────────────────────────────────────
+    isDeleted: { type: Boolean, default: false, index: true },
+    deletedAt: { type: Date, default: null },
+    // ────────────────────────────────────────────────────────────────────────
   },
   { timestamps: true },
 );

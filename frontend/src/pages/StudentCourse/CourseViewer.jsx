@@ -18,6 +18,7 @@ import {
 } from "../../store";
 import { BookOpen, Layers, Clock, Loader2, User, Play, ArrowLeft } from "lucide-react";
 import PaymentModal from "../../components/PaymentModal";
+import { marked } from 'marked';
 
 const CourseViewer = () => {
   // --- 1. HOOK CALLS (MUST BE UNCONDITIONAL) ---
@@ -350,10 +351,13 @@ const CourseViewer = () => {
               </div>
             )}
 
-            <div className="lesson-text" style={{ lineHeight: "1.7", color: "#374151" }}>
-              {introModule.text ||
-                "Welcome to the course! This is the introduction module. Enroll to start tracking your progress."}
-            </div>
+            <div 
+              className="lesson-text markdown-content" 
+              style={{ wordBreak: "break-word", lineHeight: "1.7", color: "#374151" }}
+              dangerouslySetInnerHTML={{
+                __html: marked.parse(introModule.text || "Welcome to the course! This is the introduction module. Enroll to start tracking your progress.")
+              }}
+            />
           </div>
 
           {/* ── About the Instructor ── */}

@@ -234,6 +234,13 @@ exports.getAllCourses = async (req, res) => {
 
     const pipeline = [];
 
+    // Universally filter out soft-deleted courses
+    pipeline.push({
+      $match: {
+        isDeleted: { $ne: true },
+      },
+    });
+
     if (isPublic) {
       pipeline.push({
         $match: {
@@ -358,7 +365,7 @@ exports.getCourseById = async (req, res) => {
     }
 
     // Always include modules; frontend components like CourseViewer/Learn require them.
-    const course = await Course.findById(req.params.id)
+    const course = await Course.findOne({ _id: req.params.id, isDeleted: { $ne: true } })
       .populate("teacherId", "name email")
       .lean();
     console.timeEnd("DB_Get_Course_Detail");
@@ -822,6 +829,7 @@ exports.searchCourses = async (req, res) => {
             { approvalStatus: "approved" },
             { approvalStatus: { $exists: false } },
           ],
+          isDeleted: { $ne: true },
         },
       },
       {
@@ -864,3 +872,31 @@ exports.searchCourses = async (req, res) => {
   }
 };
 
+// Delete Course (Soft Delete)
+exports.deleteCourse = async (req, res) => {
+  try {
+    const course = await Course.findOne({
+      _id: req.params.id,
+      teacherId: req.session.user.id,
+    });
+
+    if (!course) {
+      return res.status(403).json({ message: "Not authorized or course not found" });
+    }
+
+    course.isDeleted = true;
+    course.deletedAt = new Date();
+    await course.save();
+
+    // Invalidate caches
+    await cacheService.delByPattern("courses:catalog:*");
+    await cacheService.del(`course:detail:${req.params.id}`);
+
+    // Remove from Search Engine
+    await searchService.deleteCourse(course._id);
+
+    res.json({ message: "Course deleted successfully", course });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};

@@ -125,6 +125,7 @@ router.post("/", isAuthenticated, isTeacher, courseController.createCourse);
  *       200: { description: Course updated }
  */
 router.put("/:id", isAuthenticated, isTeacher, courseController.updateCourse);
+router.delete("/:id", isAuthenticated, isTeacher, courseController.deleteCourse);
 router.use("/", require("./mediaUpload")); // Mount media upload routes
 
 module.exports = router;

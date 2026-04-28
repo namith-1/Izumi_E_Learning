@@ -110,3 +110,55 @@ video,
 }
 
 /* ... the rest of your logo and card CSS ... */
+
+/* Markdown Content Styling */
+.markdown-content {
+  text-align: left;
+}
+.markdown-content h1, .markdown-content h2, .markdown-content h3, .markdown-content h4 {
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  color: #111827;
+  font-weight: 700;
+}
+.markdown-content h1 { font-size: 1.8em; }
+.markdown-content h2 { font-size: 1.5em; }
+.markdown-content h3 { font-size: 1.3em; }
+.markdown-content p {
+  margin-bottom: 1em;
+}
+.markdown-content ul, .markdown-content ol {
+  margin-bottom: 1em;
+  padding-left: 2em;
+}
+.markdown-content li {
+  margin-bottom: 0.5em;
+}
+.markdown-content code {
+  background: #f3f4f6;
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.9em;
+  color: #ef4444;
+}
+.markdown-content pre {
+  background: #1f2937;
+  color: #f9fafb;
+  padding: 1em;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin-bottom: 1em;
+}
+.markdown-content pre code {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+}
+.markdown-content blockquote {
+  border-left: 4px solid #d1d5db;
+  padding-left: 1em;
+  margin-left: 0;
+  color: #4b5563;
+  font-style: italic;
+}
