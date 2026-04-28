@@ -2,6 +2,7 @@ const Course = require("../models/Course");
 const Enrollment = require("../models/Enrollment");
 const Teacher = require("../models/Teacher");
 const emailService = require("../services/emailService");
+const cacheService = require("../services/cacheService");
 
 // ──────────────────────────────────────────────────────────────────────────────
 // AUTOMATED PRE-CHECKS — runs before a course can be submitted for review
@@ -199,6 +200,9 @@ exports.approveCourse = async (req, res) => {
         course.reviewedAt = new Date();
         await course.save();
 
+        await cacheService.delByPattern("courses:catalog:*");
+        await cacheService.del(`course:detail:${req.params.id}`);
+
         // Send Email Notification (with isUpdate flag)
         if (course.teacherId && course.teacherId.email) {
             emailService.sendCourseStatusEmail(
@@ -242,6 +246,9 @@ exports.rejectCourse = async (req, res) => {
         course.reviewedAt = new Date();
         await course.save();
 
+        await cacheService.delByPattern("courses:catalog:*");
+        await cacheService.del(`course:detail:${req.params.id}`);
+
         // Send Email Notification
         if (course.teacherId && course.teacherId.email) {
             emailService.sendCourseStatusEmail(
@@ -283,6 +290,9 @@ exports.requestRevision = async (req, res) => {
         course.reviewerId = req.session.user.id;
         course.reviewedAt = new Date();
         await course.save();
+
+        await cacheService.delByPattern("courses:catalog:*");
+        await cacheService.del(`course:detail:${req.params.id}`);
 
         // Send Email Notification
         if (course.teacherId && course.teacherId.email) {

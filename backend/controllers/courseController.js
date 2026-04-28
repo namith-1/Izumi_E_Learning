@@ -196,7 +196,7 @@ exports.createCourse = async (req, res) => {
     const weightWarning = checkWeightSum(modules);
     
     // Invalidate Kurs catalog cache
-    await cacheService.del("courses:catalog");
+    await cacheService.delByPattern("courses:catalog:*");
     
     // Sync to Search Engine
     await searchService.syncCourse(newCourse);
@@ -220,16 +220,21 @@ exports.getAllCourses = async (req, res) => {
       ? subjectsParam.split(",").map((s) => s.trim()).filter(Boolean)
       : [];
 
+    const userRole = req.session?.user?.role;
+    const isPublic = userRole !== "teacher" && userRole !== "admin";
+
     // Cache key includes subjects so different preference sets are cached separately
     const subjectsKey = subjectList.length ? subjectList.sort().join("|") : "all";
     const cacheKey    = `courses:catalog:p${page}:l${limit}:s${subjectsKey}`;
-    const cachedData  = await cacheService.get(cacheKey);
-    if (cachedData) return res.json(cachedData);
+    
+    if (isPublic) {
+      const cachedData  = await cacheService.get(cacheKey);
+      if (cachedData) return res.json(cachedData);
+    }
 
     const pipeline = [];
 
-    const userRole = req.session?.user?.role;
-    if (userRole !== "teacher" && userRole !== "admin") {
+    if (isPublic) {
       pipeline.push({
         $match: {
           $or: [
@@ -237,6 +242,17 @@ exports.getAllCourses = async (req, res) => {
             { approvalStatus: { $exists: false } },
           ],
         },
+      });
+    } else if (userRole === "teacher") {
+      // Teachers should only see approved courses AND their own courses
+      pipeline.push({
+        $match: {
+          $or: [
+            { approvalStatus: "approved" },
+            { approvalStatus: { $exists: false } },
+            { teacherId: new mongoose.Types.ObjectId(req.session.user.id) }
+          ]
+        }
       });
     }
 
@@ -278,7 +294,9 @@ exports.getAllCourses = async (req, res) => {
     );
 
     const courses = await Course.aggregate(pipeline);
-    await cacheService.set(cacheKey, courses, 600);
+    if (isPublic) {
+      await cacheService.set(cacheKey, courses, 600);
+    }
     res.json(courses);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -564,7 +582,7 @@ exports.updateCourse = async (req, res) => {
     const weightWarning = checkWeightSum(modules);
     
     // Invalidate caches
-    await cacheService.del("courses:catalog");
+    await cacheService.delByPattern("courses:catalog:*");
     await cacheService.del(`course:detail:${req.params.id}`);
     
     // Sync to Search Engine
