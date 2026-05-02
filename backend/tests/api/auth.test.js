@@ -94,7 +94,7 @@ describe("Authentication & Profile API (Comprehensive)", () => {
     test("POST /api/auth/login - Success: Hardcoded Admin", async () => {
       const res = await request(app)
         .post("/api/auth/login")
-        .send({ email: "admin@izumi.com", password: "adminpass", role: "admin" });
+        .send({ email: "admin@izumi.com", password: "admipass", role: "admin" });
       
       expect(res.status).toBe(200);
       expect(res.body.user.role).toBe("admin");
