@@ -90,6 +90,7 @@ describe("Authentication & Profile API (Comprehensive)", () => {
     });
   });
 
+  //new
   describe("Login & Lockout", () => {
     test("POST /api/auth/login - Success: Hardcoded Admin", async () => {
       const res = await request(app)
