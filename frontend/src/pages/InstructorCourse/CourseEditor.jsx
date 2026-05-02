@@ -77,6 +77,7 @@ const initialCourseStructure = {
   courseDescription: "A description for the entire course.",
   subject: "General",
   price: 0,
+  instructorShare: 30,
   passingPolicy: { ...DEFAULT_PASSING_POLICY },
   _id: null,
 };
@@ -927,6 +928,7 @@ const CourseEditor = () => {
         subject: currentCourse.subject,
         imageUrl: currentCourse.imageUrl || null,
         price: currentCourse.price || 0,
+        instructorShare: currentCourse.instructorShare ?? 30,
         passingPolicy: currentCourse.passingPolicy || {
           ...DEFAULT_PASSING_POLICY,
         },
@@ -1229,6 +1231,7 @@ const CourseEditor = () => {
           courseDescription: courseStructure.courseDescription,
           subject: courseStructure.subject,
           price: Number(courseStructure.price) || 0,
+          instructorShare: Number(courseStructure.instructorShare) ?? 30,
           rootModule: courseStructure.rootModule,
           modules: courseStructure.modules,
           imageUrl: courseStructure.imageUrl || null,
@@ -1389,8 +1392,9 @@ const CourseEditor = () => {
 
               <div className="form-grid" style={{ gridTemplateColumns: "2fr 1fr", gap: "20px" }}>
                 <div className="form-field">
-                  <label>Course Title <span className="required-star">*</span></label>
+                  <label htmlFor="courseTitle">Course Title <span className="required-star">*</span></label>
                   <input
+                    id="courseTitle"
                     type="text"
                     className={validationErrors.courseTitle ? "input-error" : ""}
                     placeholder="Enter a catchy title..."
@@ -1400,8 +1404,9 @@ const CourseEditor = () => {
                   {validationErrors.courseTitle && <span className="error-text">{validationErrors.courseTitle}</span>}
                 </div>
                 <div className="form-field">
-                  <label>Course Price ($)</label>
+                  <label htmlFor="coursePrice">Course Price ($)</label>
                   <input
+                    id="coursePrice"
                     type="number"
                     min="0"
                     step="0.01"
@@ -1413,6 +1418,43 @@ const CourseEditor = () => {
                   {validationErrors.price && <span className="error-text">{validationErrors.price}</span>}
                 </div>
               </div>
+
+              {/* ── Revenue Share Slider ──────────────────────────────── */}
+              {Number(courseStructure.price) > 0 && (
+                <div className="form-field" style={{ marginTop: 4 }}>
+                  <label>Your Revenue Share</label>
+                  <div style={{
+                    display: "flex", alignItems: "center", gap: 12,
+                    background: "#f0fdf4", border: "1px solid #bbf7d0",
+                    borderRadius: 10, padding: "12px 16px", marginTop: 4,
+                  }}>
+                    <input
+                      type="range"
+                      min="0" max="100" step="1"
+                      value={courseStructure.instructorShare ?? 30}
+                      onChange={(e) => handleCourseMetaChange("instructorShare", Number(e.target.value))}
+                      style={{ flex: 1, accentColor: "#16a34a", cursor: "pointer" }}
+                    />
+                    <span style={{
+                      fontWeight: 700, fontSize: 16, color: "#15803d",
+                      minWidth: 48, textAlign: "center",
+                    }}>
+                      {courseStructure.instructorShare ?? 30}%
+                    </span>
+                  </div>
+                  <div style={{
+                    display: "flex", justifyContent: "space-between",
+                    fontSize: 12, color: "#6b7280", marginTop: 6, padding: "0 4px",
+                  }}>
+                    <span>💰 You earn: <strong style={{ color: "#15803d" }}>
+                      ${((Number(courseStructure.price) || 0) * (courseStructure.instructorShare ?? 30) / 100).toFixed(2)}
+                    </strong></span>
+                    <span>🏢 Platform: <strong style={{ color: "#6366f1" }}>
+                      ${((Number(courseStructure.price) || 0) * (100 - (courseStructure.instructorShare ?? 30)) / 100).toFixed(2)}
+                    </strong></span>
+                  </div>
+                </div>
+              )}
 
               <div className="form-field">
                 <label>Subject / Category <span className="required-star">*</span></label>

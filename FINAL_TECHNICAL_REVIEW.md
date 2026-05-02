@@ -21,10 +21,13 @@ We transitioned the database from a "Collection Scan" (Slow) architecture to an 
     - **Revenue Analytics**: 285ms → **63ms** (78% Faster).
 - **Selective Projection**: Implemented `.select('-modules')` for list-based requests to reduce network payload by ~80%.
 
-### B. MeiliSearch Integration
-Rather than using standard RegEx (which slows down as the database grows), we integrated **MeiliSearch** for the Course Catalog.
-- **O(1) Keyword Indexing**: Fuzzy search and instant results.
-- **Impact**: Provides a "Google-style" search experience for students even with thousands of courses.
+### B. Atlas Search (Lucene-Powered, Solr-Class)
+We integrated **MongoDB Atlas Search** for the Course Catalog — powered by **Apache Lucene**, the same engine used by **Apache Solr** and Elasticsearch.
+- **Fuzzy Matching & Typo Tolerance**: Handles misspellings (e.g., "progamming" → "Programming") with configurable edit distance.
+- **Relevance Scoring**: Results are ranked by search relevance with field-level boosting (title 3×, subject 2×, description 1×).
+- **Zero Infrastructure Overhead**: Runs natively within MongoDB Atlas — no separate Solr/Elasticsearch server needed.
+- **Graceful Fallback**: If Atlas Search is unavailable, the system automatically falls back to MongoDB regex search.
+- **Impact**: Provides a "Google-style" search experience with instant, typo-tolerant results.
 
 ---
 

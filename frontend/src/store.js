@@ -250,7 +250,6 @@ export const searchCourses = createAsyncThunk(
   async ({ q, page = 1, limit = 12, append = false } = {}, { rejectWithValue }) => {
     try {
       const data = await apiRequest(`/courses/search?q=${q}&page=${page}&limit=${limit}`, "GET");
-      // Meilisearch returns { hits: [], ... }
       return { courses: data.hits || [], append, page, q };
     } catch (err) {
       return rejectWithValue(err.message);

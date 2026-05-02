@@ -152,8 +152,9 @@ const Login = () => {
 
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label>Email Address</label>
+              <label htmlFor="email">Email Address</label>
               <input
+                id="email"
                 type="email"
                 name="email"
                 className="form-input"
@@ -164,8 +165,9 @@ const Login = () => {
             </div>
 
             <div className="form-group">
-              <label>Password</label>
+              <label htmlFor="password">Password</label>
               <input
+                id="password"
                 type="password"
                 name="password"
                 className="form-input"
