@@ -301,9 +301,7 @@ app.set("io", io);
 // 2. Global Middlewares
 connectDB();
 
-// Initialize Search Engine Settings
-const searchService = require("./services/searchService");
-searchService.updateSettings();
+
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

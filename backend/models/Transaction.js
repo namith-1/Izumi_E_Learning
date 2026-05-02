@@ -22,6 +22,9 @@ const transactionSchema = new mongoose.Schema(
       index: true,
     },
     amount: { type: Number, required: true, min: 0 },
+    // Revenue split (recorded at time of purchase)
+    instructorAmount: { type: Number, default: 0, min: 0 },
+    platformAmount: { type: Number, default: 0, min: 0 },
     currency: { type: String, default: "USD", uppercase: true, trim: true },
     paymentMethod: {
       type: String,

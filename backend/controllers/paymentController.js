@@ -35,7 +35,7 @@ exports.checkoutStudentPayment = async (req, res) => {
       return res.status(400).json({ message: "courseId is required." });
 
     const course = await Course.findById(courseId).select(
-      "_id teacherId price",
+      "_id teacherId price instructorShare",
     );
     if (!course) return res.status(404).json({ message: "Course not found." });
 
@@ -49,12 +49,20 @@ exports.checkoutStudentPayment = async (req, res) => {
         .status(400)
         .json({ message: "Already enrolled in this course." });
 
+    // ── Revenue split calculation ────────────────────────────────────────
+    const totalAmount = course.price || 0;
+    const sharePercent = course.instructorShare ?? 30; // default 30%
+    const instructorAmount = parseFloat(((totalAmount * sharePercent) / 100).toFixed(2));
+    const platformAmount = parseFloat((totalAmount - instructorAmount).toFixed(2));
+
     const transaction = await Transaction.create({
       reference: buildReference(),
       courseId: course._id,
       studentId,
       teacherId: course.teacherId,
-      amount: course.price || 0,
+      amount: totalAmount,
+      instructorAmount,
+      platformAmount,
       currency,
       paymentMethod,
       status: "paid",
@@ -285,14 +293,16 @@ exports.getTeacherPaymentSummary = async (req, res) => {
           _id: null,
           totalTransactions: { $sum: 1 },
           grossRevenue: { $sum: "$amount" },
+          instructorRevenue: { $sum: { $ifNull: ["$instructorAmount", "$amount"] } },
+          platformRevenue: { $sum: { $ifNull: ["$platformAmount", 0] } },
           releasedPayouts: {
             $sum: {
-              $cond: [{ $eq: ["$payoutStatus", "released"] }, "$amount", 0],
+              $cond: [{ $eq: ["$payoutStatus", "released"] }, { $ifNull: ["$instructorAmount", "$amount"] }, 0],
             },
           },
           pendingPayouts: {
             $sum: {
-              $cond: [{ $eq: ["$payoutStatus", "pending"] }, "$amount", 0],
+              $cond: [{ $eq: ["$payoutStatus", "pending"] }, { $ifNull: ["$instructorAmount", "$amount"] }, 0],
             },
           },
         },
@@ -302,6 +312,8 @@ exports.getTeacherPaymentSummary = async (req, res) => {
       summary || {
         totalTransactions: 0,
         grossRevenue: 0,
+        instructorRevenue: 0,
+        platformRevenue: 0,
         releasedPayouts: 0,
         pendingPayouts: 0,
       },

@@ -33,7 +33,6 @@
     "helmet": "^8.1.0",
     "install": "^0.13.0",
     "ioredis": "^5.10.1",
-    "meilisearch": "^0.57.0",
     "mongoose": "^8.23.0",
     "morgan": "^1.10.1",
     "multer": "^1.4.5-lts.2",

@@ -3,7 +3,7 @@ const Course = require("../models/Course");
 const Teacher = require("../models/Teacher");
 const mongoose = require("mongoose");
 const cacheService = require("../services/cacheService");
-const searchService = require("../services/searchService");
+
 const Enrollment = require("../models/Enrollment");
 
 // ─── Helper: validate that graded module weights sum to ~100 ────────────────
@@ -174,6 +174,7 @@ exports.createCourse = async (req, res) => {
       imageUrl,
       rootModule,
       price,
+      instructorShare,
       modules,
       passingPolicy,  // NEW: grading policy from instructor
     } = req.body;
@@ -190,6 +191,7 @@ exports.createCourse = async (req, res) => {
       rootModule,
       modules,
       price,
+      instructorShare: instructorShare !== undefined ? instructorShare : 30,
       passingPolicy: passingPolicy || undefined, // use schema defaults if not provided
       teacherId: req.session.user.id,
     });
@@ -198,9 +200,6 @@ exports.createCourse = async (req, res) => {
     
     // Invalidate Kurs catalog cache
     await cacheService.delByPattern("courses:catalog:*");
-    
-    // Sync to Search Engine
-    await searchService.syncCourse(newCourse);
     
     res.status(201).json({ ...newCourse.toObject(), weightWarning });
   } catch (err) {
@@ -543,6 +542,7 @@ exports.updateCourse = async (req, res) => {
       rootModule,
       modules,
       price,
+      instructorShare,
       passingPolicy,  // NEW: grading policy update
     } = req.body;
 
@@ -555,6 +555,9 @@ exports.updateCourse = async (req, res) => {
       rootModule,
       modules,
     };
+    if (instructorShare !== undefined) {
+      updatePayload.instructorShare = instructorShare;
+    }
     if (passingPolicy !== undefined) {
       updatePayload.passingPolicy = passingPolicy;
     }
@@ -592,9 +595,6 @@ exports.updateCourse = async (req, res) => {
     // Invalidate caches
     await cacheService.delByPattern("courses:catalog:*");
     await cacheService.del(`course:detail:${req.params.id}`);
-    
-    // Sync to Search Engine
-    await searchService.syncCourse(updatedCourse);
     
     const resubmitted = updatePayload.approvalStatus === "awaited";
     res.json({ 
@@ -792,17 +792,17 @@ exports.getCourseAnalytics = async (req, res) => {
  * @swagger
  * /api/courses/search:
  *   get:
- *     summary: Search courses using Meilisearch
+ *     summary: Search courses using Atlas Search (Lucene-powered)
  *     tags: [Courses]
  *     parameters:
  *       - in: query
  *         name: q
  *         schema:
  *           type: string
- *         description: Search query
+ *         description: Search query (supports fuzzy matching and typo tolerance)
  *     responses:
  *       200:
- *         description: Search results
+ *         description: Search results with relevance scoring
  *         content:
  *           application/json:
  *             schema:
@@ -813,14 +813,85 @@ exports.searchCourses = async (req, res) => {
   if (!q?.trim()) return res.json({ hits: [] });
 
   try {
-    // Try Meilisearch first
-    const results = await searchService.search(q, { limit: 1000, offset: 0 });
+    // ── PRIMARY: MongoDB Atlas Search (Lucene-powered, like Solr) ───────────
+    const atlasResults = await Course.aggregate([
+      {
+        $search: {
+          index: "courses_search",
+          compound: {
+            should: [
+              {
+                text: {
+                  query: q,
+                  path: "title",
+                  fuzzy: { maxEdits: 2, prefixLength: 1 },
+                  score: { boost: { value: 3 } },
+                },
+              },
+              {
+                text: {
+                  query: q,
+                  path: "subject",
+                  fuzzy: { maxEdits: 2, prefixLength: 1 },
+                  score: { boost: { value: 2 } },
+                },
+              },
+              {
+                text: {
+                  query: q,
+                  path: "description",
+                  fuzzy: { maxEdits: 1, prefixLength: 2 },
+                },
+              },
+            ],
+            minimumShouldMatch: 1,
+          },
+        },
+      },
+      // Filter: only approved + not deleted
+      {
+        $match: {
+          $or: [
+            { approvalStatus: "approved" },
+            { approvalStatus: { $exists: false } },
+          ],
+          isDeleted: { $ne: true },
+        },
+      },
+      // Enrich with instructor name
+      {
+        $lookup: {
+          from: "teachers",
+          localField: "teacherId",
+          foreignField: "_id",
+          as: "teacherDetails",
+        },
+      },
+      { $unwind: { path: "$teacherDetails", preserveNullAndEmptyArrays: true } },
+      {
+        $project: {
+          _id: 1, title: 1, description: 1, subject: 1,
+          imageUrl: 1, rating: 1, createdAt: 1, teacherId: 1,
+          approvalStatus: 1,
+          instructorName: { $ifNull: ["$teacherDetails.name", "Izumi Instructor"] },
+          rootModule: 1,
+          price: 1,
+          score: { $meta: "searchScore" },
+        },
+      },
+      { $limit: 100 },
+    ]);
 
-    if (results.hits && results.hits.length > 0) {
-      return res.json(results);
+    if (atlasResults.length > 0) {
+      return res.json({ hits: atlasResults });
     }
+  } catch (atlasErr) {
+    // Atlas Search index not configured — fall through to regex fallback
+    console.warn("[Search] Atlas Search unavailable, using regex fallback:", atlasErr.message);
+  }
 
-    // ── Meilisearch empty or unavailable → MongoDB regex fallback ───────────
+  // ── FALLBACK: MongoDB regex search ───────────────────────────────────────
+  try {
     const regex = new RegExp(q.trim().split(/\s+/).join("|"), "i");
 
     const courses = await Course.aggregate([
@@ -866,7 +937,6 @@ exports.searchCourses = async (req, res) => {
       { $limit: 100 },
     ]);
 
-    // Return in same format as Meilisearch so frontend store works unchanged
     res.json({ hits: courses });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -900,9 +970,6 @@ exports.deleteCourse = async (req, res) => {
         await cacheService.del(`student:enrollments:${e.studentId}`);
       }
     }
-
-    // Remove from Search Engine
-    await searchService.deleteCourse(course._id);
 
     res.json({ message: "Course deleted successfully", course });
   } catch (err) {

@@ -21,6 +21,8 @@ const courseSchema = new mongoose.Schema(
     rootModule: { type: Object, required: true },
 
     price: { type: Number, default: 0, min: 0 },
+    // Revenue share: percentage of course price that goes to the instructor (rest → platform)
+    instructorShare: { type: Number, default: 30, min: 0, max: 100 },
     // Flat map for O(1) lookups
     modules: { type: Map, of: Object, required: true },
 
