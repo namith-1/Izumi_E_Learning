@@ -231,6 +231,10 @@ export const fetchAllCourses = createAsyncThunk(
     condition: (args = {}, { getState }) => {
       const { courses } = getState();
       const isAppend = args?.append === true;
+      const subjects = args?.subjects || [];
+
+      // If specific subjects are requested, always fetch (don't block)
+      if (subjects.length > 0) return true;
 
       // STRICT BLOCK: If we're already initialized for this session, and we already have data, BLOCK the call.
       if (courses.isSessionInitialized && !isAppend && courses.list?.length > 0) {
@@ -318,47 +322,10 @@ export const fetchSubjectTree = createAsyncThunk(
   }
 );
 
-// Helper to load/save catalog cache
-const CAT_CACHE_KEY = "izumi_catalog_cache";
-const loadCatalogCache = () => {
-  try {
-    const cached = sessionStorage.getItem(CAT_CACHE_KEY);
-    return cached ? JSON.parse(cached) : null;
-  } catch (e) {
-    return null;
-  }
-};
-
-const saveCatalogCache = (list) => {
-  try {
-    sessionStorage.setItem(
-      CAT_CACHE_KEY,
-      JSON.stringify({ list, timestamp: Date.now() }),
-    );
-  } catch (e) {}
-};
-
-const initialCatalog = loadCatalogCache();
-
-// Helper to load/save enrolled courses cache
-const ENROLLED_CACHE_KEY = "izumi_enrolled_cache";
-const loadEnrolledCache = () => {
-  try {
-    const cached = sessionStorage.getItem(ENROLLED_CACHE_KEY);
-    return cached ? JSON.parse(cached) : null;
-  } catch (e) { return null; }
-};
-const saveEnrolledCache = (list) => {
-  try {
-    sessionStorage.setItem(ENROLLED_CACHE_KEY, JSON.stringify({ list, timestamp: Date.now() }));
-  } catch (e) {}
-};
-const initialEnrolled = loadEnrolledCache();
-
 const courseSlice = createSlice({
   name: "courses",
   initialState: {
-    list: initialCatalog?.list || [],
+    list: [],
     hasMore: true,
     currentPage: 1,
     lastSearchQuery: "",
@@ -368,7 +335,7 @@ const courseSlice = createSlice({
     error: null,
     analyticsData: [],
     subjectTree: [],
-    lastFetched: initialCatalog?.timestamp || null,
+    lastFetched: null,
     isSessionInitialized: false, // Flag: true after very first successful fetch of the session
   },
   reducers: {
@@ -415,7 +382,6 @@ const courseSlice = createSlice({
         state.lastSearchQuery = "";
         state.lastFetched = Date.now();
         state.isSessionInitialized = true; // Mark session as healthy
-        saveCatalogCache(state.list);
       })
       .addCase(fetchAllCourses.rejected, (state, action) => {
         state.loading = false;
@@ -598,8 +564,8 @@ const enrollmentSlice = createSlice({
   name: "enrollment",
   initialState: {
     currentEnrollment: undefined,
-    enrolledList: initialEnrolled?.list || [],
-    lastEnrolledFetch: initialEnrolled?.timestamp || null,
+    enrolledList: [],
+    lastEnrolledFetch: null,
     isSessionInitialized: false, // Flag: true after very first successful fetch of the session
     loading: false,
     error: null,
@@ -673,7 +639,6 @@ const enrollmentSlice = createSlice({
         state.enrolledList = action.payload;
         state.lastEnrolledFetch = Date.now();
         state.isSessionInitialized = true; // Mark session as healthy
-        saveEnrolledCache(state.enrolledList);
       })
       .addCase(fetchEnrolledCourses.rejected, (state, action) => {
         state.loading = false;

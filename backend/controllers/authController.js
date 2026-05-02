@@ -134,6 +134,8 @@ exports.register = async (req, res) => {
         name: newUser.name,
         email: newUser.email,
         profilePic: newUser.profilePic || "",
+        interests: newUser.interests || [],
+        specialization: newUser.specialization || [],
       };
 
       res.status(201).json({
@@ -306,6 +308,8 @@ exports.login = async (req, res) => {
         name: user.name,
         email: user.email,
         profilePic: user.profilePic || "",
+        interests: user.interests || [],
+        specialization: user.specialization || [],
       };
 
       // Successful login — clear any recorded attempts for this user (students/teachers)

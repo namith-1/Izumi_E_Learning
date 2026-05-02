@@ -4,6 +4,7 @@ const Teacher = require("../models/Teacher");
 const mongoose = require("mongoose");
 const cacheService = require("../services/cacheService");
 const searchService = require("../services/searchService");
+const Enrollment = require("../models/Enrollment");
 
 // ─── Helper: validate that graded module weights sum to ~100 ────────────────
 const checkWeightSum = (modules) => {
@@ -891,6 +892,14 @@ exports.deleteCourse = async (req, res) => {
     // Invalidate caches
     await cacheService.delByPattern("courses:catalog:*");
     await cacheService.del(`course:detail:${req.params.id}`);
+
+    // Invalidate caches for all students enrolled in this course
+    const enrollments = await Enrollment.find({ courseId: course._id }).select('studentId').lean();
+    for (const e of enrollments) {
+      if (e.studentId) {
+        await cacheService.del(`student:enrollments:${e.studentId}`);
+      }
+    }
 
     // Remove from Search Engine
     await searchService.deleteCourse(course._id);

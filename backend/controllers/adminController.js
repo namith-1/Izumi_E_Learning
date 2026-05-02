@@ -98,8 +98,12 @@ const clearUserCache = async () => {
     await cacheService.del("admin:users_analytics");
 };
 
-const clearCourseCache = async () => {
+const clearCourseCache = async (courseId = null) => {
     await cacheService.del("admin:courses");
+    await cacheService.delByPattern("courses:catalog:*");
+    if (courseId) {
+        await cacheService.del(`course:detail:${courseId}`);
+    }
 };
 
 // 2. Get All Users (Split by role + Analytics for Teachers)
@@ -229,9 +233,14 @@ exports.updateUser = async (req, res) => {
 // 5. Course CRUD - Delete
 exports.deleteCourse = async (req, res) => {
     try {
+        const enrollments = await Enrollment.find({ courseId: req.params.id }).select('studentId').lean();
+        for (const e of enrollments) {
+            if (e.studentId) await cacheService.del(`student:enrollments:${e.studentId}`);
+        }
+
         await Course.findByIdAndDelete(req.params.id);
         await Enrollment.deleteMany({ courseId: req.params.id });
-        await clearCourseCache();
+        await clearCourseCache(req.params.id);
         res.json({ message: 'Course deleted successfully' });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -350,6 +359,7 @@ exports.getAllCoursesAdmin = async (req, res) => {
 exports.updateCourseAdmin = async (req, res) => {
     try {
         const updatedCourse = await Course.findByIdAndUpdate(req.params.id, req.body, { new: true }).lean();
+        await clearCourseCache(req.params.id);
         res.json(updatedCourse);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -444,7 +454,7 @@ exports.updateCourseStatusAdmin = async (req, res) => {
             { approvalStatus: status, reviewedAt: new Date(), reviewerId: req.session.user.id },
             { new: true }
         ).lean();
-        await clearCourseCache();
+        await clearCourseCache(req.params.id);
         res.json(updated);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -458,7 +468,7 @@ exports.toggleCourseFeatured = async (req, res) => {
         if (!course) return res.status(404).json({ message: 'Course not found' });
         course.isFeatured = !course.isFeatured;
         await course.save();
-        await clearCourseCache();
+        await clearCourseCache(req.params.id);
         res.json({ isFeatured: course.isFeatured });
     } catch (err) {
         res.status(500).json({ error: err.message });

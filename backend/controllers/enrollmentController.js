@@ -267,6 +267,7 @@ exports.getMyEnrolledCourses = async (req, res) => {
     })
       .populate({
         path: "courseId",
+        match: { isDeleted: { $ne: true } },
         select: "title description subject teacherId rating imageUrl rootModule modules passingPolicy",
         populate: { path: "teacherId", select: "name" },
       })
