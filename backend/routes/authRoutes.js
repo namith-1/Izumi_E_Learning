@@ -180,7 +180,12 @@ router.get(
     const redirectUrl =
       (process.env.FRONTEND_URL || "http://localhost:5173") +
       "/student-dashboard";
-    res.redirect(redirectUrl);
+    req.session.save((err) => {
+      if (err) {
+        return res.redirect((process.env.FRONTEND_URL || "http://localhost:5173") + "/login");
+      }
+      res.redirect(redirectUrl);
+    });
   },
 );
 module.exports = router;

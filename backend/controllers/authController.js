@@ -11,6 +11,15 @@ const ADMIN_PASSWORD = "adminpass";
 // Use a valid MongoDB ObjectId format for the mock user
 const MOCK_ADMIN_ID = "60c728362d294d1f88c88888";
 
+const saveSession = (req, res, successStatus, payload) => {
+  req.session.save((err) => {
+    if (err) {
+      return res.status(500).json({ error: "Session save failed" });
+    }
+    return res.status(successStatus).json(payload);
+  });
+};
+
 // Helper to get the correct model based on role
 const getModel = (role) => {
   if (role === "student") return Student;
@@ -138,7 +147,7 @@ exports.register = async (req, res) => {
         specialization: newUser.specialization || [],
       };
 
-      res.status(201).json({
+      saveSession(req, res, 201, {
         message: "Registration successful",
         user: req.session.user,
       });
@@ -240,7 +249,7 @@ exports.login = async (req, res) => {
         name: "Izumi Admin",
         email: ADMIN_EMAIL,
       };
-      res.json({
+      saveSession(req, res, 200, {
         message: "Logged in successfully",
         user: req.session.user,
       });
@@ -326,7 +335,10 @@ exports.login = async (req, res) => {
         console.error("Failed to clear attempts", e && e.message);
       }
 
-      res.json({ message: "Logged in successfully", user: req.session.user });
+      saveSession(req, res, 200, {
+        message: "Logged in successfully",
+        user: req.session.user,
+      });
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
