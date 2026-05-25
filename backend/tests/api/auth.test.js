@@ -112,6 +112,24 @@ describe("Authentication & Profile API (Comprehensive)", () => {
       
       expect(res.status).toBe(200);
       expect(res.body.message).toBe("Logged in successfully");
+      expect(res.body.token).toBeTruthy();
+    });
+
+    test("GET /api/auth/me - Accepts bearer token without session cookie", async () => {
+      const bcrypt = require("bcryptjs");
+      const hashedPassword = await bcrypt.hash("secure123", 10);
+      await Student.create({ name: "Token User", email: "token@test.com", password: hashedPassword });
+
+      const loginRes = await request(app)
+        .post("/api/auth/login")
+        .send({ email: "token@test.com", password: "secure123", role: "student" });
+
+      const res = await request(app)
+        .get("/api/auth/me")
+        .set("Authorization", `Bearer ${loginRes.body.token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.user.email).toBe("token@test.com");
     });
 
     test("POST /api/auth/login - Fail: Invalid credentials", async () => {

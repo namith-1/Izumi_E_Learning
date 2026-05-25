@@ -11,6 +11,68 @@ import {
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
 // Derived backend root for asset loading (e.g., images)
 export const BACKEND_URL = BASE_URL.replace(/\/api$/, "");
+const AUTH_TOKEN_KEY = "izumi_auth_token";
+
+const getAuthToken = () => {
+  try {
+    return localStorage.getItem(AUTH_TOKEN_KEY);
+  } catch {
+    return null;
+  }
+};
+
+export const getStoredAuthToken = () => getAuthToken();
+
+const setAuthToken = (token) => {
+  try {
+    if (token) localStorage.setItem(AUTH_TOKEN_KEY, token);
+  } catch {
+    // Storage can be unavailable in private/browser-restricted contexts.
+  }
+};
+
+export const persistAuthToken = (token) => setAuthToken(token);
+
+const clearAuthToken = () => {
+  try {
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+  } catch {
+    // Storage can be unavailable in private/browser-restricted contexts.
+  }
+};
+
+const normalizeErrorMessage = (error, fallback) => {
+  if (typeof error === "string") return error;
+  if (error?.message) return error.message;
+  if (error?.error) return error.error;
+  return fallback;
+};
+
+const installAuthenticatedFetch = () => {
+  if (typeof window === "undefined" || window.__izumiAuthFetchInstalled) return;
+
+  const originalFetch = window.fetch.bind(window);
+  window.fetch = (input, init = {}) => {
+    const token = getAuthToken();
+    const url = typeof input === "string" ? input : input?.url;
+    const shouldAttachToken = token && url && url.startsWith(BACKEND_URL);
+
+    if (!shouldAttachToken) {
+      return originalFetch(input, init);
+    }
+
+    const headers = new Headers(init.headers || (input instanceof Request ? input.headers : undefined));
+    if (!headers.has("Authorization")) {
+      headers.set("Authorization", `Bearer ${token}`);
+    }
+
+    return originalFetch(input, { ...init, headers });
+  };
+
+  window.__izumiAuthFetchInstalled = true;
+};
+
+installAuthenticatedFetch();
 
 /**
  * Universal fetch wrapper.
@@ -22,6 +84,11 @@ const apiRequest = async (endpoint, method = "GET", body = null) => {
     headers: {},
     credentials: "include", // CRITICAL: Allows session cookies
   };
+
+  const token = getAuthToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
 
   // If body is FormData, we let the browser set the boundary and Content-Type
   if (body instanceof FormData) {
@@ -79,9 +146,10 @@ export const registerUser = createAsyncThunk(
   async (userData, { rejectWithValue }) => {
     try {
       const data = await apiRequest("/auth/register", "POST", userData);
+      setAuthToken(data.token);
       return data.user;
     } catch (err) {
-      return rejectWithValue(err.message);
+      return rejectWithValue(normalizeErrorMessage(err, "Registration failed"));
     }
   },
 );
@@ -91,6 +159,7 @@ export const loginUser = createAsyncThunk(
   async (credentials, { rejectWithValue }) => {
     try {
       const data = await apiRequest("/auth/login", "POST", credentials);
+      setAuthToken(data.token);
       return data.user;
     } catch (err) {
       // Pass the whole error object so callers can inspect e.g. blockedUntil
@@ -104,9 +173,11 @@ export const logoutUser = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       await apiRequest("/auth/logout", "POST");
+      clearAuthToken();
       return null;
     } catch (err) {
-      return rejectWithValue(err.message);
+      clearAuthToken();
+      return rejectWithValue(normalizeErrorMessage(err, "Logout failed"));
     }
   },
 );
@@ -114,6 +185,8 @@ export const logoutUser = createAsyncThunk(
 export const checkAuthStatus = createAsyncThunk(
   "auth/checkStatus",
   async (_, { rejectWithValue }) => {
+    if (!getAuthToken()) return null;
+
     try {
       const data = await apiRequest("/auth/me", "GET");
       return data.user;
@@ -123,7 +196,8 @@ export const checkAuthStatus = createAsyncThunk(
       if (err.status === 401) {
         return null;
       }
-      return rejectWithValue(err.message);
+      clearAuthToken();
+      return rejectWithValue(normalizeErrorMessage(err, "Authentication check failed"));
     }
   },
 );
@@ -136,7 +210,7 @@ export const updateStudentProfile = createAsyncThunk(
       const data = await apiRequest("/auth/profile", "PUT", profileData);
       return data.user;
     } catch (err) {
-      return rejectWithValue(err.message);
+      return rejectWithValue(normalizeErrorMessage(err, "Profile update failed"));
     }
   },
 );
@@ -169,7 +243,7 @@ const authSlice = createSlice({
       .addCase(registerUser.rejected, (state, action) => {
         state.loading = false;
         // Ensure error is ALWAYS a string for safe rendering
-        state.error = action.payload?.message || action.payload || "Registration failed";
+        state.error = normalizeErrorMessage(action.payload, "Registration failed");
         state.errorDetail = action.payload;
       })
       .addCase(loginUser.pending, (state) => {
@@ -184,7 +258,7 @@ const authSlice = createSlice({
       .addCase(loginUser.rejected, (state, action) => {
         state.loading = false;
         // String for display, object for logic
-        state.error = action.payload?.message || action.payload || "Login failed";
+        state.error = normalizeErrorMessage(action.payload, "Login failed");
         state.errorDetail = action.payload;
       })
       .addCase(logoutUser.fulfilled, (state) => {

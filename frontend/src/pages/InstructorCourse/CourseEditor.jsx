@@ -32,7 +32,7 @@ import {
 } from "lucide-react";
 import QuizBuilder from "../../components/QuizBuilder";
 import SubjectPicker from "../../components/SubjectPicker";
-import { BACKEND_URL } from "../../store";
+import { BACKEND_URL, getStoredAuthToken } from "../../store";
 import "../css/CourseEditor.css";
 
 // ==========================================
@@ -329,6 +329,8 @@ const VideoUploader = ({ currentUrl, onVideoReady, onError }) => {
 
     xhr.open("POST", `${API_BASE}/api/courses/upload-video`);
     xhr.withCredentials = true;
+    const token = getStoredAuthToken();
+    if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
     xhr.send(formData);
   };
 

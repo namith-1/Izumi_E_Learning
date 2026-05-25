@@ -244,6 +244,7 @@ const sessionMiddleware = require("./middleware/session");
 const securityMiddleware = require("./middleware/security");
 const errorHandler = require("./middleware/errorMiddleware");
 const { isAllowedOrigin } = require("./config/allowedOrigins");
+const { verifyAuthToken } = require("./utils/token");
 
 // Socket handler
 const registerChatHandlers = require("./sockets/chatSocket");
@@ -281,6 +282,14 @@ io.engine.use(sessionMiddleware);
 // Attach session to socket.request (Socket.IO v4 engine middleware)
 io.use((socket, next) => {
   const req = socket.request;
+  if ((!req.session || !req.session.user) && socket.handshake.auth && socket.handshake.auth.token) {
+    const tokenUser = verifyAuthToken(socket.handshake.auth.token);
+    if (tokenUser) {
+      req.session = req.session || {};
+      req.session.user = tokenUser;
+    }
+  }
+
   if (req.session && req.session.user) {
     next();
   } else {

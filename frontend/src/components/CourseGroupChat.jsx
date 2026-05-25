@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSelector } from "react-redux";
 import { io } from "socket.io-client";
-import { BACKEND_URL } from "../store";
+import { BACKEND_URL, getStoredAuthToken } from "../store";
 import { MessageCircle, Send, X, ChevronDown, Users } from "lucide-react";
 
 const API = BACKEND_URL.replace(/\/$/, "");
@@ -95,7 +95,11 @@ const CourseGroupChat = ({ courseId, courseTitle }) => {
 
   // ── Socket setup ────────────────────────────────────────────────────────────
   useEffect(() => {
-    const s = io(API, { withCredentials: true, transports: ["websocket"] });
+    const s = io(API, {
+      withCredentials: true,
+      transports: ["websocket"],
+      auth: { token: getStoredAuthToken() },
+    });
     socketRef.current = s;
     s.emit("join-course-chat", courseId);
     s.on("group-message", (msg) => {

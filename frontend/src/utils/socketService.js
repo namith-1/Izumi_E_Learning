@@ -1,5 +1,5 @@
 import { io } from "socket.io-client";
-import { BACKEND_URL } from "../store";
+import { BACKEND_URL, getStoredAuthToken } from "../store";
 
 const SOCKET_URL = BACKEND_URL;
 
@@ -9,6 +9,7 @@ export const getSocket = () => {
     if (!socket) {
         socket = io(SOCKET_URL, {
             withCredentials: true,
+            auth: { token: getStoredAuthToken() },
             autoConnect: false,
             reconnection: true,
             reconnectionAttempts: 5,

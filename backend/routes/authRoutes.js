@@ -3,6 +3,7 @@ const router = express.Router();
 const authController = require("../controllers/authController");
 const { isAuthenticated } = require("../middleware/authMiddleware"); // Import isAuthenticated
 const upload = require("../middleware/uploadMiddleware");
+const { createAuthToken } = require("../utils/token");
 
 // Use upload.single('profileImage') to handle the "profileImage" field from frontend FormData
 /**
@@ -175,11 +176,12 @@ router.get(
       name: req.user.name,
       email: req.user.email,
     };
+    const token = createAuthToken(req.session.user);
     // Redirect to the frontend dashboard
     // Fallback to localhost if the env variable is missing
     const redirectUrl =
       (process.env.FRONTEND_URL || "http://localhost:5173") +
-      "/student-dashboard";
+      `/student-dashboard?token=${encodeURIComponent(token)}`;
     req.session.save((err) => {
       if (err) {
         return res.redirect((process.env.FRONTEND_URL || "http://localhost:5173") + "/login");

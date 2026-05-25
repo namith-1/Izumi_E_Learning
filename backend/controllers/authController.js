@@ -4,6 +4,7 @@ const Teacher = require("../models/Teacher");
 const Reviewer = require("../models/Reviewer");
 const bcrypt = require("bcryptjs");
 const attemptStore = require("../services/attemptStore");
+const { createAuthToken, getBearerToken, verifyAuthToken } = require("../utils/token");
 
 // --- Hardcoded Admin Credentials and Mock ID ---
 const ADMIN_EMAIL = "admin@izumi.com";
@@ -19,6 +20,12 @@ const saveSession = (req, res, successStatus, payload) => {
     return res.status(successStatus).json(payload);
   });
 };
+
+const authPayload = (user, extra = {}) => ({
+  ...extra,
+  user,
+  token: createAuthToken(user),
+});
 
 // Helper to get the correct model based on role
 const getModel = (role) => {
@@ -147,10 +154,9 @@ exports.register = async (req, res) => {
         specialization: newUser.specialization || [],
       };
 
-      saveSession(req, res, 201, {
+      saveSession(req, res, 201, authPayload(req.session.user, {
         message: "Registration successful",
-        user: req.session.user,
-      });
+      }));
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -249,10 +255,9 @@ exports.login = async (req, res) => {
         name: "Izumi Admin",
         email: ADMIN_EMAIL,
       };
-      saveSession(req, res, 200, {
+      saveSession(req, res, 200, authPayload(req.session.user, {
         message: "Logged in successfully",
-        user: req.session.user,
-      });
+      }));
     });
   }
   // --- END Hardcoded Admin Check ---
@@ -335,10 +340,9 @@ exports.login = async (req, res) => {
         console.error("Failed to clear attempts", e && e.message);
       }
 
-      saveSession(req, res, 200, {
+      saveSession(req, res, 200, authPayload(req.session.user, {
         message: "Logged in successfully",
-        user: req.session.user,
-      });
+      }));
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -444,6 +448,13 @@ exports.logout = (req, res) => {
 
 // Check Current Session (Useful for React useEffect on load)
 exports.me = (req, res) => {
+  if (!req.session.user) {
+    const tokenUser = verifyAuthToken(getBearerToken(req));
+    if (tokenUser) {
+      req.session.user = tokenUser;
+    }
+  }
+
   if (req.session.user) {
     // --- NEW LOGIC: Mock Admin Check (Bypasses DB lookup for session restore) ---
     if (
