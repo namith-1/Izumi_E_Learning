@@ -9,11 +9,17 @@ app.get("/test", (req, res) => res.send("ok"));
 describe("Security Middleware (Comprehensive)", () => {
     describe("CORS Policies", () => {
         test("Should allow specific known origins", async () => {
-            const origins = ["http://localhost:5173", "http://localhost:5000", "https://izumi-e-learning-frontend.onrender.com"];
+            const origins = ["http://localhost:5173", "http://localhost:5000"];
             for (const origin of origins) {
                 const res = await request(app).get("/test").set("Origin", origin);
                 expect(res.headers["access-control-allow-origin"]).toBe(origin);
             }
+        });
+
+        test("Should allow Vercel frontend origins", async () => {
+            const origin = "https://izumi-e-learning.vercel.app";
+            const res = await request(app).get("/test").set("Origin", origin);
+            expect(res.headers["access-control-allow-origin"]).toBe(origin);
         });
 
         test("Should allow requests with no origin (e.g. mobile/postman)", async () => {

@@ -1,24 +1,17 @@
 const cors = require("cors");
 const helmet = require("helmet");
+const { getAllowedOrigins, isAllowedOrigin } = require("../config/allowedOrigins");
 
 // Create a function or array to apply both
 const securityMiddleware = [
   helmet(), // Protects headers
   cors({
     origin: (origin, callback) => {
-      const allowedOrigins = [
-        process.env.CLIENT_URL,
-        process.env.FRONTEND_URL,
-        "https://izumi-e-learning-frontend.onrender.com",
-        "http://localhost:5173",
-        "http://localhost:5174",
-        "http://localhost:5000",
-      ].filter(Boolean).map(url => url.trim().replace(/\/$/, ""));
-      
       // Allow if no origin (like mobile apps/Postman) or if in allowed list
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (isAllowedOrigin(origin)) {
         callback(null, true);
       } else {
+        const allowedOrigins = getAllowedOrigins().concat("https://*.vercel.app");
         console.warn(`[CORS Blocked] Origin: ${origin}. Allowed: ${allowedOrigins.join(", ")}`);
         callback(new Error("Not allowed by CORS"));
       }

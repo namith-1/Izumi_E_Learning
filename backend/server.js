@@ -243,6 +243,7 @@ const setupLogging = require("./middleware/logger");
 const sessionMiddleware = require("./middleware/session");
 const securityMiddleware = require("./middleware/security");
 const errorHandler = require("./middleware/errorMiddleware");
+const { isAllowedOrigin } = require("./config/allowedOrigins");
 
 // Socket handler
 const registerChatHandlers = require("./sockets/chatSocket");
@@ -263,7 +264,13 @@ const FRONTEND_URL =
 // ——— Socket.IO setup ————————————————————————————————————————
 const io = new SocketIO(server, {
   cors: {
-    origin: FRONTEND_URL,
+    origin: (origin, callback) => {
+      if (isAllowedOrigin(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by Socket.IO CORS"));
+      }
+    },
     credentials: true,
   },
 });
