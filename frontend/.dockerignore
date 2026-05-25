@@ -1,0 +1,9 @@
+node_modules
+dist
+npm-debug.log
+.git
+.gitignore
+README.md
+frontend.zip
+eslint.config.js
+vite.config.js

@@ -1,0 +1,651 @@
+// v2/backend/controllers/authController.js
+const Student = require("../models/Student");
+const Teacher = require("../models/Teacher");
+const Reviewer = require("../models/Reviewer");
+const bcrypt = require("bcryptjs");
+const attemptStore = require("../services/attemptStore");
+const { createAuthToken, getRequestToken, verifyAuthToken } = require("../utils/token");
+
+// --- Hardcoded Admin Credentials and Mock ID ---
+const ADMIN_EMAIL = "admin@izumi.com";
+const ADMIN_PASSWORD = "adminpass";
+// Use a valid MongoDB ObjectId format for the mock user
+const MOCK_ADMIN_ID = "60c728362d294d1f88c88888";
+
+const isProductionDeployment = () =>
+  process.env.NODE_ENV === "production" ||
+  process.env.RENDER === "true" ||
+  process.env.FORCE_SECURE_COOKIES === "true";
+
+const setTokenCookie = (res, token) => {
+  res.cookie("izumi_token", token, {
+    httpOnly: false,
+    secure: isProductionDeployment(),
+    sameSite: isProductionDeployment() ? "none" : "lax",
+    maxAge: 14 * 24 * 60 * 60 * 1000,
+    path: "/",
+  });
+};
+
+const sendAuthResponse = (req, res, successStatus, payload) => {
+  setTokenCookie(res, payload.token);
+
+  if (req.session && req.session.save) {
+    req.session.save((err) => {
+      if (err) console.error("Session save failed after JWT login:", err.message);
+    });
+  }
+
+  return res.status(successStatus).json(payload);
+};
+
+const authPayload = (user, extra = {}) => ({
+  ...extra,
+  user,
+  token: createAuthToken(user),
+});
+
+const setSessionUser = (req, user) => {
+  if (req.session) {
+    req.session.user = user;
+  }
+  return user;
+};
+
+// Helper to get the correct model based on role
+const getModel = (role) => {
+  if (role === "student") return Student;
+  if (role === "reviewer") return Reviewer;
+  // Treat 'teacher' and 'admin' (if not mock) as searching the Teacher model
+  if (role === "teacher" || role === "admin") return Teacher;
+  return null;
+};
+
+/**
+ * @swagger
+ * /api/auth/register:
+ *   post:
+ *     summary: Register a new user
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - email
+ *               - password
+ *               - role
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: "John Doe"
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: "john.doe@example.com"
+ *               password:
+ *                 type: string
+ *                 minLength: 6
+ *                 example: "password123"
+ *               role:
+ *                 type: string
+ *                 enum: [student, teacher, reviewer]
+ *                 example: "student"
+ *     responses:
+ *       201:
+ *         description: Registration successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Registration successful"
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Email already exists or invalid input
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Email already exists"
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
+// Register
+exports.register = async (req, res) => {
+  const { name, email, password, role } = req.body;
+
+  try {
+    const Model = getModel(role);
+
+    // Check if user exists
+    const existingUser = await Model.findOne({ email });
+    if (existingUser)
+      return res.status(400).json({ message: "Email already exists" });
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newUser = await Model.create({
+      name,
+      email,
+      password: hashedPassword,
+      resume: role === "teacher" ? (req.file ? req.file.path : req.body.resume) : undefined,
+      linkedIn: role === "teacher" ? req.body.linkedIn : undefined,
+      applicationStatus: role === "teacher" ? "pending" : undefined,
+    });
+
+    // For teachers, do not auto-login. Tell them their application is pending.
+    if (role === "teacher") {
+      return res.status(201).json({
+        message: "Registration successful. Your application is pending review by our team.",
+        user: {
+          id: newUser._id,
+          role: role,
+          name: newUser.name,
+          email: newUser.email,
+          applicationStatus: "pending"
+        }
+      });
+    }
+
+    const sessionUser = setSessionUser(req, {
+        id: newUser._id,
+        role: role,
+        name: newUser.name,
+        email: newUser.email,
+        profilePic: newUser.profilePic || "",
+        interests: newUser.interests || [],
+        specialization: newUser.specialization || [],
+      });
+
+      return sendAuthResponse(req, res, 201, authPayload(sessionUser, {
+        message: "Registration successful",
+      }));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     summary: Login user
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *               - role
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: "john.doe@example.com"
+ *               password:
+ *                 type: string
+ *                 example: "password123"
+ *               role:
+ *                 type: string
+ *                 enum: [student, teacher, reviewer, admin]
+ *                 example: "student"
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Logged in successfully"
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Invalid credentials
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Invalid credentials"
+ *       429:
+ *         description: Too many failed attempts
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Too many attempts. Try again in 60 seconds."
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
+
+// Login
+exports.login = async (req, res) => {
+  const { email, password, role } = req.body;
+
+  // --- NEW LOGIC: Hardcoded Admin Check (Bypasses DB) ---
+  if (
+    role === "admin" &&
+    email === ADMIN_EMAIL &&
+    password === ADMIN_PASSWORD
+  ) {
+    const sessionUser = setSessionUser(req, {
+        id: MOCK_ADMIN_ID,
+        role: "admin",
+        name: "Izumi Admin",
+        email: ADMIN_EMAIL,
+      });
+      return sendAuthResponse(req, res, 200, authPayload(sessionUser, {
+        message: "Logged in successfully",
+      }));
+  }
+  // --- END Hardcoded Admin Check ---
+  let actualRole = role;
+  try {
+    // Build a key that includes role so locking is role-scoped
+    const key = `${actualRole}:${email}`;
+
+    // Only apply blocking logic for students and teachers (role-scoped)
+    if (actualRole === "student" || actualRole === "teacher") {
+      const blocked = await attemptStore.isBlocked(key);
+      if (blocked.blocked) {
+        const blockedUntil =
+          blocked.rec && blocked.rec.blockedUntil
+            ? new Date(blocked.rec.blockedUntil)
+            : null;
+        const remainingMs = blockedUntil
+          ? Math.max(0, blockedUntil.getTime() - Date.now())
+          : 0;
+        return res.status(429).json({
+          message: `Too many attempts. Try again in ${Math.ceil(remainingMs / 1000)} seconds.`,
+          blockedUntil,
+        });
+      }
+    }
+    const Model = getModel(actualRole);
+    if (!Model) return res.status(400).json({ message: "Invalid role" });
+
+    const user = await Model.findOne({ email }).lean();
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      const attemptRec = await attemptStore.recordFailedAttempt(email);
+      if (attemptRec && attemptRec.blockedUntil) {
+        const remainingMs = Math.max(0, new Date(attemptRec.blockedUntil).getTime() - Date.now());
+        return res.status(429).json({
+          message: `Too many attempts. Try again in ${Math.ceil(remainingMs / 1000)} seconds.`,
+        });
+      }
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    if (user.isLocked) {
+      return res.status(403).json({ message: "Account is locked. Please contact support." });
+    }
+
+    // Check application status for teachers
+    if (actualRole === "teacher" && user.applicationStatus !== "approved") {
+      if (user.applicationStatus === "pending") {
+        return res.status(403).json({ message: "Your application is still pending review." });
+      } else if (user.applicationStatus === "rejected") {
+        return res.status(403).json({ message: "Your application has been rejected. Please contact support." });
+      }
+    }
+
+      const sessionUser = setSessionUser(req, {
+        id: user._id,
+        role: actualRole,
+        name: user.name,
+        email: user.email,
+        profilePic: user.profilePic || "",
+        interests: user.interests || [],
+        specialization: user.specialization || [],
+      });
+
+      // Successful login — clear any recorded attempts for this user (students/teachers)
+      try {
+        if (actualRole === "student" || actualRole === "teacher") {
+          await attemptStore.clearAttempts(`${actualRole}:${email}`);
+          if (res && res.locals)
+            res.locals.authAttempt = {
+              key: `${actualRole}:${email}`,
+              cleared: true,
+            };
+        }
+      } catch (e) {
+        console.error("Failed to clear attempts", e && e.message);
+      }
+
+      return sendAuthResponse(req, res, 200, authPayload(sessionUser, {
+        message: "Logged in successfully",
+      }));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     summary: Logout user
+ *     tags: [Authentication]
+ *     responses:
+ *       200:
+ *         description: Logout successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Logged out"
+ *       500:
+ *         description: Logout failed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Logout failed"
+ */
+
+// Logout
+exports.logout = (req, res) => {
+  const isProduction = isProductionDeployment();
+  
+  req.session.destroy((err) => {
+    if (err) return res.status(500).json({ message: "Logout failed" });
+    
+    // Explicitly clear with matching options to ensure browser removes it
+    res.clearCookie("connect.sid", {
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
+      path: "/"
+    });
+    res.clearCookie("izumi_token", {
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
+      path: "/"
+    });
+    
+    res.json({ message: "Logged out" });
+  });
+};
+
+/**
+ * @swagger
+ * /api/auth/me:
+ *   get:
+ *     summary: Get current user session
+ *     tags: [Authentication]
+ *     responses:
+ *       200:
+ *         description: Current user session
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Not authenticated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   type: null
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   type: null
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   type: null
+ *                 message:
+ *                   type: string
+ */
+
+// Check Current Session (Useful for React useEffect on load)
+exports.me = (req, res) => {
+  if (!req.session.user) {
+    const tokenUser = verifyAuthToken(getRequestToken(req));
+    if (tokenUser) {
+      req.session.user = tokenUser;
+    }
+  }
+
+  if (req.session.user) {
+    // --- NEW LOGIC: Mock Admin Check (Bypasses DB lookup for session restore) ---
+    if (
+      req.session.user.id === MOCK_ADMIN_ID &&
+      req.session.user.role === "admin"
+    ) {
+      // Return mock user data directly
+      return res.json({ user: req.session.user });
+    }
+    // --- END Mock Admin Check ---
+
+    // Determine model: use 'teacher' model if the session role is 'admin' for lookup
+    const role =
+      req.session.user.role === "admin" ? "teacher" : req.session.user.role;
+    const Model = getModel(role);
+
+    if (!Model) {
+      return res
+        .status(404)
+        .json({ user: null, message: "Invalid session role." });
+    }
+
+        Model.findById(req.session.user.id)
+      .select("name email profilePic interests specialization")
+      .then((userDoc) => {
+        if (userDoc) {
+          // Ensure the session user object is complete
+          req.session.user.email = userDoc.email;
+          req.session.user.name = userDoc.name;
+          req.session.user.profilePic = userDoc.profilePic || "";
+          req.session.user.interests = userDoc.interests || [];
+          req.session.user.specialization = userDoc.specialization || [];
+          res.json({ user: req.session.user });
+        } else {
+          res.status(404).json({ user: null });
+        }
+      })
+      .catch((err) => {
+        res
+          .status(500)
+          .json({ user: null, message: "Database error fetching user." });
+      });
+  } else {
+    res.status(401).json({ user: null });
+  }
+};
+
+// NEW: Update Profile
+exports.updateProfile = async (req, res) => {
+  try {
+    let { name, currentPassword, newPassword, interests, specialization } = req.body;
+    // FormData sends arrays as JSON strings — parse them
+    if (typeof interests === "string") {
+      try { interests = JSON.parse(interests); } catch { interests = undefined; }
+    }
+    if (typeof specialization === "string") {
+      try { specialization = JSON.parse(specialization); } catch { specialization = undefined; }
+    }
+    const userId = req.session.user.id;
+    const profilePicPath = req.file
+      ? req.file.path
+      : null;
+
+    // --- NEW LOGIC: Block profile update for mock Admin account ---
+    if (userId === MOCK_ADMIN_ID && req.session.user.role === "admin") {
+      return res
+        .status(403)
+        .json({ message: "Cannot update profile for administrative account." });
+    }
+    // --- END Block ---
+
+    // Determine model: use 'teacher' model if the session role is 'admin' for lookup
+    const role =
+      req.session.user.role === "admin" ? "teacher" : req.session.user.role;
+    const Model = getModel(role);
+
+    const user = await Model.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // 1. Verify current password — skip if google user (no password)
+    if (!user.googleId) {
+      if (
+        !currentPassword ||
+        !(await bcrypt.compare(currentPassword, user.password))
+      ) {
+        return res.status(401).json({ message: "Invalid current password." });
+      }
+    }
+
+    // 2. Update name if provided
+    if (name) {
+      user.name = name;
+      req.session.user.name = name; // Update session
+    }
+
+    if (profilePicPath) {
+      user.profilePic = profilePicPath;
+      req.session.user.profilePic = profilePicPath;
+    }
+
+    // 3. Update topic preferences
+    if (role === "student" && Array.isArray(interests)) {
+      user.interests = interests;
+      req.session.user.interests = interests;
+    }
+    if ((role === "teacher" || role === "reviewer") && Array.isArray(specialization)) {
+      user.specialization = specialization;
+      req.session.user.specialization = specialization;
+    }
+
+    // 4. Update password if new one is provided
+    if (newPassword && newPassword.length >= 6) {
+      user.password = await bcrypt.hash(newPassword, 10);
+    } else if (newPassword) {
+      // New password provided but too short
+      return res
+        .status(400)
+        .json({ message: "New password must be at least 6 characters." });
+    }
+
+    await user.save();
+
+    // Return updated session data, maintaining the session role.
+    res.json({
+      message: "Profile updated successfully",
+      user: {
+        id: user._id,
+        role: req.session.user.role,
+        name: user.name,
+        email: user.email,
+        profilePic: user.profilePic || "",
+        interests: user.interests || [],
+        specialization: user.specialization || [],
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message || "Error updating profile." });
+  }
+};
+
+/**
+ * @swagger
+ * /api/auth/teachers:
+ *   get:
+ *     summary: Get all teachers
+ *     tags: [Authentication]
+ *     responses:
+ *       200:
+ *         description: List of teachers
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   _id:
+ *                     type: string
+ *                     example: "60c728362d294d1f88c88888"
+ *                   name:
+ *                     type: string
+ *                     example: "Dr. Smith"
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
+
+// Get all teachers (ID and Name)
+exports.getAllTeachers = async (req, res) => {
+  try {
+    // Find all users in the Teacher collection and only return their _id and name
+    const teachers = await Teacher.find().select("_id name");
+    res.json(teachers);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
