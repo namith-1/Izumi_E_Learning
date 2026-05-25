@@ -99,9 +99,6 @@ jobs:
     needs: [backend-tests, frontend-build]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./frontend
     steps:
       - uses: actions/checkout@v4
 
@@ -109,35 +106,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: './frontend/package-lock.json'
 
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build frontend
-        run: npm run build
-        env:
-          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL || 'https://izumi-e-learning.onrender.com/api' }}
-
-      - name: Add Vercel SPA routing config
-        run: |
-          cat > dist/vercel.json <<'JSON'
-          {
-            "rewrites": [
-              {
-                "source": "/(.*)",
-                "destination": "/index.html"
-              }
-            ]
-          }
-          JSON
-
       - name: Deploy frontend to Vercel
-        run: vercel deploy ./dist --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel deploy --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
