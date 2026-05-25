@@ -4,7 +4,7 @@ const Teacher = require("../models/Teacher");
 const Reviewer = require("../models/Reviewer");
 const bcrypt = require("bcryptjs");
 const attemptStore = require("../services/attemptStore");
-const { createAuthToken, getBearerToken, verifyAuthToken } = require("../utils/token");
+const { createAuthToken, getRequestToken, verifyAuthToken } = require("../utils/token");
 
 // --- Hardcoded Admin Credentials and Mock ID ---
 const ADMIN_EMAIL = "admin@izumi.com";
@@ -12,13 +12,31 @@ const ADMIN_PASSWORD = "adminpass";
 // Use a valid MongoDB ObjectId format for the mock user
 const MOCK_ADMIN_ID = "60c728362d294d1f88c88888";
 
-const saveSession = (req, res, successStatus, payload) => {
-  req.session.save((err) => {
-    if (err) {
-      return res.status(500).json({ error: "Session save failed" });
-    }
-    return res.status(successStatus).json(payload);
+const isProductionDeployment = () =>
+  process.env.NODE_ENV === "production" ||
+  process.env.RENDER === "true" ||
+  process.env.FORCE_SECURE_COOKIES === "true";
+
+const setTokenCookie = (res, token) => {
+  res.cookie("izumi_token", token, {
+    httpOnly: false,
+    secure: isProductionDeployment(),
+    sameSite: isProductionDeployment() ? "none" : "lax",
+    maxAge: 14 * 24 * 60 * 60 * 1000,
+    path: "/",
   });
+};
+
+const sendAuthResponse = (req, res, successStatus, payload) => {
+  setTokenCookie(res, payload.token);
+
+  if (req.session && req.session.save) {
+    req.session.save((err) => {
+      if (err) console.error("Session save failed after JWT login:", err.message);
+    });
+  }
+
+  return res.status(successStatus).json(payload);
 };
 
 const authPayload = (user, extra = {}) => ({
@@ -26,6 +44,13 @@ const authPayload = (user, extra = {}) => ({
   user,
   token: createAuthToken(user),
 });
+
+const setSessionUser = (req, user) => {
+  if (req.session) {
+    req.session.user = user;
+  }
+  return user;
+};
 
 // Helper to get the correct model based on role
 const getModel = (role) => {
@@ -140,11 +165,7 @@ exports.register = async (req, res) => {
       });
     }
 
-    // Auto-login after register for other roles (students, reviewers if allowed)
-    req.session.regenerate((err) => {
-      if (err) return res.status(500).json({ error: "Session regeneration failed" });
-
-      req.session.user = {
+    const sessionUser = setSessionUser(req, {
         id: newUser._id,
         role: role,
         name: newUser.name,
@@ -152,12 +173,11 @@ exports.register = async (req, res) => {
         profilePic: newUser.profilePic || "",
         interests: newUser.interests || [],
         specialization: newUser.specialization || [],
-      };
+      });
 
-      saveSession(req, res, 201, authPayload(req.session.user, {
+      return sendAuthResponse(req, res, 201, authPayload(sessionUser, {
         message: "Registration successful",
       }));
-    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -245,20 +265,15 @@ exports.login = async (req, res) => {
     email === ADMIN_EMAIL &&
     password === ADMIN_PASSWORD
   ) {
-    // SECURITY: Regenerate session to prevent fixation and account bleeding
-    return req.session.regenerate((err) => {
-      if (err) return res.status(500).json({ error: "Session regeneration failed" });
-
-      req.session.user = {
+    const sessionUser = setSessionUser(req, {
         id: MOCK_ADMIN_ID,
         role: "admin",
         name: "Izumi Admin",
         email: ADMIN_EMAIL,
-      };
-      saveSession(req, res, 200, authPayload(req.session.user, {
+      });
+      return sendAuthResponse(req, res, 200, authPayload(sessionUser, {
         message: "Logged in successfully",
       }));
-    });
   }
   // --- END Hardcoded Admin Check ---
   let actualRole = role;
@@ -311,12 +326,7 @@ exports.login = async (req, res) => {
       }
     }
 
-    // Save session (Only for student/teacher here, admin is handled above)
-    // SECURITY: Regenerate session to prevent fixation and account bleeding
-    req.session.regenerate(async (err) => {
-      if (err) return res.status(500).json({ error: "Session regeneration failed" });
-
-      req.session.user = {
+      const sessionUser = setSessionUser(req, {
         id: user._id,
         role: actualRole,
         name: user.name,
@@ -324,7 +334,7 @@ exports.login = async (req, res) => {
         profilePic: user.profilePic || "",
         interests: user.interests || [],
         specialization: user.specialization || [],
-      };
+      });
 
       // Successful login — clear any recorded attempts for this user (students/teachers)
       try {
@@ -340,10 +350,9 @@ exports.login = async (req, res) => {
         console.error("Failed to clear attempts", e && e.message);
       }
 
-      saveSession(req, res, 200, authPayload(req.session.user, {
+      return sendAuthResponse(req, res, 200, authPayload(sessionUser, {
         message: "Logged in successfully",
       }));
-    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -380,16 +389,18 @@ exports.login = async (req, res) => {
 
 // Logout
 exports.logout = (req, res) => {
-  const isProduction =
-    process.env.NODE_ENV === "production" ||
-    process.env.RENDER === "true" ||
-    process.env.FORCE_SECURE_COOKIES === "true";
+  const isProduction = isProductionDeployment();
   
   req.session.destroy((err) => {
     if (err) return res.status(500).json({ message: "Logout failed" });
     
     // Explicitly clear with matching options to ensure browser removes it
     res.clearCookie("connect.sid", {
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
+      path: "/"
+    });
+    res.clearCookie("izumi_token", {
       secure: isProduction,
       sameSite: isProduction ? "none" : "lax",
       path: "/"
@@ -449,7 +460,7 @@ exports.logout = (req, res) => {
 // Check Current Session (Useful for React useEffect on load)
 exports.me = (req, res) => {
   if (!req.session.user) {
-    const tokenUser = verifyAuthToken(getBearerToken(req));
+    const tokenUser = verifyAuthToken(getRequestToken(req));
     if (tokenUser) {
       req.session.user = tokenUser;
     }

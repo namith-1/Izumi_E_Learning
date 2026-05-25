@@ -1,7 +1,7 @@
 const Student = require('../models/Student');
 const Teacher = require('../models/Teacher');
 const Reviewer = require('../models/Reviewer');
-const { getBearerToken, verifyAuthToken } = require('../utils/token');
+const { getRequestToken, verifyAuthToken } = require('../utils/token');
 
 const getModel = (role) => {
     if (role === 'student') return Student;
@@ -12,7 +12,7 @@ const getModel = (role) => {
 
 const isAuthenticated = async (req, res, next) => {
     if (!req.session.user) {
-        const tokenUser = verifyAuthToken(getBearerToken(req));
+        const tokenUser = verifyAuthToken(getRequestToken(req));
         if (tokenUser) {
             req.session.user = tokenUser;
         }

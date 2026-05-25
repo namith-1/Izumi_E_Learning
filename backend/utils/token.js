@@ -48,8 +48,19 @@ const getBearerToken = (req) => {
   return scheme && scheme.toLowerCase() === "bearer" ? token : null;
 };
 
+const getCookieToken = (req) => {
+  const cookieHeader = req.headers.cookie || "";
+  const cookies = cookieHeader.split(";").map((cookie) => cookie.trim());
+  const tokenCookie = cookies.find((cookie) => cookie.startsWith("izumi_token="));
+  if (!tokenCookie) return null;
+  return decodeURIComponent(tokenCookie.slice("izumi_token=".length));
+};
+
+const getRequestToken = (req) => getBearerToken(req) || getCookieToken(req);
+
 module.exports = {
   createAuthToken,
   getBearerToken,
+  getRequestToken,
   verifyAuthToken,
 };

@@ -177,6 +177,13 @@ router.get(
       email: req.user.email,
     };
     const token = createAuthToken(req.session.user);
+    res.cookie("izumi_token", token, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === "production" || process.env.RENDER === "true",
+      sameSite: process.env.NODE_ENV === "production" || process.env.RENDER === "true" ? "none" : "lax",
+      maxAge: 14 * 24 * 60 * 60 * 1000,
+      path: "/",
+    });
     // Redirect to the frontend dashboard
     // Fallback to localhost if the env variable is missing
     const redirectUrl =
