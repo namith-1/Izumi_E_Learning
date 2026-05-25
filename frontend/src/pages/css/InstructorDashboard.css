@@ -1,0 +1,241 @@
+.instructor-dash-container {
+  min-height: 100vh;
+  background-color: #111827; /* Dark theme background */
+  color: white;
+  padding: 2rem;
+}
+
+.instructor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid #374151;
+  padding-bottom: 1.5rem;
+}
+
+.instructor-header h1 {
+  font-size: 2rem;
+  margin: 0;
+  color: #f3f4f6;
+}
+
+.header-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.create-btn {
+  background-color: #6366f1; /* Indigo-500 */
+  color: white;
+  padding: 0.8rem 1.5rem;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: background 0.2s;
+}
+
+.create-btn:hover {
+  background-color: #4f46e5;
+}
+
+.create-btn-small {
+  background-color: #6366f1;
+  color: white;
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  margin-top: 1rem;
+}
+
+.logout-btn {
+  background-color: #ef4444;
+  color: white;
+  padding: 0.8rem 1.5rem;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 250px 1fr;
+  gap: 2rem;
+}
+
+/* Sidebar */
+.sidebar-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.menu-item {
+  padding: 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #9ca3af;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.menu-item:hover {
+  background-color: #1f2937;
+  color: white;
+}
+
+.menu-item.active {
+  background-color: #1f2937;
+  color: #6366f1; /* Indigo highlight */
+  border-left: 4px solid #6366f1;
+}
+
+/* Main Content */
+.content-area {
+  background-color: #1f2937;
+  border-radius: 12px;
+  padding: 2rem;
+  min-height: 500px;
+}
+
+.metrics-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.metric-box {
+  background: #374151;
+  padding: 1.5rem;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.metric-box h4 {
+  color: #9ca3af;
+  margin: 0 0 0.5rem 0;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.metric-box span {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #f3f4f6;
+}
+
+.section-title {
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+  color: white;
+}
+
+/* Course Grid */
+.course-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.course-card {
+  background-color: #111827; /* Darker than content area */
+  border: 1px solid #374151;
+  border-radius: 8px;
+  padding: 1.5rem;
+  transition: transform 0.2s;
+  display: flex;
+  flex-direction: column;
+}
+
+.course-card:hover {
+  transform: translateY(-4px);
+  border-color: #4b5563;
+}
+
+.course-card-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.badge-subject {
+  background-color: #312e81;
+  color: #a5b4fc;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.badge-rating {
+  color: #fbbf24;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+.course-card h3 {
+  margin: 0 0 0.75rem 0;
+  font-size: 1.25rem;
+  color: #f3f4f6;
+}
+
+.course-desc {
+  color: #9ca3af;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  flex-grow: 1; /* Pushes footer down */
+  margin-bottom: 1.5rem;
+}
+
+.course-card-footer {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.btn-edit, .btn-view {
+  flex: 1;
+  padding: 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.9rem;
+  border: none;
+}
+
+.btn-edit {
+  background-color: #374151;
+  color: white;
+  border: 1px solid #4b5563;
+}
+
+.btn-edit:hover {
+  background-color: #4b5563;
+}
+
+.btn-view {
+  background-color: transparent;
+  color: #6366f1;
+  border: 1px solid #6366f1;
+}
+
+.btn-view:hover {
+  background-color: #6366f1;
+  color: white;
+}
+
+.loading-state, .empty-state-instructor {
+  text-align: center;
+  padding: 3rem;
+  color: #9ca3af;
+  background-color: #111827;
+  border-radius: 8px;
+  border: 2px dashed #374151;
+}

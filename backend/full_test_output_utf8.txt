@@ -1,0 +1,903 @@
+﻿  console.warn
+    [CORS Blocked] Origin: http://hacker-domain.com. Allowed: https://izumi-e-learning-frontend.onrender.com, http://localhost:5173, http://localhost:5174, http://localhost:5000
+
+    [0m [90m 20 |[39m         callback([36mnull[39m[33m,[39m [36mtrue[39m)[33m;[39m
+     [90m 21 |[39m       } [36melse[39m {
+    [31m[1m>[22m[39m[90m 22 |[39m         console[33m.[39mwarn([32m`[CORS Blocked] Origin: ${origin}. Allowed: ${allowedOrigins.join(", ")}`[39m)[33m;[39m
+     [90m    |[39m                 [31m[1m^[22m[39m
+     [90m 23 |[39m         callback([36mnew[39m [33mError[39m([32m"Not allowed by CORS"[39m))[33m;[39m
+     [90m 24 |[39m       }
+     [90m 25 |[39m     }[33m,[39m[0m
+
+      at warn (middleware/security.js:22:17)
+      at node_modules/cors/lib/index.js:219:13
+      at optionsCallback (node_modules/cors/lib/index.js:199:9)
+      at corsMiddleware (node_modules/cors/lib/index.js:204:7)
+      at Layer.handle [as handle_request] (node_modules/express/lib/router/layer.js:95:5)
+      at trim_prefix (node_modules/express/lib/router/index.js:328:13)
+      at node_modules/express/lib/router/index.js:286:9
+      at router.process_params (node_modules/express/lib/router/index.js:346:12)
+      at next (node_modules/express/lib/router/index.js:280:10)
+      at internalNext (node_modules/helmet/index.cjs:531:6)
+      at xXssProtectionMiddleware (node_modules/helmet/index.cjs:311:3)
+      at internalNext (node_modules/helmet/index.cjs:529:6)
+      at xPoweredByMiddleware (node_modules/helmet/index.cjs:304:3)
+      at internalNext (node_modules/helmet/index.cjs:529:6)
+      at xPermittedCrossDomainPoliciesMiddleware (node_modules/helmet/index.cjs:297:3)
+      at internalNext (node_modules/helmet/index.cjs:529:6)
+      at xFrameOptionsMiddleware (node_modules/helmet/index.cjs:281:3)
+      at internalNext (node_modules/helmet/index.cjs:529:6)
+      at xDownloadOptionsMiddleware (node_modules/helmet/index.cjs:261:3)
+      at internalNext (node_modules/helmet/index.cjs:529:6)
+      at xDnsPrefetchControlMiddleware (node_modules/helmet/index.cjs:254:3)
+      at internalNext (node_modules/helmet/index.cjs:529:6)
+      at xContentTypeOptionsMiddleware (node_modules/helmet/index.cjs:246:3)
+      at internalNext (node_modules/helmet/index.cjs:529:6)
+      at strictTransportSecurityMiddleware (node_modules/helmet/index.cjs:239:3)
+      at internalNext (node_modules/helmet/index.cjs:529:6)
+      at referrerPolicyMiddleware (node_modules/helmet/index.cjs:207:3)
+      at internalNext (node_modules/helmet/index.cjs:529:6)
+      at originAgentClusterMiddleware (node_modules/helmet/index.cjs:182:3)
+      at internalNext (node_modules/helmet/index.cjs:529:6)
+      at crossOriginResourcePolicyMiddleware (node_modules/helmet/index.cjs:175:3)
+      at internalNext (node_modules/helmet/index.cjs:529:6)
+      at crossOriginOpenerPolicyMiddleware (node_modules/helmet/index.cjs:159:3)
+      at internalNext (node_modules/helmet/index.cjs:529:6)
+      at contentSecurityPolicyMiddleware (node_modules/helmet/index.cjs:124:4)
+      at internalNext (node_modules/helmet/index.cjs:529:6)
+      at helmetMiddleware (node_modules/helmet/index.cjs:533:6)
+      at Layer.handle [as handle_request] (node_modules/express/lib/router/layer.js:95:5)
+      at trim_prefix (node_modules/express/lib/router/index.js:328:13)
+      at node_modules/express/lib/router/index.js:286:9
+      at router.process_params (node_modules/express/lib/router/index.js:346:12)
+      at next (node_modules/express/lib/router/index.js:280:10)
+      at expressInit (node_modules/express/lib/middleware/init.js:40:5)
+      at Layer.handle [as handle_request] (node_modules/express/lib/router/layer.js:95:5)
+      at trim_prefix (node_modules/express/lib/router/index.js:328:13)
+      at node_modules/express/lib/router/index.js:286:9
+      at router.process_params (node_modules/express/lib/router/index.js:346:12)
+      at next (node_modules/express/lib/router/index.js:280:10)
+      at query (node_modules/express/lib/middleware/query.js:45:5)
+      at Layer.handle [as handle_request] (node_modules/express/lib/router/layer.js:95:5)
+      at trim_prefix (node_modules/express/lib/router/index.js:328:13)
+      at node_modules/express/lib/router/index.js:286:9
+      at router.process_params (node_modules/express/lib/router/index.js:346:12)
+      at next (node_modules/express/lib/router/index.js:280:10)
+      at router.handle (node_modules/express/lib/router/index.js:175:3)
+      at app.handle (node_modules/express/lib/application.js:181:10)
+      at Server.app (node_modules/express/lib/express.js:39:9)
+
+node : PASS tests/api/security.test.js
+At line:1 char:1
++ node node_modules\jest\bin\jest.js --setupFilesAfterEnv=./tests/api/j ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (PASS tests/api/security.test.js:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  Security Middleware (Comprehensive)
+    CORS Policies
+      ΓêÜ Should allow specific known origins (83 ms)
+      ΓêÜ Should allow requests with no origin (e.g. mobile/postman) (14 ms)
+      ΓêÜ Should reject malicious origins (127 ms)
+      ΓêÜ Should handle OPTIONS preflight with correct headers (9 ms)
+    HTTP Security Headers (Helmet)
+      ΓêÜ Should include critical security headers (16 ms)
+
+PASS tests/unit/attemptStore.test.js
+  attemptStore Service
+    ΓêÜ should start with 0 attempts and not blocked (7 ms)
+    ΓêÜ should record a failed attempt (2 ms)
+    ΓêÜ should block after MAX_ATTEMPTS (3 ms)
+    ΓêÜ should clear attempts (2 ms)
+
+PASS tests/api/media.test.js
+  Media API (Comprehensive)
+    Video Upload Logic
+      ΓêÜ POST /upload-video - Success: Valid MP4 upload (60 ms)
+      ΓêÜ POST /upload-video - Success: Valid WebM upload (13 ms)
+      ΓêÜ POST /upload-video - Failure: Unsupported file type (text) (18 ms)
+      ΓêÜ POST /upload-video - Failure: No file attached (6 ms)
+    Edge Cases
+      ΓêÜ Large file simulation (Multer error handling)
+
+  console.log
+    [dotenv@17.2.4] injecting env (9) from .env -- tip: ≡ƒöÉ prevent building .env in docker: https://dotenvx.com/prebuild
+
+      at _log (node_modules/dotenv/lib/main.js:142:11)
+
+  console.log
+    [dotenv@17.2.4] injecting env (0) from .env -- tip: ΓÜÖ∩╕Å  enable debug logging with { debug: true }
+
+      at _log (node_modules/dotenv/lib/main.js:142:11)
+
+PASS tests/unit/course.test.js
+  Course Controller - Unit Tests
+    checkWeightSum helper
+      ΓêÜ should return null if modules is undefined (1 ms)
+      ΓêÜ should return null if no graded modules exist (1 ms)
+      ΓêÜ should return null if graded modules sum to exactly 100
+      ΓêÜ should return error message if graded modules sum to 90
+      ΓêÜ should handle Map input as well as Object
+      ΓêÜ should ignore non-graded modules in sum
+
+  console.log
+    [dotenv@17.2.4] injecting env (9) from .env -- tip: ΓÜÖ∩╕Å  write to custom object with { processEnv: myObject }
+
+      at _log (node_modules/dotenv/lib/main.js:142:11)
+
+  console.log
+    [dotenv@17.2.4] injecting env (0) from .env -- tip: ΓÜÖ∩╕Å  enable debug logging with { debug: true }
+
+      at _log (node_modules/dotenv/lib/main.js:142:11)
+
+  console.log
+    [dotenv@17.2.4] injecting env (9) from .env -- tip: ≡ƒöæ add access controls to secrets: https://dotenvx.com/ops
+
+      at _log (node_modules/dotenv/lib/main.js:142:11)
+
+  console.log
+    [dotenv@17.2.4] injecting env (9) from .env -- tip: Γ£à audit secrets and track compliance: https://dotenvx.com/ops
+
+      at _log (node_modules/dotenv/lib/main.js:142:11)
+
+  console.log
+    [dotenv@17.2.4] injecting env (9) from .env -- tip: ≡ƒöÉ prevent building .env in docker: https://dotenvx.com/prebuild
+
+      at _log (node_modules/dotenv/lib/main.js:142:11)
+
+  console.time
+    DB_Chat_History: 25 ms
+
+      at timeEnd (controllers/chatController.js:53:17)
+
+  console.time
+    DB_Chat_History: 4 ms
+
+      at timeEnd (controllers/chatController.js:25:25)
+
+  console.time
+    DB_Conversations_Link: 55 ms
+
+      at timeEnd (controllers/chatController.js:125:17)
+
+  console.time
+    DB_Conversations_Link: 4 ms
+
+      at timeEnd (controllers/chatController.js:72:21)
+
+  console.time
+    DB_Analytics_Overview: 44 ms
+
+      at timeEnd (controllers/analyticsController.js:152:17)
+
+PASS tests/api/health.test.js
+  Health Check API
+    ΓêÜ GET /api/health - returns 200 and connected status (260 ms)
+
+PASS tests/api/chat.test.js (7.834 s)
+  Chat API (Comprehensive)
+    Messaging & Privacy
+      ΓêÜ GET /unread-count - Accurate counting of unread messages (327 ms)
+      ΓêÜ GET /:courseId/messages - isolation: Student A cannot read Student B chat (148 ms)
+      ΓêÜ GET /:courseId/messages - Block access if not enrolled (35 ms)
+    Instructor Operations
+      ΓêÜ GET /:courseId/conversations - List students who messaged instructor (104 ms)
+      ΓêÜ RBAC: Student cannot access conversation list (26 ms)
+    Security Boundaries
+      ΓêÜ Unauthenticated access should be blocked (21 ms)
+
+FAIL tests/api/analytics.test.js (8.117 s)
+  Analytics API
+    ├ù GET /api/analytics/admin/overview - should return platform-wide stats (640 ms)
+
+  ΓùÅ Analytics API ΓÇ║ GET /api/analytics/admin/overview - should return platform-wide stats
+
+    TypeError: Cannot read properties of undefined (reading 'students')
+
+    [0m [90m 63 |[39m     [36mconst[39m res [33m=[39m [36mawait[39m 
+request(app)[33m.[39m[36mget[39m([32m"/api/analytics/admin/overview"[39m)[33m;[39m
+     [90m 64 |[39m     expect(res[33m.[39mstatus)[33m.[39mtoBe([35m200[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m 65 |[39m     
+expect(res[33m.[39mbody[33m.[39mtotals[33m.[39mstudents)[33m.[39mtoBe([35m1[39m)[33m;[39m
+     [90m    |[39m                            [31m[1m^[22m[39m
+     [90m 66 |[39m     
+expect(res[33m.[39mbody[33m.[39mtotals[33m.[39minstructors)[33m.[39mtoBe([35m1[39m)[33m;[39m
+     [90m 67 |[39m     
+expect(res[33m.[39mbody[33m.[39mtotals[33m.[39mcourses)[33m.[39mtoBe([35m1[39m)[33m;[39m
+     [90m 68 |[39m     
+expect(res[33m.[39mbody[33m.[39mtotals[33m.[39menrollments)[33m.[39mtoBe([35m1[39m)[33m;[39m[0m
+
+      at Object.students (tests/api/analytics.test.js:65:28)
+
+FAIL tests/api/enrollment.test.js (8.466 s)
+  Enrollment API (Comprehensive)
+    Lifecycle & Access
+      ├ù POST /api/enrollment/enroll - Successfully enroll student (419 ms)
+      ├ù POST /api/enrollment/enroll - Block duplicate enrollment (75 ms)
+      ├ù GET /api/enrollment/my-courses - Returns list of enrolled courses (30 ms)
+      ├ù GET /api/enrollment/:courseId - Returns specific enrollment details (24 ms)
+      ├ù RBAC: Cannot access another student's enrollment detail (24 ms)
+    Progress & Completion
+      ├ù PUT /api/enrollment/:courseId/progress - Update module completion (27 ms)
+      ├ù PUT /api/enrollment/:courseId/progress - Handling non-existent module (36 ms)
+      ├ù Workflow: Progress update leads to course completion (28 ms)
+    Ratings & Feedback
+      ├ù PUT /api/enrollment/:courseId/rating - Successfully rate course (23 ms)
+      ├ù PUT /api/enrollment/:courseId/rating - Fail on invalid rating range (24 ms)
+
+  ΓùÅ Enrollment API (Comprehensive) ΓÇ║ Lifecycle & Access ΓÇ║ POST /api/enrollment/enroll - Successfully enroll 
+student
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 201
+    Received: 403
+
+    [0m [90m 69 |[39m
+     [90m 70 |[39m       [36mconst[39m res [33m=[39m [36mawait[39m 
+request(app)[33m.[39mpost([32m"/api/enrollment/enroll"[39m)[33m.[39msend({ courseId[33m:[39m 
+course[33m.[39m_id })[33m;[39m
+    [31m[1m>[22m[39m[90m 71 |[39m       expect(res[33m.[39mstatus)[33m.[39mtoBe([35m201[39m)[33m;[39m
+     [90m    |[39m                          [31m[1m^[22m[39m
+     [90m 72 |[39m       
+     [90m 73 |[39m       [36mconst[39m dbEntry [33m=[39m [36mawait[39m 
+[33mEnrollment[39m[33m.[39mfindOne({ studentId[33m,[39m courseId[33m:[39m course[33m.[39m_id })[33m;[39m
+     [90m 74 |[39m       expect(dbEntry)[33m.[39mtoBeDefined()[33m;[39m[0m
+
+      at Object.toBe (tests/api/enrollment.test.js:71:26)
+
+  ΓùÅ Enrollment API (Comprehensive) ΓÇ║ Lifecycle & Access ΓÇ║ POST /api/enrollment/enroll - Block duplicate 
+enrollment
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 400
+    Received: 403
+
+    [0m [90m 83 |[39m       [36mconst[39m res [33m=[39m [36mawait[39m 
+request(app)[33m.[39mpost([32m"/api/enrollment/enroll"[39m)[33m.[39msend({ courseId[33m:[39m 
+course[33m.[39m_id })[33m;[39m
+     [90m 84 |[39m       
+    [31m[1m>[22m[39m[90m 85 |[39m       expect(res[33m.[39mstatus)[33m.[39mtoBe([35m400[39m)[33m;[39m
+     [90m    |[39m                          [31m[1m^[22m[39m
+     [90m 86 |[39m       expect(res[33m.[39mbody[33m.[39mmessage)[33m.[39mtoContain([32m"Already enrolled in 
+this course"[39m)[33m;[39m
+     [90m 87 |[39m     })[33m;[39m
+     [90m 88 |[39m[0m
+
+      at Object.toBe (tests/api/enrollment.test.js:85:26)
+
+  ΓùÅ Enrollment API (Comprehensive) ΓÇ║ Lifecycle & Access ΓÇ║ GET /api/enrollment/my-courses - Returns list of 
+enrolled courses
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 403
+
+    [0m [90m  96 |[39m       
+     [90m  97 |[39m       [36mconst[39m res [33m=[39m [36mawait[39m 
+request(app)[33m.[39m[36mget[39m([32m"/api/enrollment/my-courses"[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m  98 |[39m       expect(res[33m.[39mstatus)[33m.[39mtoBe([35m200[39m)[33m;[39m
+     [90m     |[39m                          [31m[1m^[22m[39m
+     [90m  99 |[39m       expect(res[33m.[39mbody[33m.[39mlength)[33m.[39mtoBe([35m1[39m)[33m;[39m
+     [90m 100 |[39m     })[33m;[39m
+     [90m 101 |[39m[0m
+
+      at Object.toBe (tests/api/enrollment.test.js:98:26)
+
+  ΓùÅ Enrollment API (Comprehensive) ΓÇ║ Lifecycle & Access ΓÇ║ GET /api/enrollment/:courseId - Returns specific 
+enrollment details
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 403
+
+    [0m [90m 108 |[39m       
+     [90m 109 |[39m       [36mconst[39m res [33m=[39m [36mawait[39m 
+request(app)[33m.[39m[36mget[39m([32m`/api/enrollment/${course._id}`[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m 110 |[39m       expect(res[33m.[39mstatus)[33m.[39mtoBe([35m200[39m)[33m;[39m
+     [90m     |[39m                          [31m[1m^[22m[39m
+     [90m 111 |[39m       
+expect(res[33m.[39mbody[33m.[39mcompletionStatus)[33m.[39mtoBe([32m"in-progress"[39m)[33m;[39m
+     [90m 112 |[39m     })[33m;[39m
+     [90m 113 |[39m[0m
+
+      at Object.toBe (tests/api/enrollment.test.js:110:26)
+
+  ΓùÅ Enrollment API (Comprehensive) ΓÇ║ Lifecycle & Access ΓÇ║ RBAC: Cannot access another student's enrollment detail
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 404
+    Received: 403
+
+    [0m [90m 119 |[39m        activeUser [33m=[39m { id[33m:[39m [36mnew[39m 
+mongoose[33m.[39m[33mTypes[39m[33m.[39m[33mObjectId[39m()[33m,[39m role[33m:[39m [32m"student"[39m 
+}[33m;[39m
+     [90m 120 |[39m        [36mconst[39m res [33m=[39m [36mawait[39m 
+request(app)[33m.[39m[36mget[39m([32m`/api/enrollment/${course._id}`[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m 121 |[39m        expect(res[33m.[39mstatus)[33m.[39mtoBe([35m404[39m)[33m;[39m 
+[90m// Or 403 depending on logic. Controller uses findOne({studentId, courseId})[39m
+     [90m     |[39m                           [31m[1m^[22m[39m
+     [90m 122 |[39m     })[33m;[39m
+     [90m 123 |[39m   })[33m;[39m
+     [90m 124 |[39m[0m
+
+      at Object.toBe (tests/api/enrollment.test.js:121:27)
+
+  ΓùÅ Enrollment API (Comprehensive) ΓÇ║ Progress & Completion ΓÇ║ PUT /api/enrollment/:courseId/progress - Update 
+module completion
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 403
+
+    [0m [90m 135 |[39m         [33m.[39msend({ moduleId[33m:[39m [32m"m1"[39m[33m,[39m completed[33m:[39m 
+[36mtrue[39m[33m,[39m timeSpent[33m:[39m [35m120[39m })[33m;[39m
+     [90m 136 |[39m       
+    [31m[1m>[22m[39m[90m 137 |[39m       expect(res[33m.[39mstatus)[33m.[39mtoBe([35m200[39m)[33m;[39m
+     [90m     |[39m                          [31m[1m^[22m[39m
+     [90m 138 |[39m       [36mconst[39m updated [33m=[39m [36mawait[39m 
+[33mEnrollment[39m[33m.[39mfindOne({ studentId[33m,[39m courseId[33m:[39m course[33m.[39m_id })[33m;[39m
+     [90m 139 |[39m       [36mconst[39m mod [33m=[39m updated[33m.[39mmodules_status[33m.[39mfind(m 
+[33m=>[39m m[33m.[39mmoduleId [33m===[39m [32m"m1"[39m)[33m;[39m
+     [90m 140 |[39m       expect(mod[33m.[39mcompleted)[33m.[39mtoBe([36mtrue[39m)[33m;[39m[0m
+
+      at Object.toBe (tests/api/enrollment.test.js:137:26)
+
+  ΓùÅ Enrollment API (Comprehensive) ΓÇ║ Progress & Completion ΓÇ║ PUT /api/enrollment/:courseId/progress - Handling 
+non-existent module
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 403
+
+    [0m [90m 150 |[39m         [33m.[39msend({ moduleId[33m:[39m [32m"ghost"[39m[33m,[39m 
+completed[33m:[39m [36mtrue[39m })[33m;[39m
+     [90m 151 |[39m       
+    [31m[1m>[22m[39m[90m 152 |[39m       expect(res[33m.[39mstatus)[33m.[39mtoBe([35m200[39m)[33m;[39m 
+     [90m     |[39m                          [31m[1m^[22m[39m
+     [90m 153 |[39m     })[33m;[39m
+     [90m 154 |[39m
+     [90m 155 |[39m     test([32m"Workflow: Progress update leads to course completion"[39m[33m,[39m 
+[36masync[39m () [33m=>[39m {[0m
+
+      at Object.toBe (tests/api/enrollment.test.js:152:26)
+
+  ΓùÅ Enrollment API (Comprehensive) ΓÇ║ Progress & Completion ΓÇ║ Workflow: Progress update leads to course completion
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 403
+
+    [0m [90m 175 |[39m         [33m.[39msend({ moduleId[33m:[39m [32m"m1"[39m[33m,[39m completed[33m:[39m 
+[36mtrue[39m[33m,[39m quizScore[33m:[39m [35m85[39m })[33m;[39m
+     [90m 176 |[39m       
+    [31m[1m>[22m[39m[90m 177 |[39m       expect(res[33m.[39mstatus)[33m.[39mtoBe([35m200[39m)[33m;[39m
+     [90m     |[39m                          [31m[1m^[22m[39m
+     [90m 178 |[39m       expect(res[33m.[39mbody[33m.[39mpassStatus)[33m.[39mtoBe([32m"pass"[39m)[33m;[39m
+     [90m 179 |[39m       
+expect(res[33m.[39mbody[33m.[39mcompletionStatus)[33m.[39mtoBe([32m"completed"[39m)[33m;[39m
+     [90m 180 |[39m     })[33m;[39m[0m
+
+      at Object.toBe (tests/api/enrollment.test.js:177:26)
+
+  ΓùÅ Enrollment API (Comprehensive) ΓÇ║ Ratings & Feedback ΓÇ║ PUT /api/enrollment/:courseId/rating - Successfully 
+rate course
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 403
+
+    [0m [90m 193 |[39m         [33m.[39msend({ rating[33m:[39m [35m5[39m[33m,[39m review[33m:[39m 
+[32m"Excellent!"[39m })[33m;[39m
+     [90m 194 |[39m       
+    [31m[1m>[22m[39m[90m 195 |[39m       expect(res[33m.[39mstatus)[33m.[39mtoBe([35m200[39m)[33m;[39m
+     [90m     |[39m                          [31m[1m^[22m[39m
+     [90m 196 |[39m       [36mconst[39m updated [33m=[39m [36mawait[39m 
+[33mEnrollment[39m[33m.[39mfindOne({ studentId[33m,[39m courseId[33m:[39m course[33m.[39m_id })[33m;[39m
+     [90m 197 |[39m       expect(updated[33m.[39mrating)[33m.[39mtoBe([35m5[39m)[33m;[39m
+     [90m 198 |[39m     })[33m;[39m[0m
+
+      at Object.toBe (tests/api/enrollment.test.js:195:26)
+
+  ΓùÅ Enrollment API (Comprehensive) ΓÇ║ Ratings & Feedback ΓÇ║ PUT /api/enrollment/:courseId/rating - Fail on invalid 
+rating range
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 400
+    Received: 403
+
+    [0m [90m 207 |[39m         [33m.[39msend({ rating[33m:[39m [35m6[39m })[33m;[39m
+     [90m 208 |[39m       
+    [31m[1m>[22m[39m[90m 209 |[39m       expect(res[33m.[39mstatus)[33m.[39mtoBe([35m400[39m)[33m;[39m
+     [90m     |[39m                          [31m[1m^[22m[39m
+     [90m 210 |[39m     })[33m;[39m
+     [90m 211 |[39m   })[33m;[39m
+     [90m 212 |[39m[0m
+
+      at Object.toBe (tests/api/enrollment.test.js:209:26)
+
+  console.time
+    DB_Instructor_Analytics: 15 ms
+
+      at timeEnd (controllers/courseController.js:694:13)
+
+  console.time
+    DB_Admin_AllUsers: 35 ms
+
+      at timeEnd (controllers/adminController.js:147:17)
+
+FAIL tests/api/payment.test.js (8.618 s)
+  Payment API (Comprehensive)
+    Student Checkout Flow
+      ├ù POST /student/checkout - Success creates transaction and enrollment (833 ms)
+      ├ù POST /student/checkout - Fail on missing courseId (37 ms)
+      ├ù GET /student/transactions - List owned transactions (25 ms)
+      ├ù GET /student/transactions/:id - Block unauthorized access (22 ms)
+    Teacher Revenue Operations
+      ├ù GET /teacher/summary - returns revenue data (26 ms)
+      ├ù PUT /teacher/transactions/:id/status - teacher updates payout status (24 ms)
+    Admin Financial Oversight
+      ├ù GET /admin/transactions - returns all platform transactions (26 ms)
+      ΓêÜ RBAC: Teacher cannot access admin transactions (25 ms)
+      ├ù PUT /admin/transactions/:id - admin can void transaction (29 ms)
+
+  ΓùÅ Payment API (Comprehensive) ΓÇ║ Student Checkout Flow ΓÇ║ POST /student/checkout - Success creates transaction 
+and enrollment
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 201
+    Received: 403
+
+    [0m [90m 73 |[39m         [33m.[39msend({ courseId[33m:[39m course[33m.[39m_id[33m,[39m 
+paymentMethod[33m:[39m [32m"card"[39m })[33m;[39m
+     [90m 74 |[39m       
+    [31m[1m>[22m[39m[90m 75 |[39m       expect(res[33m.[39mstatus)[33m.[39mtoBe([35m201[39m)[33m;[39m
+     [90m    |[39m                          [31m[1m^[22m[39m
+     [90m 76 |[39m       
+expect(res[33m.[39mbody[33m.[39mtransaction[33m.[39mamount)[33m.[39mtoBe([35m99[39m)[33m;[39m
+     [90m 77 |[39m       
+     [90m 78 |[39m       [36mconst[39m enrollment [33m=[39m [36mawait[39m 
+[33mEnrollment[39m[33m.[39mfindOne({ studentId[33m,[39m courseId[33m:[39m course[33m.[39m_id 
+})[33m;[39m[0m
+
+      at Object.toBe (tests/api/payment.test.js:75:26)
+
+  ΓùÅ Payment API (Comprehensive) ΓÇ║ Student Checkout Flow ΓÇ║ POST /student/checkout - Fail on missing courseId
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 400
+    Received: 403
+
+    [0m [90m 83 |[39m       activeUser [33m=[39m { id[33m:[39m [36mnew[39m 
+mongoose[33m.[39m[33mTypes[39m[33m.[39m[33mObjectId[39m()[33m,[39m role[33m:[39m [32m"student"[39m 
+}[33m;[39m
+     [90m 84 |[39m       [36mconst[39m res [33m=[39m [36mawait[39m 
+request(app)[33m.[39mpost([32m"/api/payments/student/checkout"[39m)[33m.[39msend({})[33m;[39m
+    [31m[1m>[22m[39m[90m 85 |[39m       expect(res[33m.[39mstatus)[33m.[39mtoBe([35m400[39m)[33m;[39m
+     [90m    |[39m                          [31m[1m^[22m[39m
+     [90m 86 |[39m     })[33m;[39m
+     [90m 87 |[39m
+     [90m 88 |[39m     test([32m"GET /student/transactions - List owned transactions"[39m[33m,[39m 
+[36masync[39m () [33m=>[39m {[0m
+
+      at Object.toBe (tests/api/payment.test.js:85:26)
+
+  ΓùÅ Payment API (Comprehensive) ΓÇ║ Student Checkout Flow ΓÇ║ GET /student/transactions - List owned transactions
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 403
+
+    [0m [90m 93 |[39m       activeUser [33m=[39m { id[33m:[39m studentId[33m,[39m role[33m:[39m 
+[32m"student"[39m }[33m;[39m
+     [90m 94 |[39m       [36mconst[39m res [33m=[39m [36mawait[39m 
+request(app)[33m.[39m[36mget[39m([32m"/api/payments/student/transactions"[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m 95 |[39m       expect(res[33m.[39mstatus)[33m.[39mtoBe([35m200[39m)[33m;[39m
+     [90m    |[39m                          [31m[1m^[22m[39m
+     [90m 96 |[39m       expect(res[33m.[39mbody[33m.[39mlength)[33m.[39mtoBe([35m1[39m)[33m;[39m
+     [90m 97 |[39m     })[33m;[39m
+     [90m 98 |[39m[0m
+
+      at Object.toBe (tests/api/payment.test.js:95:26)
+
+  ΓùÅ Payment API (Comprehensive) ΓÇ║ Student Checkout Flow ΓÇ║ GET /student/transactions/:id - Block unauthorized 
+access
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 404
+    Received: 403
+
+    [0m [90m 104 |[39m       activeUser [33m=[39m { id[33m:[39m student2[33m,[39m role[33m:[39m 
+[32m"student"[39m }[33m;[39m
+     [90m 105 |[39m       [36mconst[39m res [33m=[39m [36mawait[39m 
+request(app)[33m.[39m[36mget[39m([32m`/api/payments/student/transactions/${txn._id}`[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m 106 |[39m       expect(res[33m.[39mstatus)[33m.[39mtoBe([35m404[39m)[33m;[39m 
+[90m// Controller logic uses findOne({_id, studentId})[39m
+     [90m     |[39m                          [31m[1m^[22m[39m
+     [90m 107 |[39m     })[33m;[39m
+     [90m 108 |[39m   })[33m;[39m
+     [90m 109 |[39m[0m
+
+      at Object.toBe (tests/api/payment.test.js:106:26)
+
+  ΓùÅ Payment API (Comprehensive) ΓÇ║ Teacher Revenue Operations ΓÇ║ GET /teacher/summary - returns revenue data
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 403
+
+    [0m [90m 119 |[39m       activeUser [33m=[39m { id[33m:[39m teacherId[33m,[39m role[33m:[39m 
+[32m"teacher"[39m }[33m;[39m
+     [90m 120 |[39m       [36mconst[39m res [33m=[39m [36mawait[39m 
+request(app)[33m.[39m[36mget[39m([32m"/api/payments/teacher/summary"[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m 121 |[39m       expect(res[33m.[39mstatus)[33m.[39mtoBe([35m200[39m)[33m;[39m
+     [90m     |[39m                          [31m[1m^[22m[39m
+     [90m 122 |[39m       expect(res[33m.[39mbody[33m.[39mgrossRevenue)[33m.[39mtoBe([35m100[39m)[33m;[39m
+     [90m 123 |[39m     })[33m;[39m
+     [90m 124 |[39m[0m
+
+      at Object.toBe (tests/api/payment.test.js:121:26)
+
+  ΓùÅ Payment API (Comprehensive) ΓÇ║ Teacher Revenue Operations ΓÇ║ PUT /teacher/transactions/:id/status - teacher 
+updates payout status
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 403
+
+    [0m [90m 136 |[39m         [33m.[39msend({ payoutStatus[33m:[39m [32m"released"[39m })[33m;[39m
+     [90m 137 |[39m       
+    [31m[1m>[22m[39m[90m 138 |[39m       expect(res[33m.[39mstatus)[33m.[39mtoBe([35m200[39m)[33m;[39m
+     [90m     |[39m                          [31m[1m^[22m[39m
+     [90m 139 |[39m       [36mconst[39m updated [33m=[39m [36mawait[39m 
+[33mTransaction[39m[33m.[39mfindById(txn[33m.[39m_id)[33m;[39m
+     [90m 140 |[39m       expect(updated[33m.[39mpayoutStatus)[33m.[39mtoBe([32m"released"[39m)[33m;[39m
+     [90m 141 |[39m     })[33m;[39m[0m
+
+      at Object.toBe (tests/api/payment.test.js:138:26)
+
+  ΓùÅ Payment API (Comprehensive) ΓÇ║ Admin Financial Oversight ΓÇ║ GET /admin/transactions - returns all platform 
+transactions
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 403
+
+    [0m [90m 154 |[39m       activeUser [33m=[39m { id[33m:[39m [36mnew[39m 
+mongoose[33m.[39m[33mTypes[39m[33m.[39m[33mObjectId[39m()[33m,[39m role[33m:[39m [32m"admin"[39m 
+}[33m;[39m
+     [90m 155 |[39m       [36mconst[39m res [33m=[39m [36mawait[39m 
+request(app)[33m.[39m[36mget[39m([32m"/api/payments/admin/transactions"[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m 156 |[39m       expect(res[33m.[39mstatus)[33m.[39mtoBe([35m200[39m)[33m;[39m
+     [90m     |[39m                          [31m[1m^[22m[39m
+     [90m 157 |[39m       expect(res[33m.[39mbody[33m.[39mlength)[33m.[39mtoBe([35m1[39m)[33m;[39m
+     [90m 158 |[39m     })[33m;[39m
+     [90m 159 |[39m[0m
+
+      at Object.toBe (tests/api/payment.test.js:156:26)
+
+  ΓùÅ Payment API (Comprehensive) ΓÇ║ Admin Financial Oversight ΓÇ║ PUT /admin/transactions/:id - admin can void 
+transaction
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 403
+
+    [0m [90m 178 |[39m         [33m.[39msend({ status[33m:[39m [32m"failed"[39m })[33m;[39m
+     [90m 179 |[39m       
+    [31m[1m>[22m[39m[90m 180 |[39m       expect(res[33m.[39mstatus)[33m.[39mtoBe([35m200[39m)[33m;[39m
+     [90m     |[39m                          [31m[1m^[22m[39m
+     [90m 181 |[39m       [36mconst[39m updated [33m=[39m [36mawait[39m 
+[33mTransaction[39m[33m.[39mfindById(txn[33m.[39m_id)[33m;[39m
+     [90m 182 |[39m       expect(updated[33m.[39mstatus)[33m.[39mtoBe([32m"failed"[39m)[33m;[39m
+     [90m 183 |[39m     })[33m;[39m[0m
+
+      at Object.toBe (tests/api/payment.test.js:180:26)
+
+PASS tests/api/review.test.js (8.665 s)
+  Review API (Comprehensive)
+    Instructor Submission & Checks
+      ΓêÜ POST /submit/:id - Success after passing pre-checks (1174 ms)
+      ΓêÜ POST /submit/:id - Fail on failed pre-checks (no content) (35 ms)
+      ΓêÜ GET /my-status - Teacher checks their own submissions (32 ms)
+    Reviewer Workflow
+      ΓêÜ GET /queue - returns only pending courses (88 ms)
+      ΓêÜ POST /course/:id/approve - Successfully approves pending course (79 ms)
+      ΓêÜ POST /course/:id/reject - Fails without rejection note (20 ms)
+      ΓêÜ GET /stats - Returns accurate platform review stats (31 ms)
+    RBAC & Boundaries
+      ΓêÜ RBAC: Instructor cannot access review queue (13 ms)
+      ΓêÜ Workflow: Cannot approve a draft course (20 ms)
+
+FAIL tests/api/course.test.js (8.952 s)
+  Course API (Comprehensive)
+    Course Catalog & Discovery
+      ΓêÜ GET /api/courses - Visibility check for { role: 'student', expectedCount: 1 } (437 ms)
+      ├ù GET /api/courses - Visibility check for { role: 'teacher', expectedCount: 2 } (39 ms)
+      ├ù GET /api/courses - Visibility check for { role: 'admin', expectedCount: 2 } (30 ms)
+      ΓêÜ GET /api/courses - Unauthenticated see only approved (27 ms)
+      ├ù GET /api/courses/:id - Authenticated user can see course detail (30 ms)
+      ├ù GET /api/courses/:id - Fail on invalid ID format (18 ms)
+    Instructor Actions
+      ΓêÜ POST /api/courses - Instructor can create course (70 ms)
+      ΓêÜ PUT /api/courses/:id - Instructor can update their own course (43 ms)
+      ΓêÜ PUT /api/courses/:id - Instructor CANNOT update others' courses (40 ms)
+      ΓêÜ GET /api/courses/analytics - Returns aggregated stats for instructor (59 ms)
+    Validation & Security
+      ΓêÜ POST /api/courses - Fail if user is not teacher (20 ms)
+      ΓêÜ POST /api/courses - Fail if subject is missing (22 ms)
+
+  ΓùÅ Course API (Comprehensive) ΓÇ║ Course Catalog & Discovery ΓÇ║ GET /api/courses - Visibility check for { role: 
+'teacher', expectedCount: 2 }
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 2
+    Received: 1
+
+    [0m [90m 79 |[39m         expect(res[33m.[39mbody[33m.[39mlength)[33m.[39mtoBe([35m1[39m)[33m;[39m
+     [90m 80 |[39m       } [36melse[39m {
+    [31m[1m>[22m[39m[90m 81 |[39m         
+expect(res[33m.[39mbody[33m.[39mlength)[33m.[39mtoBe([35m2[39m)[33m;[39m
+     [90m    |[39m                                 [31m[1m^[22m[39m
+     [90m 82 |[39m       }
+     [90m 83 |[39m     })[33m;[39m
+     [90m 84 |[39m[0m
+
+      at toBe (tests/api/course.test.js:81:33)
+
+  ΓùÅ Course API (Comprehensive) ΓÇ║ Course Catalog & Discovery ΓÇ║ GET /api/courses - Visibility check for { role: 
+'admin', expectedCount: 2 }
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 2
+    Received: 1
+
+    [0m [90m 79 |[39m         expect(res[33m.[39mbody[33m.[39mlength)[33m.[39mtoBe([35m1[39m)[33m;[39m
+     [90m 80 |[39m       } [36melse[39m {
+    [31m[1m>[22m[39m[90m 81 |[39m         
+expect(res[33m.[39mbody[33m.[39mlength)[33m.[39mtoBe([35m2[39m)[33m;[39m
+     [90m    |[39m                                 [31m[1m^[22m[39m
+     [90m 82 |[39m       }
+     [90m 83 |[39m     })[33m;[39m
+     [90m 84 |[39m[0m
+
+      at toBe (tests/api/course.test.js:81:33)
+
+  ΓùÅ Course API (Comprehensive) ΓÇ║ Course Catalog & Discovery ΓÇ║ GET /api/courses/:id - Authenticated user can see 
+course detail
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 403
+
+    [0m [90m 100 |[39m       activeUser [33m=[39m { id[33m:[39m [36mnew[39m 
+mongoose[33m.[39m[33mTypes[39m[33m.[39m[33mObjectId[39m()[33m,[39m role[33m:[39m [32m"student"[39m 
+}[33m;[39m
+     [90m 101 |[39m       [36mconst[39m res [33m=[39m [36mawait[39m 
+request(app)[33m.[39m[36mget[39m([32m`/api/courses/${course._id}`[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m 102 |[39m       expect(res[33m.[39mstatus)[33m.[39mtoBe([35m200[39m)[33m;[39m
+     [90m     |[39m                          [31m[1m^[22m[39m
+     [90m 103 |[39m       expect(res[33m.[39mbody[33m.[39mtitle)[33m.[39mtoBe([32m"Valid 
+Course"[39m)[33m;[39m
+     [90m 104 |[39m     })[33m;[39m
+     [90m 105 |[39m     [0m
+
+      at Object.toBe (tests/api/course.test.js:102:26)
+
+  ΓùÅ Course API (Comprehensive) ΓÇ║ Course Catalog & Discovery ΓÇ║ GET /api/courses/:id - Fail on invalid ID format
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 500
+    Received: 403
+
+    [0m [90m 107 |[39m       activeUser [33m=[39m { id[33m:[39m [36mnew[39m 
+mongoose[33m.[39m[33mTypes[39m[33m.[39m[33mObjectId[39m()[33m,[39m role[33m:[39m [32m"student"[39m 
+}[33m;[39m
+     [90m 108 |[39m       [36mconst[39m res [33m=[39m [36mawait[39m 
+request(app)[33m.[39m[36mget[39m([32m"/api/courses/invalid-id"[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m 109 |[39m       expect(res[33m.[39mstatus)[33m.[39mtoBe([35m500[39m)[33m;[39m 
+[90m// Controller might throw on cast error[39m
+     [90m     |[39m                          [31m[1m^[22m[39m
+     [90m 110 |[39m     })[33m;[39m
+     [90m 111 |[39m   })[33m;[39m
+     [90m 112 |[39m[0m
+
+      at Object.toBe (tests/api/course.test.js:109:26)
+
+  console.time
+    DB_Admin_AllCourses: 15 ms
+
+      at timeEnd (controllers/adminController.js:339:17)
+
+  console.time
+    DB_Admin_LookupEmail: 56 ms
+
+      at timeEnd (controllers/adminController.js:377:17)
+
+  console.time
+    DB_Admin_LookupEmail: 2 ms
+
+      at timeEnd (controllers/adminController.js:366:21)
+
+PASS tests/api/admin.test.js (9.473 s)
+  Admin Dashboard API (Comprehensive)
+    ΓêÜ { method: 'get', url: '/users' } %s should be blocked for Students (11 ms)
+    ΓêÜ { method: 'get', url: '/enrollments' } %s should be blocked for Students (10 ms)
+    ΓêÜ { method: 'get', url: '/courses' } %s should be blocked for Students (9 ms)
+    ΓêÜ { method: 'get', url: '/reviewers' } %s should be blocked for Students (10 ms)
+    ΓêÜ { method: 'post', url: '/reviewers' } %s should be blocked for Students (8 ms)
+    ΓêÜ { method: 'put', url: '/users/student/60c728362d294d1f88c88888' } %s should be blocked for Students (7 ms)
+    ΓêÜ { method: 'delete', url: '/users/student/60c728362d294d1f88c88888' } %s should be blocked for Students (7 ms)
+    ΓêÜ { method: 'put', url: '/courses/60c728362d294d1f88c88888' } %s should be blocked for Students (8 ms)
+    ΓêÜ { method: 'delete', url: '/courses/60c728362d294d1f88c88888' } %s should be blocked for Students (8 ms)
+    ΓêÜ { method: 'get', url: '/users' } %s should be blocked for Teachers (7 ms)
+    ΓêÜ { method: 'get', url: '/enrollments' } %s should be blocked for Teachers (7 ms)
+    ΓêÜ { method: 'get', url: '/courses' } %s should be blocked for Teachers (7 ms)
+    ΓêÜ { method: 'get', url: '/reviewers' } %s should be blocked for Teachers (8 ms)
+    ΓêÜ { method: 'post', url: '/reviewers' } %s should be blocked for Teachers (7 ms)
+    ΓêÜ { method: 'put', url: '/users/student/60c728362d294d1f88c88888' } %s should be blocked for Teachers (7 ms)
+    ΓêÜ { method: 'delete', url: '/users/student/60c728362d294d1f88c88888' } %s should be blocked for Teachers (8 ms)
+    ΓêÜ { method: 'put', url: '/courses/60c728362d294d1f88c88888' } %s should be blocked for Teachers (9 ms)
+    ΓêÜ { method: 'delete', url: '/courses/60c728362d294d1f88c88888' } %s should be blocked for Teachers (8 ms)
+    ΓêÜ { method: 'get', url: '/users' } %s should be blocked for Reviewers (8 ms)
+    ΓêÜ { method: 'get', url: '/enrollments' } %s should be blocked for Reviewers (7 ms)
+    ΓêÜ { method: 'get', url: '/courses' } %s should be blocked for Reviewers (8 ms)
+    ΓêÜ { method: 'get', url: '/reviewers' } %s should be blocked for Reviewers (7 ms)
+    ΓêÜ { method: 'post', url: '/reviewers' } %s should be blocked for Reviewers (7 ms)
+    ΓêÜ { method: 'put', url: '/users/student/60c728362d294d1f88c88888' } %s should be blocked for Reviewers (7 ms)
+    ΓêÜ { method: 'delete', url: '/users/student/60c728362d294d1f88c88888' } %s should be blocked for Reviewers (16 ms)
+    ΓêÜ { method: 'put', url: '/courses/60c728362d294d1f88c88888' } %s should be blocked for Reviewers (15 ms)
+    ΓêÜ { method: 'delete', url: '/courses/60c728362d294d1f88c88888' } %s should be blocked for Reviewers (11 ms)
+    User Management
+      ΓêÜ GET /api/admin/users - Admin can fetch all students and teachers (672 ms)
+      ΓêÜ RBAC: Student cannot fetch all users (26 ms)
+      ΓêÜ POST /api/admin/reviewers - Successfully create reviewer (161 ms)
+      ΓêÜ PUT /api/admin/users/student/:id - Update student details (33 ms)
+      ΓêÜ PUT /api/admin/users/student/:id - Fail on duplicate email (44 ms)
+      ΓêÜ PUT /api/admin/users/student/:id - 404 on non-existent student (27 ms)
+      ΓêÜ DELETE /api/admin/users/teacher/:id - Deleting teacher should delete their courses (58 ms)
+    Course & Enrollment Analytics
+      ΓêÜ GET /api/admin/courses - Returns complex analytics (56 ms)
+      ΓêÜ GET /api/admin/enrollments/student/:email - Student lookup (92 ms)
+      ΓêÜ GET /api/admin/enrollments/student/:email - 404 on missing student (15 ms)
+      ΓêÜ GET /api/admin/teachers/courses/:email - Teacher lookup (20 ms)
+
+FAIL tests/api/auth.test.js (10.754 s)
+  Authentication & Profile API (Comprehensive)
+    Registration
+      ΓêÜ POST /api/auth/register - Successfully register as student (695 ms)
+      ΓêÜ POST /api/auth/register - Successfully register as teacher (111 ms)
+      ΓêÜ POST /api/auth/register - Fail on duplicate email (26 ms)
+      ΓêÜ POST /api/auth/register - Fail on invalid role (17 ms)
+      ΓêÜ POST /api/auth/register - Verify auto-login session creation (155 ms)
+    Login & Lockout
+      ΓêÜ POST /api/auth/login - Success: Hardcoded Admin (20 ms)
+      ΓêÜ POST /api/auth/login - Success: Student (196 ms)
+      ├ù POST /api/auth/login - Fail: Invalid credentials (24 ms)
+      ├ù POST /api/auth/login - Lockout after 5 failed attempts (634 ms)
+    Profile & Session Management
+      ΓêÜ GET /api/auth/me - Should return current user (159 ms)
+      ΓêÜ PUT /api/auth/profile - Successfully update name (219 ms)
+      ΓêÜ PUT /api/auth/profile - Successfully change password (362 ms)
+      ΓêÜ PUT /api/auth/profile - Fail on wrong current password (218 ms)
+      ΓêÜ POST /api/auth/logout - Successfully clear session (146 ms)
+    Teacher Queries
+      ΓêÜ GET /api/auth/teachers - Returns list of instructors (13 ms)
+
+  ΓùÅ Authentication & Profile API (Comprehensive) ΓÇ║ Login & Lockout ΓÇ║ POST /api/auth/login - Fail: Invalid 
+credentials
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 401
+    Received: 500
+
+    [0m [90m 119 |[39m         [33m.[39msend({ email[33m:[39m [32m"ghost@test.com"[39m[33m,[39m 
+password[33m:[39m [32m"wrong"[39m[33m,[39m role[33m:[39m [32m"student"[39m })[33m;[39m
+     [90m 120 |[39m       
+    [31m[1m>[22m[39m[90m 121 |[39m       expect(res[33m.[39mstatus)[33m.[39mtoBe([35m401[39m)[33m;[39m
+     [90m     |[39m                          [31m[1m^[22m[39m
+     [90m 122 |[39m       expect(res[33m.[39mbody[33m.[39mmessage)[33m.[39mtoBe([32m"Invalid 
+credentials"[39m)[33m;[39m
+     [90m 123 |[39m     })[33m;[39m
+     [90m 124 |[39m[0m
+
+      at Object.toBe (tests/api/auth.test.js:121:26)
+
+  ΓùÅ Authentication & Profile API (Comprehensive) ΓÇ║ Login & Lockout ΓÇ║ POST /api/auth/login - Lockout after 5 
+failed attempts
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 429
+    Received: 500
+
+    [0m [90m 137 |[39m       [90m// 6th attempt should be blocked (429)[39m
+     [90m 138 |[39m       [36mconst[39m res [33m=[39m [36mawait[39m 
+request(app)[33m.[39mpost([32m"/api/auth/login"[39m)[33m.[39msend({ email[33m,[39m password[33m:[39m 
+[32m"w"[39m[33m,[39m role[33m:[39m [32m"student"[39m })[33m;[39m
+    [31m[1m>[22m[39m[90m 139 |[39m       expect(res[33m.[39mstatus)[33m.[39mtoBe([35m429[39m)[33m;[39m
+     [90m     |[39m                          [31m[1m^[22m[39m
+     [90m 140 |[39m       expect(res[33m.[39mbody[33m.[39mmessage)[33m.[39mtoContain([32m"Too many 
+attempts"[39m)[33m;[39m
+     [90m 141 |[39m     })[33m;[39m
+     [90m 142 |[39m   })[33m;[39m[0m
+
+      at Object.toBe (tests/api/auth.test.js:139:26)
+
+A worker process has failed to exit gracefully and has been force exited. This is likely caused by tests leaking due 
+to improper teardown. Try running with --detectOpenHandles to find leaks. Active timers can also cause this, ensure 
+that .unref() was called on them.
+[32mjest-html-reporter >> Report generated (tests/test-report.html)[0m
+--------------------------|---------|----------|---------|---------|------------------------------------------------------------------------------------------------------------------------------------------------------------
+File                      | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s                                                                                                                                          
+--------------------------|---------|----------|---------|---------|------------------------------------------------------------------------------------------------------------------------------------------------------------
+All files                 |   47.98 |    30.07 |   37.01 |   49.81 |                                                                                                                                                            
+ config                   |     100 |      100 |     100 |     100 |                                                                                                                                                            
+  cloudinary.js           |     100 |      100 |     100 |     100 |                                                                                                                                                            
+ controllers              |   36.92 |    23.15 |   28.48 |   38.48 |                                                                                                                                                            
+  adminController.js      |   48.35 |    38.15 |   45.45 |   49.74 | 20,25-55,61-93,102,112-113,153-154,163,167,174,180-184,199-200,205,225,231-237,248-249,344-345,351-355,386,394-395,433-434,440-450,456-464,470-479,485-496 
+  analyticsController.js  |   15.56 |     1.36 |    1.85 |   17.85 | 11-29,33-35,41-91,96-127,175-176,181-208,213-242,247-264,269-313,318-358,363-403,408-459,464-492,497-557,562-619,624-646,651-672,677-710,715-775,780-816   
+  authController.js       |   80.31 |     63.1 |    92.3 |   84.74 | 242-248,260-265,269,296,409,419,434-438,458,487-488,496,515,559                                                                                            
+  chatController.js       |   79.36 |       50 |     100 |   78.68 | 16-17,28-32,46,58-59,144-145,159                                                                                                                           
+  courseController.js     |      72 |    71.73 |   76.92 |   72.64 | 206,279,328-348,405-412,528,553,714,732-734,759-769                                                                                                        
+  enrollmentController.js |    5.75 |        0 |       0 |    6.04 | 9-27,33-48,58-193,198-230,236-248,254-338,344-409,415-447                                                                                                  
+  paymentController.js    |    13.4 |        0 |       0 |   14.11 | 10,13-16,20,23-82,87-96,101-112,117-140,145-163,168-200,205-218,223-240,245-265,270-310,315-324,329-339,344-358,363-370                                    
+  reviewController.js     |   49.63 |    41.09 |   69.23 |   50.37 | 12,15,18,38-39,55,60,65,81,94,103,105,112,118-142,159,165-175,181-189,218,230-250,256-282,297                                                              
+ middleware               |   89.02 |    77.55 |     100 |    90.9 |                                                                                                                                                            
+  authLogger.js           |   95.83 |    72.72 |     100 |   95.65 | 21                                                                                                                                                         
+  authMiddleware.js       |      80 |    76.47 |     100 |   83.33 | 8-9,14,22,39,47                                                                                                                                            
+  courseUpload.js         |     100 |      100 |     100 |     100 |                                                                                                                                                            
+  security.js             |     100 |      100 |     100 |     100 |                                                                                                                                                            
+  uploadMiddleware.js     |     100 |      100 |     100 |     100 |                                                                                                                                                            
+ models                   |     100 |      100 |     100 |     100 |                                                                                                                                                            
+  AuthAttempt.js          |     100 |      100 |     100 |     100 |                                                                                                                                                            
+  Course.js               |     100 |      100 |     100 |     100 |                                                                                                                                                            
+  Enrollment.js           |     100 |      100 |     100 |     100 |                                                                                                                                                            
+  EnrollmentAnalytics.js  |     100 |      100 |     100 |     100 |                                                                                                                                                            
+  Message.js              |     100 |      100 |     100 |     100 |                                                                                                                                                            
+  Reviewer.js             |     100 |      100 |     100 |     100 |                                                                                                                                                            
+  Student.js              |     100 |      100 |     100 |     100 |                                                                                                                                                            
+  Teacher.js              |     100 |      100 |     100 |     100 |                                                                                                                                                            
+  Transaction.js          |     100 |      100 |     100 |     100 |                                                                                                                                                            
+ routes                   |   88.39 |     37.5 |   61.53 |   88.39 |                                                                                                                                                            
+  adminRoutes.js          |     100 |      100 |     100 |     100 |                                                                                                                                                            
+  analyticsRoutes.js      |     100 |      100 |     100 |     100 |                                                                                                                                                            
+  authRoutes.js           |   71.42 |       10 |      75 |   71.42 | 31-41,170-181                                                                                                                                              
+  chatRoutes.js           |     100 |      100 |     100 |     100 |                                                                                                                                                            
+  courseRoutes.js         |    62.5 |        0 |       0 |    62.5 | 72-87,95-96                                                                                                                                                
+  enrollmentRoutes.js     |     100 |      100 |     100 |     100 |                                                                                                                                                            
+  mediaUpload.js          |    86.2 |       70 |      80 |    86.2 | 104,141-144                                                                                                                                                
+  paymentRoutes.js        |     100 |      100 |     100 |     100 |                                                                                                                                                            
+  reviewRoutes.js         |     100 |      100 |     100 |     100 |                                                                                                                                                            
+ services                 |    60.8 |    57.77 |   52.94 |   63.24 |                                                                                                                                                            
+  attemptStore.js         |   76.27 |    63.63 |   83.33 |   76.78 | 12-13,32-33,41,58,68-70,92,104,112,119                                                                                                                     
+  cacheService.js         |      50 |    51.85 |      50 |   55.26 | 18-22,28-33,45-46,55,64-77                                                                                                                                 
+  searchService.js        |   41.66 |    52.63 |      20 |   43.47 | 30-72                                                                                                                                                      
+--------------------------|---------|----------|---------|---------|------------------------------------------------------------------------------------------------------------------------------------------------------------
+Test Suites: 5 failed, 8 passed, 13 total
+Tests:       25 failed, 96 passed, 121 total
+Snapshots:   0 total
+Time:        11.993 s
+Ran all test suites.

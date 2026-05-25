@@ -1,0 +1,371 @@
+/* v2/frontend/src/pages/css/AdminDashboard.css */
+
+.admin-dash-layout {
+    /* Inherits general layout from student-dash-layout */
+}
+
+.admin-navbar {
+    background-color: #1f2937; /* Dark background for admin bar */
+    border-bottom-color: #374151;
+}
+
+.admin-navbar .nav-brand {
+    color: #4ade80; /* Green highlight */
+}
+
+.admin-navbar .nav-user-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-back-to-home {
+    background-color: #3b82f6;
+    color: white;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+}
+.btn-back-to-home:hover {
+    background-color: #2563eb;
+}
+
+
+/* --- Tabs --- */
+.admin-tabs-container {
+    display: flex;
+    border-bottom: 2px solid #e5e7eb;
+    margin-bottom: 2rem;
+    gap: 1rem;
+}
+
+.tab-btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px; 
+}
+
+.tab-btn:hover {
+    color: #1f2937;
+}
+
+.tab-btn.active {
+    color: #3b82f6;
+    border-bottom-color: #3b82f6;
+}
+
+.tab-section-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 1rem;
+}
+
+/* --- Table Styles --- */
+.admin-table-container {
+    overflow-x: auto;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    min-width: 800px;
+}
+
+.admin-table th, .admin-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.admin-table th {
+    background-color: #f9fafb;
+    color: #4b5563;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+.admin-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.admin-table tbody tr:hover {
+    background-color: #f3f4f6;
+}
+
+/* Table Inputs */
+.table-input {
+    padding: 0.4rem 0.6rem;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.table-input.w-20 {
+    width: 60px;
+    text-align: center;
+}
+
+/* Action Buttons */
+.btn-action-delete, .btn-action-edit, .btn-action-save, .btn-action-cancel {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 4px;
+    margin-right: 0.25rem;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.btn-action-delete {
+    color: #ef4444;
+    background-color: #fee2e2;
+}
+.btn-action-delete:hover {
+    background-color: #fecaca;
+}
+
+.btn-action-edit {
+    color: #10b981;
+    background-color: #d1fae5;
+}
+.btn-action-edit:hover {
+    background-color: #a7f3d0;
+}
+
+.btn-action-save {
+    color: #3b82f6;
+    background-color: #eff6ff;
+}
+.btn-action-save:hover {
+    background-color: #bfdbfe;
+}
+
+.btn-action-cancel {
+    color: #6b7280;
+    background-color: #f3f4f6;
+}
+.btn-action-cancel:hover {
+    background-color: #e5e7eb;
+}
+
+/* Enrollment Status Badges */
+.status-badge {
+    padding: 0.3rem 0.6rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-badge.completed {
+    background-color: #d1fae5; 
+    color: #047857; 
+}
+
+.status-badge.in-progress {
+    background-color: #fef3c7; 
+    color: #b45309; 
+}
+
+.tab-section-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 1rem;
+}
+
+/* --- Table Styles --- */
+.admin-table-container {
+    overflow-x: auto;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    min-width: 800px;
+}
+
+.admin-table th, .admin-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.admin-table th {
+    background-color: #f9fafb;
+    color: #4b5563;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+.admin-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.admin-table tbody tr:hover {
+    background-color: #f3f4f6;
+}
+
+/* Table Inputs */
+.table-input {
+    padding: 0.4rem 0.6rem;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.table-input.w-20 {
+    width: 60px;
+    text-align: center;
+}
+
+/* Action Buttons */
+.btn-action-delete, .btn-action-edit, .btn-action-save, .btn-action-cancel {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 4px;
+    margin-right: 0.25rem;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.btn-action-delete {
+    color: #ef4444;
+    background-color: #fee2e2;
+}
+.btn-action-delete:hover {
+    background-color: #fecaca;
+}
+
+.btn-action-edit {
+    color: #10b981;
+    background-color: #d1fae5;
+}
+.btn-action-edit:hover {
+    background-color: #a7f3d0;
+}
+
+.btn-action-save {
+    color: #3b82f6;
+    background-color: #eff6ff;
+}
+.btn-action-save:hover {
+    background-color: #bfdbfe;
+}
+
+.btn-action-cancel {
+    color: #6b7280;
+    background-color: #f3f4f6;
+}
+.btn-action-cancel:hover {
+    background-color: #e5e7eb;
+}
+
+/* Enrollment Status Badges */
+.status-badge {
+    padding: 0.3rem 0.6rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-badge.completed {
+    background-color: #d1fae5; 
+    color: #047857; 
+}
+
+.status-badge.in-progress {
+    background-color: #fef3c7; 
+    color: #b45309; 
+}
+
+/* --- Student Lookup Styles (NEW) --- */
+
+.enrollment-management-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.student-lookup-form {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.student-lookup-form .search-input-group {
+    flex-grow: 1;
+    max-width: 400px;
+    position: relative;
+}
+
+.student-details-header {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 1rem;
+}
+
+.student-lookup-results .admin-table-container {
+    border: 2px solid #3b82f633; 
+}
+
+.btn-lookup {
+    background-color: #3b82f6;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-lookup:hover {
+    background-color: #2563eb;
+}
