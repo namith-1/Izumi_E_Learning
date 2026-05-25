@@ -1,7 +1,10 @@
 const session = require('express-session');
 const { MongoStore } = require('connect-mongo'); 
 
-const isProduction = process.env.NODE_ENV === 'production';
+const isProduction =
+    process.env.NODE_ENV === 'production' ||
+    process.env.RENDER === 'true' ||
+    process.env.FORCE_SECURE_COOKIES === 'true';
 
 const sessionConfig = session({
     secret: process.env.SESSION_SECRET || 'izumi_fallback_secret_123',

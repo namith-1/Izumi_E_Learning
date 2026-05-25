@@ -364,7 +364,10 @@ exports.login = async (req, res) => {
 
 // Logout
 exports.logout = (req, res) => {
-  const isProduction = process.env.NODE_ENV === "production";
+  const isProduction =
+    process.env.NODE_ENV === "production" ||
+    process.env.RENDER === "true" ||
+    process.env.FORCE_SECURE_COOKIES === "true";
   
   req.session.destroy((err) => {
     if (err) return res.status(500).json({ message: "Logout failed" });
