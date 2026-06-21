@@ -25,10 +25,20 @@ const transactionSchema = new mongoose.Schema(
     // Revenue split (recorded at time of purchase)
     instructorAmount: { type: Number, default: 0, min: 0 },
     platformAmount: { type: Number, default: 0, min: 0 },
-    currency: { type: String, default: "USD", uppercase: true, trim: true },
+    currency: { type: String, default: "INR", uppercase: true, trim: true },
+    gateway: {
+      type: String,
+      enum: ["manual", "razorpay"],
+      default: "manual",
+      index: true,
+    },
+    gatewayOrderId: { type: String, default: "", index: true },
+    gatewayPaymentId: { type: String, default: "", index: true },
+    gatewaySignature: { type: String, default: "" },
+    gatewayReceipt: { type: String, default: "" },
     paymentMethod: {
       type: String,
-      enum: ["card", "wallet", "upi", "bank-transfer", "other"],
+      enum: ["card", "wallet", "upi", "netbanking", "bank-transfer", "other"],
       default: "card",
     },
     status: {
@@ -43,11 +53,20 @@ const transactionSchema = new mongoose.Schema(
       default: "pending",
       index: true,
     },
+    payoutDueAt: { type: Date, default: null, index: true },
+    payoutReleasedAt: { type: Date, default: null },
+    payoutBatchId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "PayoutBatch",
+      default: null,
+      index: true,
+    },
     notes: { type: String, default: "" },
   },
   { timestamps: true },
 );
 
 transactionSchema.index({ createdAt: 1 });
+transactionSchema.index({ teacherId: 1, payoutStatus: 1, payoutDueAt: 1 });
 
 module.exports = mongoose.model("Transaction", transactionSchema);

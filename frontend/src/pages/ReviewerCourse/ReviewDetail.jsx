@@ -267,7 +267,7 @@ const ReviewDetail = () => {
                         {course.price != null && (
                             <span style={{ marginLeft: 10, fontWeight: 600, color: "#4f46e5" }}>
                                 <DollarSign size={13} style={{ verticalAlign: "middle" }} />
-                                {course.price === 0 ? "Free" : `$${course.price}`}
+                                {course.price === 0 ? "Free" : `₹${course.price}`}
                             </span>
                         )}
                     </p>

@@ -78,7 +78,7 @@ installAuthenticatedFetch();
  * Universal fetch wrapper.
  * Automatically detects FormData to allow multipart/form-data (Multer) uploads.
  */
-const apiRequest = async (endpoint, method = "GET", body = null) => {
+export const apiRequest = async (endpoint, method = "GET", body = null) => {
   const config = {
     method,
     headers: {},
@@ -767,6 +767,56 @@ export const fetchStudentPaymentSummary = createAsyncThunk(
   },
 );
 
+export const createRazorpayOrder = createAsyncThunk(
+  "payments/createRazorpayOrder",
+  async ({ courseId, notes = "" }, { rejectWithValue }) => {
+    try {
+      return await apiRequest("/payments/student/razorpay/order", "POST", {
+        courseId,
+        notes,
+        currency: "INR",
+      });
+    } catch (err) {
+      return rejectWithValue(normalizeErrorMessage(err, "Failed to start payment"));
+    }
+  },
+);
+
+export const verifyRazorpayPayment = createAsyncThunk(
+  "payments/verifyRazorpayPayment",
+  async (payload, { rejectWithValue }) => {
+    try {
+      return await apiRequest("/payments/student/razorpay/verify", "POST", payload);
+    } catch (err) {
+      return rejectWithValue(normalizeErrorMessage(err, "Payment verification failed"));
+    }
+  },
+);
+
+export const fetchWeeklyPayoutPreview = createAsyncThunk(
+  "payments/fetchWeeklyPayoutPreview",
+  async (_, { rejectWithValue }) => {
+    try {
+      return await apiRequest("/payments/admin/payouts/weekly", "GET");
+    } catch (err) {
+      return rejectWithValue(normalizeErrorMessage(err, "Failed to load payout preview"));
+    }
+  },
+);
+
+export const releaseWeeklyPayouts = createAsyncThunk(
+  "payments/releaseWeeklyPayouts",
+  async (_, { rejectWithValue }) => {
+    try {
+      return await apiRequest("/payments/admin/payouts/weekly/release", "POST", {
+        payoutMethod: "manual",
+      });
+    } catch (err) {
+      return rejectWithValue(normalizeErrorMessage(err, "Failed to release weekly payouts"));
+    }
+  },
+);
+
 export const fetchTeacherTransactions = createAsyncThunk(
   "payments/fetchTeacherTransactions",
   async (_, { rejectWithValue }) => {
@@ -796,6 +846,8 @@ const paymentSlice = createSlice({
     teacherTransactions: [],
     studentSummary: null,
     teacherSummary: null,
+    weeklyPayoutPreview: [],
+    lastPayoutRelease: null,
     loading: false,
     error: null,
   },
@@ -831,6 +883,13 @@ const paymentSlice = createSlice({
       })
       .addCase(fetchTeacherPaymentSummary.fulfilled, (state, action) => {
         state.teacherSummary = action.payload;
+      })
+      .addCase(fetchWeeklyPayoutPreview.fulfilled, (state, action) => {
+        state.weeklyPayoutPreview = action.payload;
+      })
+      .addCase(releaseWeeklyPayouts.fulfilled, (state, action) => {
+        state.lastPayoutRelease = action.payload;
+        state.weeklyPayoutPreview = [];
       });
   },
 });

@@ -332,7 +332,7 @@ const PaymentModal = ({
                 by {course.instructorName || "Instructor"}
               </p>
               <p className="course-price-display">
-                ${(course.price || 0).toFixed(2)}
+                ₹{(course.price || 0).toFixed(2)}
               </p>
             </div>
           )}
@@ -342,7 +342,7 @@ const PaymentModal = ({
             <p className="info-box-text">
               {isSuccess
                 ? "Payment confirmed. Loading your course access now..."
-                : "💡 No actual payment gateway is implemented yet"}
+                : "Secure checkout is handled by Razorpay."}
             </p>
           </div>
 
@@ -364,6 +364,22 @@ const PaymentModal = ({
             >
               <div className="method-radio" />
               <span className="method-label">Digital Wallet</span>
+            </div>
+
+            <div
+              className={`method-option ${selectedMethod === "upi" ? "selected" : ""}`}
+              onClick={() => setSelectedMethod("upi")}
+            >
+              <div className="method-radio" />
+              <span className="method-label">UPI</span>
+            </div>
+
+            <div
+              className={`method-option ${selectedMethod === "netbanking" ? "selected" : ""}`}
+              onClick={() => setSelectedMethod("netbanking")}
+            >
+              <div className="method-radio" />
+              <span className="method-label">Netbanking</span>
             </div>
           </div>
 
@@ -399,7 +415,7 @@ const PaymentModal = ({
             </button>
             <button
               className="btn-confirm"
-              onClick={onConfirm}
+              onClick={() => onConfirm(selectedMethod)}
               disabled={!termsAccepted || isProcessing}
             >
               {isProcessing ? (

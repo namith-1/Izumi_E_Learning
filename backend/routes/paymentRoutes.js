@@ -26,6 +26,8 @@ const { isAuthenticated } = require("../middleware/authMiddleware");
  *       201: { description: Payment successful and enrolled }
  */
 router.post("/student/checkout", isAuthenticated, paymentController.checkoutStudentPayment);
+router.post("/student/razorpay/order", isAuthenticated, paymentController.createRazorpayOrder);
+router.post("/student/razorpay/verify", isAuthenticated, paymentController.verifyRazorpayPayment);
 /**
  * @swagger
  * /api/payments/student/transactions:
@@ -183,6 +185,8 @@ router.get("/teacher/summary", isAuthenticated, paymentController.getTeacherPaym
  *       200: { description: Transactions list }
  */
 router.get("/admin/transactions", isAuthenticated, paymentController.getAllTransactionsAdmin);
+router.get("/admin/payouts/weekly", isAuthenticated, paymentController.getWeeklyPayoutPreviewAdmin);
+router.post("/admin/payouts/weekly/release", isAuthenticated, paymentController.releaseWeeklyPayoutsAdmin);
 /**
  * @swagger
  * /api/payments/admin/transactions/{id}:

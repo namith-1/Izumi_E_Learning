@@ -17,7 +17,7 @@ const TeacherTransactions = () => {
     <div style={{ maxWidth: 1000, margin: "0 auto" }}>
       <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 16 }}>Transaction Revenue</h2>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 20 }}>
         <div style={{ background: "#fff", padding: 12, borderRadius: 10, border: "1px solid #e5e7eb" }}>
           <div style={{ fontSize: 12, color: "#6b7280" }}>Total Transactions</div>
           <div style={{ fontSize: 22, fontWeight: 700 }}>{teacherSummary?.totalTransactions || 0}</div>
@@ -29,6 +29,12 @@ const TeacherTransactions = () => {
         <div style={{ background: "#fff", padding: 12, borderRadius: 10, border: "1px solid #e5e7eb" }}>
           <div style={{ fontSize: 12, color: "#6b7280" }}>Pending Payout</div>
           <div style={{ fontSize: 22, fontWeight: 700 }}>${(teacherSummary?.pendingPayouts || 0).toFixed(2)}</div>
+        </div>
+        <div style={{ background: "#fff", padding: 12, borderRadius: 10, border: "1px solid #e5e7eb" }}>
+          <div style={{ fontSize: 12, color: "#6b7280" }}>Next Weekly Payout</div>
+          <div style={{ fontSize: 16, fontWeight: 700 }}>
+            {teacherSummary?.nextPayoutDue ? new Date(teacherSummary.nextPayoutDue).toLocaleDateString() : "-"}
+          </div>
         </div>
       </div>
 
@@ -42,8 +48,9 @@ const TeacherTransactions = () => {
               <th style={{ textAlign: "left", padding: 10 }}>Reference</th>
               <th style={{ textAlign: "left", padding: 10 }}>Course</th>
               <th style={{ textAlign: "left", padding: 10 }}>Student</th>
-              <th style={{ textAlign: "left", padding: 10 }}>Amount</th>
+              <th style={{ textAlign: "left", padding: 10 }}>Instructor Amount</th>
               <th style={{ textAlign: "left", padding: 10 }}>Payout Status</th>
+              <th style={{ textAlign: "left", padding: 10 }}>Due</th>
             </tr>
           </thead>
           <tbody>
@@ -52,13 +59,14 @@ const TeacherTransactions = () => {
                 <td style={{ padding: 10, borderTop: "1px solid #f3f4f6" }}>{txn.reference}</td>
                 <td style={{ padding: 10, borderTop: "1px solid #f3f4f6" }}>{txn.courseId?.title || "-"}</td>
                 <td style={{ padding: 10, borderTop: "1px solid #f3f4f6" }}>{txn.studentId?.name || "-"}</td>
-                <td style={{ padding: 10, borderTop: "1px solid #f3f4f6" }}>${(txn.amount || 0).toFixed(2)}</td>
+                <td style={{ padding: 10, borderTop: "1px solid #f3f4f6" }}>${(txn.instructorAmount ?? txn.amount ?? 0).toFixed(2)}</td>
                 <td style={{ padding: 10, borderTop: "1px solid #f3f4f6" }}>{txn.payoutStatus}</td>
+                <td style={{ padding: 10, borderTop: "1px solid #f3f4f6" }}>{txn.payoutDueAt ? new Date(txn.payoutDueAt).toLocaleDateString() : "-"}</td>
               </tr>
             ))}
             {!loading && teacherTransactions.length === 0 && (
               <tr>
-                <td style={{ padding: 14 }} colSpan={5}>
+                <td style={{ padding: 14 }} colSpan={6}>
                   No transaction revenue yet.
                 </td>
               </tr>

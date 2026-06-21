@@ -79,7 +79,7 @@ const CourseCard = ({ course, onEnroll, user }) => {
         <StarRating rating={course.rating} />
         <div className="card-price-section">
           <span className="card-price" style={{ fontSize: "1.2rem" }}>
-            {course.price === 0 ? "Free" : `$${(course.price || 0).toFixed(2)}`}
+            {course.price === 0 ? "Free" : `₹${(course.price || 0).toFixed(2)}`}
           </span>
         </div>
         <button onClick={() => onEnroll(course._id)} className="btn-action btn-enroll"

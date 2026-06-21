@@ -317,7 +317,10 @@ app.set("io", io);
 // 2. Global Middlewares
 connectDB();
 
-
+// ⚠️ WEBHOOK ROUTE MUST come BEFORE express.json().
+// Razorpay signature verification requires the raw request body bytes.
+// express.json() consumes the body stream, making raw body unavailable.
+app.use("/api/webhook", require("./routes/webhookRoutes"));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -356,6 +359,7 @@ app.use("/api/tests", require("./routes/testRoutes"));
 app.use("/api/chat", require("./routes/chatRoutes"));
 app.use("/api/review", require("./routes/reviewRoutes"));
 app.use("/api/payments", require("./routes/paymentRoutes"));
+// Note: /api/webhook is already registered above before express.json()
 app.use("/api/subjects", require("./routes/subjectRoutes"));
 app.use("/api/explore", require("./routes/exploreRoutes"));
 app.use("/api/group-chat", require("./routes/groupChatRoutes"));

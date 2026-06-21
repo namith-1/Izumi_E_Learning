@@ -44,7 +44,7 @@ const CourseCard = ({ course, onView }) => {
         <StarRating rating={course.rating} />
         <div className="card-price-section">
           <span className="card-price">
-            {course.price === 0 ? "Free" : `$${(course.price || 0).toFixed(2)}`}
+            {course.price === 0 ? "Free" : `₹${(course.price || 0).toFixed(2)}`}
           </span>
         </div>
         <button

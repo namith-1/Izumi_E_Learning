@@ -1406,7 +1406,7 @@ const CourseEditor = () => {
                   {validationErrors.courseTitle && <span className="error-text">{validationErrors.courseTitle}</span>}
                 </div>
                 <div className="form-field">
-                  <label htmlFor="coursePrice">Course Price ($)</label>
+                  <label htmlFor="coursePrice">Course Price (₹)</label>
                   <input
                     id="coursePrice"
                     type="number"
@@ -1449,10 +1449,10 @@ const CourseEditor = () => {
                     fontSize: 12, color: "#6b7280", marginTop: 6, padding: "0 4px",
                   }}>
                     <span>💰 You earn: <strong style={{ color: "#15803d" }}>
-                      ${((Number(courseStructure.price) || 0) * (courseStructure.instructorShare ?? 30) / 100).toFixed(2)}
+                      ₹{((Number(courseStructure.price) || 0) * (courseStructure.instructorShare ?? 30) / 100).toFixed(2)}
                     </strong></span>
                     <span>🏢 Platform: <strong style={{ color: "#6366f1" }}>
-                      ${((Number(courseStructure.price) || 0) * (100 - (courseStructure.instructorShare ?? 30)) / 100).toFixed(2)}
+                      ₹{((Number(courseStructure.price) || 0) * (100 - (courseStructure.instructorShare ?? 30)) / 100).toFixed(2)}
                     </strong></span>
                   </div>
                 </div>

@@ -6,6 +6,8 @@ import {
   fetchRevenueByTeacher,
   fetchRevenueByStudent,
   fetchRevenueByCourse,
+  fetchWeeklyPayoutPreview,
+  releaseWeeklyPayouts,
 } from "../../store";
 import {
   ResponsiveContainer,
@@ -24,6 +26,8 @@ const RevenueAnalyticsDashboard = () => {
   const dispatch = useDispatch();
   const { revenueOverview, revenueTrend, revenueByTeacher, revenueByStudent, revenueByCourse, loading, error } =
     useSelector((state) => state.analytics);
+  const { weeklyPayoutPreview, lastPayoutRelease, loading: paymentsLoading } =
+    useSelector((state) => state.payments);
 
   const [preset, setPreset] = useState("30");
   const [groupBy, setGroupBy] = useState("day");
@@ -44,7 +48,16 @@ const RevenueAnalyticsDashboard = () => {
     dispatch(fetchRevenueByTeacher({ ...queryParams, limit: 10 }));
     dispatch(fetchRevenueByStudent({ ...queryParams, limit: 10 }));
     dispatch(fetchRevenueByCourse({ ...queryParams, limit: 10 }));
+    dispatch(fetchWeeklyPayoutPreview());
   }, [dispatch, queryParams, groupBy, preset, startDate, endDate]);
+
+  const handleReleaseWeeklyPayouts = async () => {
+    const result = await dispatch(releaseWeeklyPayouts());
+    if (releaseWeeklyPayouts.fulfilled.match(result)) {
+      dispatch(fetchWeeklyPayoutPreview());
+      dispatch(fetchRevenueOverview(queryParams));
+    }
+  };
 
   return (
     <div style={{ maxWidth: 1400, margin: "0 auto", padding: "1rem" }}>
@@ -122,6 +135,63 @@ const RevenueAnalyticsDashboard = () => {
               {(revenueByTeacher || []).map((r) => (
                 <tr key={r.teacherId}><td>{r.teacherName}</td><td>${r.netRevenue.toFixed(2)}</td><td>${r.platformProfit.toFixed(2)}</td><td>{r.totalTransactions}</td></tr>
               ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="analytics-section">
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 10 }}>
+          <h2 className="section-title" style={{ margin: 0 }}>Weekly Instructor Payouts</h2>
+          <button
+            type="button"
+            onClick={handleReleaseWeeklyPayouts}
+            disabled={paymentsLoading || !weeklyPayoutPreview?.length}
+            style={{
+              border: "none",
+              borderRadius: 8,
+              padding: "0.65rem 1rem",
+              background: "#0f172a",
+              color: "white",
+              fontWeight: 700,
+              cursor: paymentsLoading || !weeklyPayoutPreview?.length ? "not-allowed" : "pointer",
+              opacity: paymentsLoading || !weeklyPayoutPreview?.length ? 0.55 : 1,
+            }}
+          >
+            Release Due Payouts
+          </button>
+        </div>
+        {lastPayoutRelease?.batches?.length > 0 && (
+          <p style={{ color: "#047857", fontWeight: 600 }}>
+            Released {lastPayoutRelease.batches.length} weekly payout batch(es).
+          </p>
+        )}
+        <div className="table-card">
+          <table className="analytics-table">
+            <thead>
+              <tr>
+                <th>Instructor</th>
+                <th>Due Amount</th>
+                <th>Transactions</th>
+                <th>Currency</th>
+                <th>Next Due</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(weeklyPayoutPreview || []).map((payout) => (
+                <tr key={payout.teacherId}>
+                  <td>{payout.teacherName}</td>
+                  <td>${(payout.instructorAmount || 0).toFixed(2)}</td>
+                  <td>{payout.transactionCount}</td>
+                  <td>{payout.currency}</td>
+                  <td>{payout.nextDueAt ? new Date(payout.nextDueAt).toLocaleDateString() : "-"}</td>
+                </tr>
+              ))}
+              {(!weeklyPayoutPreview || weeklyPayoutPreview.length === 0) && (
+                <tr>
+                  <td colSpan={5}>No instructor payouts are due yet.</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

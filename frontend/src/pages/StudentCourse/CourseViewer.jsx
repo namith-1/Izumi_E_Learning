@@ -11,7 +11,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchCourseById,
-  enrollInCourse,
+  createRazorpayOrder,
+  verifyRazorpayPayment,
   fetchEnrollmentStatus,
   resetEnrollment,
   BACKEND_URL,
@@ -19,6 +20,23 @@ import {
 import { BookOpen, Layers, Clock, Loader2, User, Play, ArrowLeft } from "lucide-react";
 import PaymentModal from "../../components/PaymentModal";
 import { marked } from 'marked';
+
+const loadRazorpayCheckout = () => {
+  if (typeof window === "undefined") {
+    return Promise.reject(new Error("Razorpay Checkout requires a browser."));
+  }
+
+  if (window.Razorpay) return Promise.resolve(true);
+
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    script.onload = () => resolve(true);
+    script.onerror = () => reject(new Error("Unable to load Razorpay Checkout."));
+    document.body.appendChild(script);
+  });
+};
 
 const CourseViewer = () => {
   // --- 1. HOOK CALLS (MUST BE UNCONDITIONAL) ---
@@ -37,6 +55,7 @@ const CourseViewer = () => {
     error: enrollmentError,
   } = useSelector((state) => state.enrollment);
   const { entities: teacherEntities } = useSelector((state) => state.teachers);
+  const currentUser = useSelector((state) => state.auth?.user);
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -135,50 +154,114 @@ const CourseViewer = () => {
     setShowPaymentModal(true);
   };
 
-  const handlePaymentConfirm = async () => {
+  const finishSuccessfulEnrollment = async (enrollmentData) => {
+    setPaymentStatus("success");
+
+    // If we already have enrollment data from the verify response, use it directly
+    // instead of making another API call — faster and more reliable
+    if (enrollmentData) {
+      dispatch({ type: "enrollment/fetchStatus/fulfilled", payload: enrollmentData });
+    } else {
+      // Fallback: re-fetch from server
+      await dispatch(fetchEnrollmentStatus(courseId));
+    }
+
+    await new Promise((resolve) => {
+      redirectTimeoutRef.current = window.setTimeout(resolve, 300);
+    });
+
+    redirectTimeoutRef.current = null;
+    setShowPaymentModal(false);
+    setPaymentStatus("idle");
+
+    sessionStorage.setItem(
+      `izumi_just_enrolled_${courseId}`,
+      String(Date.now()),
+    );
+
+    navigate(`learn/module/${getFirstModuleId()}`, {
+      replace: true,
+      state: { justEnrolled: true },
+    });
+  };
+
+  const handlePaymentConfirm = async (selectedMethod = "card") => {
     if (isProcessing) return;
     setIsProcessing(true);
     setPaymentStatus("processing");
 
     try {
-      const result = await dispatch(
-        enrollInCourse({
-          courseId,
-          paymentMethod: "card",
+      const orderResult = await dispatch(createRazorpayOrder({ courseId }));
+
+      if (createRazorpayOrder.rejected.match(orderResult)) {
+        alert(orderResult.payload || "Unable to start Razorpay payment.");
+        setPaymentStatus("idle");
+        return;
+      }
+
+      const paymentPayload = orderResult.payload;
+
+      if (paymentPayload?.free || paymentPayload?.enrollment) {
+        // Free course — backend already enrolled, use the enrollment from response
+        await finishSuccessfulEnrollment(paymentPayload.enrollment);
+        return;
+      }
+
+      await loadRazorpayCheckout();
+
+      const paymentResponse = await new Promise((resolve, reject) => {
+        const razorpay = new window.Razorpay({
+          key: paymentPayload.keyId,
+          amount: paymentPayload.amount,
+          currency: paymentPayload.currency,
+          name: "Izumi E-Learning",
+          description: course?.title || "Course enrollment",
+          order_id: paymentPayload.order.id,
+          prefill: {
+            name: currentUser?.name || "",
+            email: currentUser?.email || "",
+          },
+          notes: {
+            courseId,
+          },
+          theme: {
+            color: "#10b981",
+          },
+          handler: resolve,
+          modal: {
+            ondismiss: () => reject(new Error("Payment cancelled.")),
+          },
+        });
+
+        razorpay.on("payment.failed", (response) => {
+          reject(
+            new Error(
+              response?.error?.description || "Razorpay payment failed.",
+            ),
+          );
+        });
+
+        razorpay.open();
+      });
+
+      const verifyResult = await dispatch(
+        verifyRazorpayPayment({
+          transactionId: paymentPayload.transaction._id,
+          paymentMethod: selectedMethod,
+          ...paymentResponse,
         }),
       );
 
-      if (
-        enrollInCourse.fulfilled.match(result) ||
-        (result.payload && result.payload.includes("Already enrolled"))
-      ) {
-        setPaymentStatus("success");
-
-        await new Promise((resolve) => {
-          redirectTimeoutRef.current = window.setTimeout(resolve, 100);
-        });
-
-        redirectTimeoutRef.current = null;
-        setShowPaymentModal(false);
-        setPaymentStatus("idle");
-
-        sessionStorage.setItem(
-          `izumi_just_enrolled_${courseId}`,
-          String(Date.now()),
-        );
-
-        navigate(`learn/module/${getFirstModuleId()}`, {
-          replace: true,
-          state: { justEnrolled: true },
-        });
+      if (verifyRazorpayPayment.fulfilled.match(verifyResult)) {
+        // Pass the enrollment object from the verify response directly
+        await finishSuccessfulEnrollment(verifyResult.payload?.enrollment);
       } else {
-        console.error("Enrollment failed:", result.payload);
-        alert("Enrollment failed. Please try again.");
+        alert(verifyResult.payload || "Payment verification failed.");
         setPaymentStatus("idle");
       }
     } catch (error) {
-      console.error("Enrollment error:", error);
-      alert("An error occurred during enrollment. Please try again.");
+      console.error("Payment error:", error);
+      alert(error.message || "An error occurred during payment. Please try again.");
       setPaymentStatus("idle");
     } finally {
       setIsProcessing(false);
@@ -302,7 +385,7 @@ const CourseViewer = () => {
                 <div className="price-display">
                   <span className="price-label">Course Price</span>
                   <span className="price-amount">
-                    ${(course.price || 0).toFixed(2)}
+                    ₹{(course.price || 0).toFixed(2)}
                   </span>
                 </div>
                 <button
