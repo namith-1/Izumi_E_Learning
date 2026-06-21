@@ -1,5 +1,6 @@
 const request = require("supertest");
 const mongoose = require("mongoose");
+const crypto = require("crypto");
 const { MongoMemoryServer } = require("mongodb-memory-server");
 const express = require("express");
 const session = require("express-session");
@@ -84,6 +85,52 @@ describe("Payment API (Comprehensive)", () => {
       activeUser = { id: student._id, role: "student" };
       const res = await request(app).post("/api/payments/student/checkout").send({});
       expect(res.status).toBe(400);
+    });
+
+    test("POST /student/razorpay/verify - verifies signature and enrolls", async () => {
+      process.env.RAZORPAY_KEY_SECRET = "test_secret";
+      const teacher = await Teacher.create({ name: "T_RZP", email: "rzp@t.com", password: "p" });
+      const course = await createValidCourse(teacher._id);
+      const student = await Student.create({ name: "S_RZP", email: "rzp@s.com", password: "p" });
+      const orderId = "order_test_123";
+      const paymentId = "pay_test_123";
+      const signature = crypto
+        .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+        .update(`${orderId}|${paymentId}`)
+        .digest("hex");
+
+      const txn = await Transaction.create({
+        reference: "REF_RZP_VERIFY",
+        studentId: student._id,
+        teacherId: teacher._id,
+        courseId: course._id,
+        amount: 99,
+        instructorAmount: 30,
+        platformAmount: 69,
+        currency: "INR",
+        gateway: "razorpay",
+        gatewayOrderId: orderId,
+        status: "pending",
+        payoutStatus: "on-hold",
+      });
+
+      activeUser = { id: student._id, role: "student" };
+      const res = await request(app)
+        .post("/api/payments/student/razorpay/verify")
+        .send({
+          transactionId: txn._id,
+          razorpay_order_id: orderId,
+          razorpay_payment_id: paymentId,
+          razorpay_signature: signature,
+          paymentMethod: "upi",
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.transaction.status).toBe("paid");
+      expect(res.body.transaction.payoutStatus).toBe("pending");
+
+      const enrollment = await Enrollment.findOne({ studentId: student._id, courseId: course._id });
+      expect(enrollment).toBeDefined();
     });
 
     test("GET /student/transactions - List owned transactions", async () => {
@@ -181,6 +228,35 @@ describe("Payment API (Comprehensive)", () => {
       expect(res.status).toBe(200);
       const updated = await Transaction.findById(txn._id);
       expect(updated.status).toBe("failed");
+    });
+
+    test("POST /admin/payouts/weekly/release - releases due instructor payout batches", async () => {
+      const teacher = await Teacher.create({ name: "T_Due", email: "due@t.com", password: "p" });
+      await Transaction.create({
+        reference: "REF_DUE_1",
+        teacherId: teacher._id,
+        studentId: new mongoose.Types.ObjectId(),
+        courseId: new mongoose.Types.ObjectId(),
+        amount: 100,
+        instructorAmount: 40,
+        platformAmount: 60,
+        status: "paid",
+        payoutStatus: "pending",
+        payoutDueAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      });
+
+      activeUser = { id: "60c728362d294d1f88c88888", role: "admin" };
+      const res = await request(app)
+        .post("/api/payments/admin/payouts/weekly/release")
+        .send({});
+
+      expect(res.status).toBe(201);
+      expect(res.body.batches).toHaveLength(1);
+      expect(res.body.batches[0].instructorAmount).toBe(40);
+
+      const released = await Transaction.findOne({ reference: "REF_DUE_1" });
+      expect(released.payoutStatus).toBe("released");
+      expect(released.payoutBatchId).toBeTruthy();
     });
   });
 
